@@ -11,6 +11,11 @@ import (
 
 // AutoMigrate creates reference tables, seeds them, then migrates all models.
 func AutoMigrate(db *gorm.DB) error {
+	// Enable unaccent extension for accent-insensitive search
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS unaccent").Error; err != nil {
+		return err
+	}
+
 	// Migrate reference tables first (they are FK targets)
 	if err := db.AutoMigrate(
 		&types.SexAtBirth{},

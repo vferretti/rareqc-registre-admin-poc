@@ -3,9 +3,14 @@
     "title": "RareQC — Registre Admin",
     "description": "Registre québécois de patients atteints de maladies rares"
   },
+  "landing": {
+    "title": "Registre québécois de patients atteints de maladies rares",
+    "description": "Portail d'administration pour la gestion des participants du registre.",
+    "enter": "Accéder au portail"
+  },
   "nav": {
     "home": "Accueil",
-    "patients": "Patients"
+    "patients": "Participants"
   },
   "common": {
     "loading": "Chargement…",
@@ -16,6 +21,45 @@
     "edit": "Modifier",
     "add": "Ajouter",
     "search": "Rechercher",
-    "noResults": "Aucun résultat"
+    "noResults": "Aucun résultat",
+    "search_placeholder": "Rechercher…"
+  },
+  "participants": {
+    "title": "Participants",
+    "description": "{{count}} participants au registre",
+    "search_placeholder": "Rechercher par nom ou RAMQ…",
+    "columns": {
+      "last_name": "Nom",
+      "first_name": "Prénom",
+      "date_of_birth": "Date de naissance",
+      "sex_at_birth": "Sexe à la naissance",
+      "vital_status": "Statut vital",
+      "ramq": "RAMQ",
+      "created_at": "Date d'inscription"
+    }
+  },
+  "enums": {
+    "sex_at_birth": {
+      "male": "Masculin",
+      "female": "Féminin",
+      "unknown": "Inconnu"
+    },
+    "vital_status": {
+      "alive": "Vivant",
+      "deceased": "Décédé",
+      "unknown": "Inconnu"
+    }
+  },
+  "pagination": {
+    "results": "{{from}} – {{to}} de {{total}}",
+    "per_page": "/ page",
+    "first": "Début",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "table": {
+    "pin_left": "Épingler à gauche",
+    "pin_right": "Épingler à droite",
+    "unpin": "Désépingler"
   }
 }

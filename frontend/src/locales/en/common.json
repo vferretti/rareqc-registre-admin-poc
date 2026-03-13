@@ -3,9 +3,14 @@
     "title": "RareQC — Registry Admin",
     "description": "Quebec registry for patients with rare diseases"
   },
+  "landing": {
+    "title": "Quebec Registry for Patients with Rare Diseases",
+    "description": "Administration portal for managing registry participants.",
+    "enter": "Enter portal"
+  },
   "nav": {
     "home": "Home",
-    "patients": "Patients"
+    "patients": "Participants"
   },
   "common": {
     "loading": "Loading…",
@@ -16,6 +21,45 @@
     "edit": "Edit",
     "add": "Add",
     "search": "Search",
-    "noResults": "No results"
+    "noResults": "No results",
+    "search_placeholder": "Search…"
+  },
+  "participants": {
+    "title": "Participants",
+    "description": "{{count}} participants in the registry",
+    "search_placeholder": "Search by name or RAMQ…",
+    "columns": {
+      "last_name": "Last name",
+      "first_name": "First name",
+      "date_of_birth": "Date of birth",
+      "sex_at_birth": "Sex at birth",
+      "vital_status": "Vital status",
+      "ramq": "RAMQ",
+      "created_at": "Registration date"
+    }
+  },
+  "enums": {
+    "sex_at_birth": {
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown"
+    },
+    "vital_status": {
+      "alive": "Alive",
+      "deceased": "Deceased",
+      "unknown": "Unknown"
+    }
+  },
+  "pagination": {
+    "results": "{{from}} – {{to}} of {{total}}",
+    "per_page": "/ page",
+    "first": "First",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "table": {
+    "pin_left": "Pin left",
+    "pin_right": "Pin right",
+    "unpin": "Unpin"
   }
 }

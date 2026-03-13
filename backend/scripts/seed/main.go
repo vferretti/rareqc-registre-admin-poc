@@ -105,11 +105,13 @@ func seedChild(db *gorm.DB, index int) {
 	dob := randomChildDOB()
 	city := pick(cities)
 
+	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
 		FirstName:       firstName,
 		LastName:        lastName,
 		DateOfBirth:     dob,
 		CityOfBirth:     &city,
+		RAMQ:            &ramq,
 		SexAtBirthCode:  sex,
 		VitalStatusCode: "alive",
 	}
@@ -203,11 +205,13 @@ func seedAdult(db *gorm.DB, index int) {
 	city := pick(cities)
 	email := fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain())
 
+	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
 		FirstName:       firstName,
 		LastName:        lastName,
 		DateOfBirth:     dob,
 		CityOfBirth:     &city,
+		RAMQ:            &ramq,
 		SexAtBirthCode:  sex,
 		VitalStatusCode: "alive",
 	}
@@ -326,4 +330,60 @@ func langForName(firstName string) string {
 func randomDomain() string {
 	domains := []string{"gmail.com", "outlook.com", "videotron.ca", "bell.net", "hotmail.com", "yahoo.ca"}
 	return pick(domains)
+}
+
+// generateRAMQ generates a realistic RAMQ number.
+// Format: AAAA NNNN NNNN (12 chars)
+// - 3 first letters of last name (uppercased, unaccented)
+// - 1 first letter of first name (uppercased, unaccented)
+// - 2 digits: year of birth (+ 50 for females)
+// - 2 digits: month of birth
+// - 2 digits: day of birth
+// - 2 digits: sequence (random 01-99)
+func generateRAMQ(firstName, lastName string, dob time.Time, isFemale bool) string {
+	ln := upper(lastName)
+	fn := upper(firstName)
+
+	// Pad last name to at least 3 chars
+	for len(ln) < 3 {
+		ln += "X"
+	}
+
+	year := dob.Year() % 100
+	if isFemale {
+		year += 50
+	}
+
+	seq := rand.Intn(99) + 1
+
+	return fmt.Sprintf("%s%s %02d%02d %02d%02d",
+		ln[:3], fn[:1],
+		year, int(dob.Month()),
+		dob.Day(), seq,
+	)
+}
+
+func upper(s string) string {
+	result := make([]byte, 0, len(s))
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z':
+			result = append(result, byte(r-32))
+		case r >= 'A' && r <= 'Z':
+			result = append(result, byte(r))
+		case r == 'é' || r == 'è' || r == 'ê' || r == 'ë' || r == 'É':
+			result = append(result, 'E')
+		case r == 'à' || r == 'â' || r == 'ä':
+			result = append(result, 'A')
+		case r == 'î' || r == 'ï':
+			result = append(result, 'I')
+		case r == 'ô' || r == 'ö':
+			result = append(result, 'O')
+		case r == 'ù' || r == 'û' || r == 'ü':
+			result = append(result, 'U')
+		case r == 'ç':
+			result = append(result, 'C')
+		}
+	}
+	return string(result)
 }

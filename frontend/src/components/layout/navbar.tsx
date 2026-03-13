@@ -7,8 +7,7 @@ export function Navbar() {
   const location = useLocation();
 
   const links = [
-    { to: "/", label: t("nav.home") },
-    { to: "/patients", label: t("nav.patients") },
+    { to: "/participants", label: t("nav.patients") },
   ];
 
   const toggleLanguage = () => {
@@ -18,7 +17,9 @@ export function Navbar() {
 
   return (
     <nav className="h-[var(--height-navbar)] bg-primary text-primary-foreground flex items-center px-4">
-      <span className="font-semibold mr-8">RareQC</span>
+      <Link to="/" className="font-semibold mr-8 hover:opacity-80 transition-opacity">
+        RareQC
+      </Link>
       <div className="flex gap-4 flex-1">
         {links.map((link) => (
           <Link

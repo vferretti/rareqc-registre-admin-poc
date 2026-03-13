@@ -27,7 +27,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	{
 		api.GET("/health", HealthHandler())
 
-		// Patient routes, additional resource routes, etc. will be added here
+		api.GET("/participants", ListParticipantsHandler(db))
 	}
 
 	return r

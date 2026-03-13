@@ -4,17 +4,21 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { ThemeProvider } from "next-themes";
 import "./index.css";
 import "./lib/i18n";
+import { LandingPage } from "./components/feature/landing-page";
 import Root from "./routes/root";
-import Home from "./routes/home";
+import Participants from "./routes/participants";
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <LandingPage />,
+  },
+  {
     element: <Root />,
     children: [
       {
-        index: true,
-        element: <Home />,
+        path: "participants",
+        element: <Participants />,
       },
     ],
   },
