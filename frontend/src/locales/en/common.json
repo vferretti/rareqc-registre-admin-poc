@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "RareQC — Registry Admin",
+    "description": "Quebec registry for patients with rare diseases"
+  },
+  "nav": {
+    "home": "Home",
+    "patients": "Patients"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "noResults": "No results"
+  }
+}

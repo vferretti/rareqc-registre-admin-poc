@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "RareQC — Registre Admin",
+    "description": "Registre québécois de patients atteints de maladies rares"
+  },
+  "nav": {
+    "home": "Accueil",
+    "patients": "Patients"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "error": "Erreur",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat"
+  }
+}
