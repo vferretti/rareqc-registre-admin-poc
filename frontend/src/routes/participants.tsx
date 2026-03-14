@@ -215,7 +215,7 @@ export default function Participants() {
     <>
       <PageHeader
         title={t("participants.title")}
-        description={t("participants.description", { count: total.toLocaleString(i18n.language) })}
+        description={t("participants.description")}
       />
       <div className="p-8">
         <div className="rounded-lg border bg-background p-6">

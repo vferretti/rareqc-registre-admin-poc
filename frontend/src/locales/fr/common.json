@@ -4,8 +4,8 @@
     "description": "Registre québécois de patients atteints de maladies rares"
   },
   "landing": {
-    "title": "Registre québécois de patients atteints de maladies rares",
-    "description": "Portail d'administration pour la gestion des participants du registre.",
+    "title": "Portail d'administration du registre des participants",
+    "description": "",
     "enter": "Accéder au portail"
   },
   "nav": {
@@ -26,7 +26,7 @@
   },
   "participants": {
     "title": "Participants",
-    "description": "{{count}} participants au registre",
+    "description": "Liste des participants du registre",
     "search_placeholder": "Rechercher par nom ou RAMQ…",
     "columns": {
       "last_name": "Nom",

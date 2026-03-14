@@ -2,6 +2,127 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  /* Define colors/variable that are global for all portals */
+  /* Extracted Tailwind color variables for light mode */
+  --radiant-amber-500: var(--color-amber-500);
+  --radiant-amber-800: var(--color-amber-800);
+  --radiant-amber-600: var(--color-amber-600);
+  --radiant-amber-400: var(--color-amber-400);
+
+  --radiant-red-400: var(--color-red-400);
+  --radiant-red-700: var(--color-red-700);
+  --radiant-red-500: var(--color-red-500);
+
+  --radiant-orange-400: var(--color-orange-400);
+  --radiant-orange-800: var(--color-orange-800);
+
+  --radiant-yellow-400: var(--color-yellow-400);
+  --radiant-yellow-800: var(--color-yellow-800);
+
+  --radiant-lime-400: var(--color-lime-400);
+  --radiant-lime-800: var(--color-lime-800);
+
+  --radiant-green-300: var(--color-green-300);
+  --radiant-green-800: var(--color-green-800);
+  --radiant-green-600: var(--color-green-600);
+  --radiant-green-400: var(--color-green-400);
+
+  --radiant-cyan-400: var(--color-cyan-400);
+  --radiant-cyan-800: var(--color-cyan-800);
+
+  --radiant-blue-400: var(--color-blue-400);
+  --radiant-blue-700: var(--color-blue-700);
+  --radiant-blue-500: var(--color-blue-500);
+  --radiant-blue-800: var(--color-blue-800);
+
+  --radiant-violet-400: var(--color-violet-400);
+  --radiant-violet-700: var(--color-violet-700);
+  --radiant-violet-800: var(--color-violet-800);
+
+  --radiant-fuchsia-400: var(--color-fuchsia-400);
+  --radiant-fuchsia-700: var(--color-fuchsia-700);
+  --radiant-fuchsia-600: var(--color-fuchsia-600);
+
+  --radiant-slate-400: var(--color-slate-400);
+  --radiant-slate-300: var(--color-slate-300);
+  --radiant-slate-500: var(--color-slate-500);
+
+  --radiant-emerald-600: var(--color-emerald-600);
+
+  --color-alert-default: var(--color-slate-50);
+  --color-alert-default-foreground: var(--color-rareqc-950);
+  --color-alert-info-foreground: var(--color-blue-700);
+  --color-alert-warning-foreground: var(--color-yellow-800);
+  --color-alert-error-foreground: var(--color-red-700);
+  --color-alert-success-foreground: var(--color-green-800);
+  --color-alert-success: var(--color-green-400);
+  --color-alert-error: var(--color-red-400);
+  --color-alert-warning: var(--color-yellow-400);
+  --color-alert-info: var(--color-blue-400);
+}
+
+.dark {
+  /* Define colors/variable that are global for all portals in dark mode */
+
+  /* Extracted Tailwind color variables for dark mode */
+  --radiant-amber-500: var(--color-amber-600);
+  --radiant-amber-800: var(--color-amber-400);
+  --radiant-amber-600: var(--color-amber-600);
+  --radiant-amber-400: var(--color-amber-400);
+
+  --radiant-red-400: var(--color-red-700);
+  --radiant-red-700: var(--color-red-400);
+  --radiant-red-500: var(--color-red-500);
+
+  --radiant-orange-400: var(--color-orange-400);
+  --radiant-orange-800: var(--color-orange-400);
+
+  --radiant-yellow-400: var(--color-yellow-400);
+  --radiant-yellow-800: var(--color-yellow-400);
+
+  --radiant-lime-400: var(--color-lime-400);
+  --radiant-lime-800: var(--color-lime-400);
+
+  --radiant-green-300: var(--color-green-400);
+  --radiant-green-800: var(--color-green-300);
+  --radiant-green-600: var(--color-green-600);
+  --radiant-green-400: var(--color-green-400);
+
+  --radiant-cyan-400: var(--color-cyan-400);
+  --radiant-cyan-800: var(--color-cyan-400);
+
+  --radiant-blue-400: var(--color-blue-800);
+  --radiant-blue-700: var(--color-blue-400);
+  --radiant-blue-500: var(--color-blue-500);
+  --radiant-blue-800: var(--color-blue-800);
+
+  --radiant-violet-400: var(--color-violet-800);
+  --radiant-violet-700: var(--color-violet-400);
+  --radiant-violet-800: var(--color-violet-800);
+
+  --radiant-fuchsia-400: var(--color-fuchsia-600);
+  --radiant-fuchsia-700: var(--color-fuchsia-400);
+  --radiant-fuchsia-600: var(--color-fuchsia-600);
+
+  --radiant-slate-400: var(--color-slate-400);
+  --radiant-slate-300: var(--color-slate-500);
+  --radiant-slate-500: var(--color-slate-500);
+
+  --radiant-emerald-600: var(--color-emerald-600);
+
+  --color-alert-default: var(--color-slate-500);
+  --color-alert-default-foreground: var(--color-slate-50);
+  --color-alert-info-foreground: var(--color-blue-400);
+  --color-alert-warning-foreground: var(--color-yellow-400);
+  --color-alert-error-foreground: var(--color-red-400);
+  --color-alert-success-foreground: var(--color-green-300);
+  --color-alert-success: var(--color-green-400);
+  --color-alert-error: var(--color-red-400);
+  --color-alert-warning: var(--color-yellow-400);
+  --color-alert-info: var(--color-blue-400);
+}
+
 @theme inline {
   /* Shadcn UI semantic tokens — set by each portal's theme.css */
   --color-border: var(--border);
@@ -23,6 +144,9 @@
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
+  --color-neutral: var(--neutral);
+  --color-neutral-foreground: var(--neutral-foreground);
 
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -48,15 +172,102 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Radiant custom colors */
+  --color-amber: var(--radiant-amber-500);
+  --color-amber-foreground: var(--radiant-amber-800);
+
+  --color-red: var(--radiant-red-400);
+  --color-red-foreground: var(--radiant-red-700);
+
+  --color-orange: var(--radiant-orange-400);
+  --color-orange-foreground: var(--radiant-orange-800);
+
+  --color-yellow: var(--radiant-yellow-400);
+  --color-yellow-foreground: var(--radiant-yellow-800);
+
+  --color-lime: var(--radiant-lime-400);
+  --color-lime-foreground: var(--radiant-lime-800);
+
+  --color-green: var(--radiant-green-300);
+  --color-green-foreground: var(--radiant-green-800);
+
+  --color-cyan: var(--radiant-cyan-400);
+  --color-cyan-foreground: var(--radiant-cyan-800);
+
+  --color-blue: var(--radiant-blue-400);
+  --color-blue-foreground: var(--radiant-blue-700);
+
+  --color-violet: var(--radiant-violet-400);
+  --color-violet-foreground: var(--radiant-violet-700);
+
+  --color-fuchsia: var(--radiant-fuchsia-400);
+  --color-fuchsia-foreground: var(--radiant-fuchsia-700);
+
+  /* Bookmark colors */
+  --color-bookmark-amber: var(--radiant-amber-500);
+  --color-bookmark-blue: var(--radiant-blue-500);
+  --color-bookmark-green: var(--radiant-green-600);
+  --color-bookmark-red: var(--radiant-red-500);
+  --color-bookmark-off: var(--radiant-slate-400);
+
+  /* Indicator colors */
+  --color-indicator-red: var(--radiant-red-500);
+  --color-indicator-amber: var(--radiant-amber-500);
+  --color-indicator-emerald: var(--radiant-emerald-600);
+  --color-indicator-blue: var(--radiant-blue-500);
+  --color-indicator-fuchsia: var(--radiant-fuchsia-600);
+  --color-indicator-grey: var(--radiant-slate-300);
+
   /* Table colors */
   --color-table-accent: var(--table-accent);
   --color-table-active: var(--table-active);
   --color-table-header: var(--table-header);
 
+  /* Alert colors */
+  --color-alert-default: var(--color-alert-default);
+  --color-alert-default-foreground: var(--color-alert-default-foreground);
+  --color-alert-info: var(--color-blue-400);
+  --color-alert-info-foreground: var(--color-alert-info-foreground);
+  --color-alert-warning: var(--color-yellow-400);
+  --color-alert-warning-foreground: var(--color-alert-warning-foreground);
+  --color-alert-error: var(--color-red-400);
+  --color-alert-error-foreground: var(--color-alert-error-foreground);
+  --color-alert-success: var(--color-green-400);
+  --color-alert-success-foreground: var(--color-alert-success-foreground);
+
+  /* Portal-specific tokens */
+  --color-hero: var(--hero);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-overlay: var(--hero-overlay);
+  --color-navbar: var(--navbar);
+  --color-navbar-foreground: var(--navbar-foreground);
+  --color-navbar-muted: var(--navbar-muted);
+  --color-navbar-accent: var(--navbar-accent);
+  --color-navbar-active: var(--navbar-active);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+
   /* Layout / sizing */
   --height-navbar: 44px;
+  --width-hero-column: 600px;
+  --max-width-content: 768px;
+  --spacing-section-x: 4rem;
+  --spacing-section-y: 2.5rem;
+
+  /* Typography */
+  --font-size-heading-1: 30px;
+  --font-size-heading-1--line-height: 38px;
+  --font-size-body-lg: 16px;
+  --font-size-body-lg--line-height: 24px;
+  --line-height-heading-1: 1.2667;
+  --line-height-body: 1.5;
 
   /* Border / ring */
+  --border-width-pinned: 3px;
+  --ring-width-focus: 3px;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

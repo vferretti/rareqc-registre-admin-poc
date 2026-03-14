@@ -4,8 +4,8 @@
     "description": "Quebec registry for patients with rare diseases"
   },
   "landing": {
-    "title": "Quebec Registry for Patients with Rare Diseases",
-    "description": "Administration portal for managing registry participants.",
+    "title": "Administration portal for managing registry participants",
+    "description": "",
     "enter": "Enter portal"
   },
   "nav": {
@@ -26,7 +26,7 @@
   },
   "participants": {
     "title": "Participants",
-    "description": "{{count}} participants in the registry",
+    "description": "List of registry participants",
     "search_placeholder": "Search by name or RAMQ…",
     "columns": {
       "last_name": "Last name",

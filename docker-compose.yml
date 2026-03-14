@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "5437:5432"
+      - "5440:5432"
     environment:
       POSTGRES_DB: rareqc_registre
       POSTGRES_USER: rareqc

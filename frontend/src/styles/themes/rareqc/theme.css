@@ -1,28 +1,33 @@
 :root {
-  /* RareQC brand palette — teal/medical tones */
-  --color-rareqc-50: oklch(0.98 0.01 180);
-  --color-rareqc-100: oklch(0.95 0.03 180);
-  --color-rareqc-200: oklch(0.89 0.06 178);
-  --color-rareqc-300: oklch(0.82 0.1 176);
-  --color-rareqc-400: oklch(0.74 0.12 174);
-  --color-rareqc-500: oklch(0.65 0.13 172);
-  --color-rareqc-600: oklch(0.56 0.12 174);
-  --color-rareqc-700: oklch(0.48 0.1 176);
-  --color-rareqc-800: oklch(0.41 0.08 178);
-  --color-rareqc-900: oklch(0.36 0.07 180);
-  --color-rareqc-950: oklch(0.27 0.05 182);
+  /* RareQC brand palette — built around logo blue #1C8AB2 (hue ~230 oklch) */
+  --color-rareqc-50: oklch(0.97 0.01 230);
+  --color-rareqc-100: oklch(0.93 0.03 230);
+  --color-rareqc-200: oklch(0.87 0.07 230);
+  --color-rareqc-300: oklch(0.78 0.1 230);
+  --color-rareqc-400: oklch(0.68 0.12 230);
+  --color-rareqc-500: oklch(0.6 0.12 230);
+  --color-rareqc-600: oklch(0.55 0.11 230);
+  --color-rareqc-700: oklch(0.48 0.1 230);
+  --color-rareqc-800: oklch(0.4 0.08 230);
+  --color-rareqc-900: oklch(0.33 0.06 230);
+  --color-rareqc-950: oklch(0.24 0.04 230);
+
+  /* Hero / landing light blue ~#C8E3EC */
+  --color-rareqc-light: oklch(0.91 0.03 220);
 
   /* Semantic tokens */
   --background: var(--color-white);
   --foreground: var(--color-rareqc-950);
-  --primary: var(--color-rareqc-700);
-  --primary-foreground: var(--color-slate-50);
+  --primary: var(--color-rareqc-600);
+  --primary-foreground: var(--color-white);
   --secondary: var(--color-slate-100);
   --secondary-foreground: var(--color-rareqc-950);
   --accent: var(--color-slate-100);
   --accent-foreground: var(--color-rareqc-950);
   --muted: var(--color-slate-100);
   --muted-foreground: var(--color-slate-500);
+  --neutral: var(--color-slate-400);
+  --neutral-foreground: var(--color-slate-800);
   --card: var(--color-white);
   --card-foreground: var(--color-rareqc-950);
   --popover: var(--color-white);
@@ -31,19 +36,19 @@
   --destructive-foreground: var(--color-red-50);
   --border: var(--color-slate-200);
   --input: var(--color-slate-300);
-  --ring: var(--color-rareqc-700);
+  --ring: var(--color-rareqc-600);
   --radius: 0.5rem;
-  --chart-1: oklch(0.631 0.101 183.848);
+  --chart-1: oklch(0.55 0.11 230);
   --chart-2: oklch(0.677 0.157 35.096);
-  --chart-3: oklch(0.379 0.044 226.154);
+  --chart-3: oklch(0.379 0.044 260);
   --chart-4: oklch(0.833 0.119 88.346);
   --chart-5: oklch(0.784 0.126 58.996);
 
   /* Sidebar */
   --sidebar: var(--color-slate-50);
   --sidebar-foreground: var(--color-slate-700);
-  --sidebar-primary: var(--color-rareqc-700);
-  --sidebar-primary-foreground: var(--color-slate-50);
+  --sidebar-primary: var(--color-rareqc-600);
+  --sidebar-primary-foreground: var(--color-white);
   --sidebar-accent: var(--color-slate-100);
   --sidebar-accent-foreground: var(--color-slate-950);
   --sidebar-border: var(--color-slate-200);
@@ -53,6 +58,29 @@
   --table-accent: var(--color-slate-50);
   --table-active: var(--color-slate-100);
   --table-header: var(--color-slate-100);
+
+  /* Navbar */
+  --navbar: var(--color-rareqc-light);
+  --navbar-foreground: var(--color-rareqc-900);
+  --navbar-muted: var(--color-rareqc-700);
+  --navbar-accent: var(--color-rareqc-200);
+  --navbar-active: var(--color-rareqc-950);
+
+  /* CTA buttons */
+  --cta: var(--color-rareqc-600);
+  --cta-foreground: var(--color-white);
+
+  /* Hero / landing background */
+  --hero: var(--color-rareqc-light);
+  --hero-foreground: var(--color-rareqc-900);
+  --hero-overlay: oklch(1 0 0 / 0.23);
+
+  /* Search highlight */
+  --highlight: var(--color-yellow-200);
+  --highlight-foreground: var(--color-yellow-900);
+
+  /* Focus ring */
+  --ring-width-focus: 3px;
 }
 
 .dark {
@@ -66,6 +94,8 @@
   --accent-foreground: var(--color-slate-50);
   --muted: var(--color-slate-800);
   --muted-foreground: var(--color-slate-400);
+  --neutral: var(--color-slate-500);
+  --neutral-foreground: var(--color-slate-400);
   --card: var(--color-slate-950);
   --card-foreground: var(--color-slate-50);
   --popover: var(--color-slate-950);
@@ -95,4 +125,24 @@
   --table-accent: var(--color-slate-900);
   --table-active: var(--color-slate-800);
   --table-header: var(--color-slate-900);
+
+  /* Navbar */
+  --navbar: var(--color-slate-900);
+  --navbar-foreground: var(--color-slate-200);
+  --navbar-muted: var(--color-slate-300);
+  --navbar-accent: rgb(255 255 255 / 0.1);
+  --navbar-active: var(--color-white);
+
+  /* CTA buttons */
+  --cta: var(--color-rareqc-200);
+  --cta-foreground: var(--color-rareqc-950);
+
+  /* Hero / landing background */
+  --hero: var(--color-slate-900);
+  --hero-foreground: var(--color-slate-50);
+  --hero-overlay: oklch(0 0 0 / 0.3);
+
+  /* Search highlight */
+  --highlight: var(--color-yellow-800);
+  --highlight-foreground: var(--color-yellow-200);
 }
