@@ -13,10 +13,17 @@ interface SortableHeaderProps<T = unknown> {
   column?: Column<T, unknown>;
 }
 
-function SortableHeader<T = unknown>({ children, sortDirection, onSort, column }: SortableHeaderProps<T>) {
+function SortableHeader<T = unknown>({
+  children,
+  sortDirection,
+  onSort,
+  column,
+}: SortableHeaderProps<T>) {
   return (
     <div className="flex items-center justify-between gap-1">
-      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">{children}</span>
+      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+        {children}
+      </span>
       <div className="flex items-center">
         {onSort && (
           <Button

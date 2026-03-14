@@ -8,7 +8,12 @@ interface InputSearchProps {
   className?: string;
 }
 
-function InputSearch({ value, onChange, placeholder, className }: InputSearchProps) {
+function InputSearch({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: InputSearchProps) {
   return (
     <div className={className}>
       <div className="relative">

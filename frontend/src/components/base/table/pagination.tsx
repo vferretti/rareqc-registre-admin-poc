@@ -32,7 +32,11 @@ function PaginationBar({
 
   return (
     <div
-      className={cn("flex items-center border-t pt-3 mt-3", showResults ? "justify-between" : "justify-end", className)}
+      className={cn(
+        "flex items-center border-t pt-3 mt-3",
+        showResults ? "justify-between" : "justify-end",
+        className,
+      )}
     >
       {showResults && (
         <div className="text-sm text-muted-foreground">
@@ -55,7 +59,11 @@ function PaginationBar({
             </option>
           ))}
         </select>
-        <nav role="navigation" aria-label="pagination" className="flex items-center gap-1">
+        <nav
+          role="navigation"
+          aria-label="pagination"
+          className="flex items-center gap-1"
+        >
           <Button
             variant="ghost"
             size="sm"

@@ -27,6 +27,7 @@
   "participants": {
     "title": "Participants",
     "description": "Liste des participants du registre",
+    "add": "Ajouter un participant",
     "search_placeholder": "Rechercher par nom ou RAMQ…",
     "columns": {
       "last_name": "Nom",
@@ -38,6 +39,33 @@
       "created_at": "Date d'inscription"
     }
   },
+  "create_participant": {
+    "title": "Ajouter un participant",
+    "section_participant": "Participant",
+    "section_coordinates": "Coordonnées",
+    "section_contacts": "Personnes contact",
+    "first_name": "Prénom",
+    "last_name": "Nom",
+    "date_of_birth": "Date de naissance",
+    "sex_at_birth": "Sexe à la naissance",
+    "vital_status": "Statut vital",
+    "date_of_death": "Date de décès",
+    "ramq": "RAMQ",
+    "email": "Courriel",
+    "phone": "Téléphone",
+    "street_address": "Adresse",
+    "city": "Ville",
+    "province": "Province",
+    "code_postal": "Code postal",
+    "relationship": "Relation avec le participant",
+    "preferred_language": "Langue préférée",
+    "same_coordinates": "Mêmes coordonnées que le participant",
+    "is_primary": "Contact principal (recevra les communications)",
+    "add_contact": "Ajouter un contact",
+    "submit": "Enregistrer",
+    "success": "Participant ajouté avec succès",
+    "error": "Erreur lors de la création du participant"
+  },
   "enums": {
     "sex_at_birth": {
       "male": "Masculin",
@@ -48,7 +76,22 @@
       "alive": "Vivant",
       "deceased": "Décédé",
       "unknown": "Inconnu"
+    },
+    "relationship": {
+      "self": "Soi-même",
+      "mother": "Mère",
+      "father": "Père",
+      "guardian": "Tuteur/Tutrice",
+      "other": "Autre"
+    },
+    "language": {
+      "fr": "Français",
+      "en": "Anglais"
     }
+  },
+  "validation": {
+    "required": "Ce champ est obligatoire",
+    "ramq_format": "Format RAMQ invalide (ex. TREG 8501 0112)"
   },
   "pagination": {
     "results": "{{from}} – {{to}} de {{total}}",

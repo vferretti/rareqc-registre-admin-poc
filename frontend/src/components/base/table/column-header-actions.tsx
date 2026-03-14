@@ -20,8 +20,16 @@ function ColumnHeaderActions<T>({ column }: ColumnHeaderActionsProps<T>) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-xs" className="size-6 shrink-0 opacity-0 group-hover/header:opacity-100">
-          {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="size-6 shrink-0 opacity-0 group-hover/header:opacity-100"
+        >
+          {isPinned ? (
+            <PinOff className="size-4" />
+          ) : (
+            <Pin className="size-4" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

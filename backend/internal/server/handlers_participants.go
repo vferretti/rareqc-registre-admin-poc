@@ -4,6 +4,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -78,5 +79,116 @@ func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
 			PageSize:   params.PageSize,
 			TotalPages: totalPages,
 		})
+	}
+}
+
+func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req types.CreateParticipantRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			return
+		}
+
+		// Parse date of birth
+		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
+			return
+		}
+
+		// Parse optional date of death
+		var dateOfDeath *time.Time
+		if req.DateOfDeath != "" {
+			d, err := time.Parse("2006-01-02", req.DateOfDeath)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+				return
+			}
+			dateOfDeath = &d
+		}
+
+		// Optional RAMQ
+		var ramq *string
+		if req.RAMQ != "" {
+			ramq = &req.RAMQ
+		}
+
+		participant := types.Participant{
+			FirstName:       req.FirstName,
+			LastName:        req.LastName,
+			DateOfBirth:     dob,
+			RAMQ:            ramq,
+			SexAtBirthCode:  req.SexAtBirthCode,
+			VitalStatusCode: req.VitalStatusCode,
+			DateOfDeath:     dateOfDeath,
+		}
+
+		err = db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Create(&participant).Error; err != nil {
+				return err
+			}
+
+			// Create "self" contact with participant's coordinates
+			selfContact := types.Contact{
+				ParticipantID:    participant.ID,
+				FirstName:        req.FirstName,
+				LastName:         req.LastName,
+				RelationshipCode: "self",
+				IsPrimary:        true,
+				Email:            req.Email,
+				Phone:            req.Phone,
+				StreetAddress:    req.StreetAddress,
+				City:             req.City,
+				Province:         req.Province,
+				CodePostal:       req.CodePostal,
+				PreferredLanguage: "fr",
+			}
+			if err := tx.Create(&selfContact).Error; err != nil {
+				return err
+			}
+
+			// Create additional contacts
+			for _, cr := range req.Contacts {
+				contact := types.Contact{
+					ParticipantID:    participant.ID,
+					FirstName:        cr.FirstName,
+					LastName:         cr.LastName,
+					RelationshipCode: cr.RelationshipCode,
+					IsPrimary:        cr.IsPrimary,
+					PreferredLanguage: cr.PreferredLanguage,
+				}
+				if cr.SameCoordinates {
+					contact.Email = req.Email
+					contact.Phone = req.Phone
+					contact.StreetAddress = req.StreetAddress
+					contact.City = req.City
+					contact.Province = req.Province
+					contact.CodePostal = req.CodePostal
+				} else {
+					contact.Email = cr.Email
+					contact.Phone = cr.Phone
+					contact.StreetAddress = cr.StreetAddress
+					contact.City = cr.City
+					contact.Province = cr.Province
+					contact.CodePostal = cr.CodePostal
+				}
+				if err := tx.Create(&contact).Error; err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create participant"})
+			return
+		}
+
+		// Reload with contacts
+		db.Preload("Contacts").First(&participant, participant.ID)
+
+		c.JSON(http.StatusCreated, participant)
 	}
 }

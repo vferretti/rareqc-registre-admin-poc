@@ -12,7 +12,13 @@ interface UseParticipantsParams {
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
-export function useParticipants({ pageIndex, pageSize, sortField, sortOrder, search }: UseParticipantsParams) {
+export function useParticipants({
+  pageIndex,
+  pageSize,
+  sortField,
+  sortOrder,
+  search,
+}: UseParticipantsParams) {
   const params = new URLSearchParams({
     page_index: String(pageIndex),
     page_size: String(pageSize),
@@ -21,10 +27,9 @@ export function useParticipants({ pageIndex, pageSize, sortField, sortOrder, sea
   });
   if (search) params.set("search", search);
 
-  const { data, error, isLoading } = useSWR<PaginatedResponse<Participant>>(
-    `/participants?${params.toString()}`,
-    fetcher,
-  );
+  const { data, error, isLoading, mutate } = useSWR<
+    PaginatedResponse<Participant>
+  >(`/participants?${params.toString()}`, fetcher);
 
   return {
     participants: data?.data ?? [],
@@ -32,5 +37,6 @@ export function useParticipants({ pageIndex, pageSize, sortField, sortOrder, sea
     totalPages: data?.total_pages ?? 0,
     isLoading,
     error: error ? String(error) : null,
+    mutate,
   };
 }

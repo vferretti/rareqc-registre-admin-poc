@@ -1,7 +1,15 @@
 import { Badge } from "@/components/base/badges/badge";
 import EmptyCell from "./empty-cell";
 
-type BadgeVariant = "default" | "secondary" | "outline" | "destructive" | "green" | "blue" | "amber" | "violet";
+type BadgeVariant =
+  | "default"
+  | "secondary"
+  | "outline"
+  | "destructive"
+  | "green"
+  | "blue"
+  | "amber"
+  | "violet";
 
 interface BadgeCellProps {
   children?: React.ReactNode;

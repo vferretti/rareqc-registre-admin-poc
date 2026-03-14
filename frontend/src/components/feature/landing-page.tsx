@@ -22,7 +22,11 @@ export function LandingPage() {
       <div className="flex w-full max-w-lg flex-col items-center gap-12 p-6">
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
-          <img src="/RARE-Qc_Logo-Colour-300px.png" alt="RareQC" className="h-20" />
+          <img
+            src="/RARE-Qc_Logo-Colour-300px.png"
+            alt="RareQC"
+            className="h-20"
+          />
         </div>
 
         {/* Copy */}

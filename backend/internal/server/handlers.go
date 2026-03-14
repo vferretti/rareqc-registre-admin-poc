@@ -28,6 +28,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.GET("/health", HealthHandler())
 
 		api.GET("/participants", ListParticipantsHandler(db))
+		api.POST("/participants", CreateParticipantHandler(db))
 	}
 
 	return r

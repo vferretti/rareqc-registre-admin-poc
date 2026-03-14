@@ -19,7 +19,11 @@ export function Navbar() {
   return (
     <nav className="h-[var(--height-navbar)] bg-navbar text-navbar-foreground flex items-center px-4">
       <Link to="/" className="mr-8 hover:opacity-80 transition-opacity">
-        <img src="/RARE-Qc_Logo-Colour-300px.png" alt="RareQC" className="h-8" />
+        <img
+          src="/RARE-Qc_Logo-Colour-300px.png"
+          alt="RareQC"
+          className="h-8"
+        />
       </Link>
       <div className="flex gap-2 flex-1">
         {links.map((link) => (

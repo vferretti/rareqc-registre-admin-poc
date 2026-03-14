@@ -30,11 +30,25 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+	// One-time migration from n:n to 1:n
+	if db.Migrator().HasTable("participant_has_contacts") {
+		db.Exec("DELETE FROM participant_has_contacts")
+		if err := db.Migrator().DropTable("participant_has_contacts"); err != nil {
+			return err
+		}
+		log.Println("Dropped legacy participant_has_contacts table")
+	}
+	// Clear old contacts that lack participant_id column (pre-1:n schema)
+	if db.Migrator().HasTable("contacts") && !db.Migrator().HasColumn(&types.Contact{}, "participant_id") {
+		db.Exec("DELETE FROM contacts")
+		db.Exec("DELETE FROM participants")
+		log.Println("Cleared legacy n:n data from contacts/participants")
+	}
+
 	// Migrate domain tables
 	return db.AutoMigrate(
 		&types.Participant{},
 		&types.Contact{},
-		&types.ParticipantHasContact{},
 	)
 }
 

@@ -42,19 +42,32 @@ const badgeVariants = cva(
   },
 );
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
+export interface BadgeProps
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {
   onClose?: () => void;
   count?: number;
 }
 
-function Badge({ className, variant, size, iconOnly, count, onClose, children, ...props }: BadgeProps) {
+function Badge({
+  className,
+  variant,
+  size,
+  iconOnly,
+  count,
+  onClose,
+  children,
+  ...props
+}: BadgeProps) {
   const showCount = count !== undefined;
 
   return (
     <div
       className={cn(
         badgeVariants({ variant, size, iconOnly }),
-        props.onClick && "hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-ring",
+        props.onClick &&
+          "hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-ring",
         className,
       )}
       {...props}
@@ -67,7 +80,10 @@ function Badge({ className, variant, size, iconOnly, count, onClose, children, .
         </>
       )}
       {onClose && (
-        <button className="opacity-65 hover:cursor-pointer hover:opacity-100" onClick={onClose}>
+        <button
+          className="opacity-65 hover:cursor-pointer hover:opacity-100"
+          onClick={onClose}
+        >
           <XIcon className="size-3" />
         </button>
       )}

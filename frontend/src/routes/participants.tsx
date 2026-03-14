@@ -13,12 +13,22 @@ import {
   getPaginationRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/base/table/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/base/table/table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
 import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
 import { InputSearch } from "@/components/base/input-search";
 import { PageHeader } from "@/components/base/page/page-header";
+import { Button } from "@/components/base/ui/button";
+import { CreateParticipantDialog } from "@/components/feature/create-participant-dialog";
+import { Plus } from "lucide-react";
 import { useParticipants } from "@/hooks/useParticipants";
 import {
   getColumnPinningHeaderCN,
@@ -34,15 +44,21 @@ const SEX_BADGE: Record<string, "blue" | "violet" | "secondary"> = {
   female: "violet",
 };
 
-const VITAL_STATUS_BADGE: Record<string, "green" | "destructive" | "secondary"> = {
+const VITAL_STATUS_BADGE: Record<
+  string,
+  "green" | "destructive" | "secondary"
+> = {
   alive: "green",
   deceased: "destructive",
 };
 
 export default function Participants() {
   const { t, i18n } = useTranslation();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [sorting, setSorting] = useState<SortingState>([{ id: "last_name", desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "last_name", desc: false },
+  ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -58,13 +74,14 @@ export default function Participants() {
   const sortField = sorting[0]?.id ?? "last_name";
   const sortOrder = sorting[0]?.desc ? "desc" : "asc";
 
-  const { participants, total, totalPages, isLoading, error } = useParticipants({
-    pageIndex: pagination.pageIndex,
-    pageSize: pagination.pageSize,
-    sortField,
-    sortOrder,
-    search: debouncedSearch || undefined,
-  });
+  const { participants, total, totalPages, isLoading, error, mutate } =
+    useParticipants({
+      pageIndex: pagination.pageIndex,
+      pageSize: pagination.pageSize,
+      sortField,
+      sortOrder,
+      search: debouncedSearch || undefined,
+    });
 
   const columns = useMemo<ColumnDef<Participant>[]>(
     () => [
@@ -73,7 +90,13 @@ export default function Participants() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -91,7 +114,13 @@ export default function Participants() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -105,7 +134,13 @@ export default function Participants() {
         size: 130,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -119,7 +154,13 @@ export default function Participants() {
         size: 120,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -140,7 +181,13 @@ export default function Participants() {
         size: 120,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -161,7 +208,13 @@ export default function Participants() {
         size: 150,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -179,7 +232,13 @@ export default function Participants() {
         size: 130,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={column.getIsSorted() === "asc" ? "asc" : column.getIsSorted() === "desc" ? "desc" : null}
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -216,6 +275,17 @@ export default function Participants() {
       <PageHeader
         title={t("participants.title")}
         description={t("participants.description")}
+        actions={
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus />
+            {t("participants.add")}
+          </Button>
+        }
+      />
+      <CreateParticipantDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => mutate()}
       />
       <div className="p-8">
         <div className="rounded-lg border bg-background p-6">
@@ -228,12 +298,23 @@ export default function Participants() {
             placeholder={t("participants.search_placeholder")}
             className="mb-6 max-w-2xl"
           />
-          {error && <p className="text-destructive mb-4">{t("common.error")}</p>}
+          {error && (
+            <p className="text-destructive mb-4">{t("common.error")}</p>
+          )}
           <div className={cn("transition-opacity", isLoading && "opacity-50")}>
             <div className="text-sm text-muted-foreground mb-1">
               {t("pagination.results", {
-                from: total > 0 ? (pagination.pageIndex * pagination.pageSize + 1).toLocaleString(i18n.language) : "0",
-                to: Math.min((pagination.pageIndex + 1) * pagination.pageSize, total).toLocaleString(i18n.language),
+                from:
+                  total > 0
+                    ? (
+                        pagination.pageIndex * pagination.pageSize +
+                        1
+                      ).toLocaleString(i18n.language)
+                    : "0",
+                to: Math.min(
+                  (pagination.pageIndex + 1) * pagination.pageSize,
+                  total,
+                ).toLocaleString(i18n.language),
                 total: total.toLocaleString(i18n.language),
               })}
             </div>
@@ -247,7 +328,12 @@ export default function Participants() {
                         className={getColumnPinningHeaderCN(header)}
                         style={getColumnPinningHeaderStyle(header)}
                       >
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                         {header.column.getCanResize() && (
                           <div
                             onDoubleClick={() => header.column.resetSize()}
@@ -267,7 +353,10 @@ export default function Participants() {
               <TableBody>
                 {table.getRowModel().rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       {isLoading ? t("common.loading") : t("common.noResults")}
                     </TableCell>
                   </TableRow>
@@ -280,7 +369,10 @@ export default function Participants() {
                           className={getColumnPinningCellCN(cell.column)}
                           style={getColumnPinningCellStyle(cell.column)}
                         >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>

@@ -72,7 +72,6 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
-	db.Exec("DELETE FROM participant_has_contacts")
 	db.Exec("DELETE FROM contacts")
 	db.Exec("DELETE FROM participants")
 
@@ -104,6 +103,10 @@ func seedChild(db *gorm.DB, index int) {
 	lastName := pick(lastNames)
 	dob := randomChildDOB()
 	city := pick(cities)
+	lang := langForName(firstName)
+	address := randomAddress()
+	contactCity := pick(cities)
+	postalCode := randomPostalCode()
 
 	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
@@ -117,76 +120,46 @@ func seedChild(db *gorm.DB, index int) {
 	}
 	db.Create(&participant)
 
-	// Self contact (child — no email, no phone)
-	lang := langForName(firstName)
-	selfContact := types.Contact{
-		FirstName:         firstName,
-		LastName:          lastName,
-		PreferredLanguage: lang,
-		StreetAddress:     randomAddress(),
-		City:              pick(cities),
-		Province:          "QC",
-		CodePostal:        randomPostalCode(),
-	}
-	db.Create(&selfContact)
-	db.Create(&types.ParticipantHasContact{
-		ParticipantID:    participant.ID,
-		ContactID:        selfContact.ID,
-		RelationshipCode: "self",
-		IsPrimary:        false,
-	})
-
-	// Mother contact (always present for children)
+	// Mother contact (always present for children, is primary)
 	motherFirst := pick(girlsNames)
 	motherLast := lastName
 	if rand.Intn(5) == 0 {
 		motherLast = pick(lastNames) // ~20% different last name
 	}
-	motherEmail := fmt.Sprintf("%s.%s@%s", lower(motherFirst), lower(motherLast), randomDomain())
-	motherPhone := randomPhone()
 
-	motherContact := types.Contact{
-		FirstName:         motherFirst,
-		LastName:          motherLast,
-		Email:             motherEmail,
-		Phone:             motherPhone,
-		StreetAddress:     selfContact.StreetAddress,
-		City:              selfContact.City,
-		Province:          "QC",
-		CodePostal:        selfContact.CodePostal,
-		PreferredLanguage: selfContact.PreferredLanguage,
-	}
-	db.Create(&motherContact)
-	db.Create(&types.ParticipantHasContact{
+	db.Create(&types.Contact{
 		ParticipantID:    participant.ID,
-		ContactID:        motherContact.ID,
+		FirstName:        motherFirst,
+		LastName:         motherLast,
 		RelationshipCode: "mother",
 		IsPrimary:        true,
+		Email:            fmt.Sprintf("%s.%s@%s", lower(motherFirst), lower(motherLast), randomDomain()),
+		Phone:            randomPhone(),
+		StreetAddress:    address,
+		City:             contactCity,
+		Province:         "QC",
+		CodePostal:       postalCode,
+		PreferredLanguage: lang,
 	})
 
-	// Father contact (~40% of children also have father)
+	// Father contact (~40% of children)
 	if rand.Intn(5) < 2 {
 		fatherFirst := pick(boysNames)
 		fatherLast := lastName
-		fatherEmail := fmt.Sprintf("%s.%s@%s", lower(fatherFirst), lower(fatherLast), randomDomain())
 
-		fatherContact := types.Contact{
-			FirstName:         fatherFirst,
-			LastName:          fatherLast,
-			Email:             fatherEmail,
-			Phone:             randomPhone(),
-			StreetAddress:     selfContact.StreetAddress,
-			City:              selfContact.City,
-			Province:          "QC",
-			CodePostal:        selfContact.CodePostal,
-			PreferredLanguage: selfContact.PreferredLanguage,
-		}
-		db.Create(&fatherContact)
-		db.Create(&types.ParticipantHasContact{
+		db.Create(&types.Contact{
 			ParticipantID:    participant.ID,
-			ContactID:        fatherContact.ID,
+			FirstName:        fatherFirst,
+			LastName:         fatherLast,
 			RelationshipCode: "father",
 			IsPrimary:        false,
+			Email:            fmt.Sprintf("%s.%s@%s", lower(fatherFirst), lower(fatherLast), randomDomain()),
+			Phone:            randomPhone(),
+			StreetAddress:    address,
+			City:             contactCity,
+			Province:         "QC",
+			CodePostal:       postalCode,
+			PreferredLanguage: lang,
 		})
 	}
 }
@@ -203,7 +176,6 @@ func seedAdult(db *gorm.DB, index int) {
 	lastName := pick(lastNames)
 	dob := randomAdultDOB()
 	city := pick(cities)
-	email := fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain())
 
 	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
@@ -217,25 +189,21 @@ func seedAdult(db *gorm.DB, index int) {
 	}
 	db.Create(&participant)
 
-	// Self contact (adult — has email and phone)
+	// Adult is their own primary contact
 	lang := langForName(firstName)
-	selfContact := types.Contact{
-		FirstName:         firstName,
-		LastName:          lastName,
-		Email:             email,
-		Phone:             randomPhone(),
-		StreetAddress:     randomAddress(),
-		City:              pick(cities),
-		Province:          "QC",
-		CodePostal:        randomPostalCode(),
-		PreferredLanguage: lang,
-	}
-	db.Create(&selfContact)
-	db.Create(&types.ParticipantHasContact{
+	db.Create(&types.Contact{
 		ParticipantID:    participant.ID,
-		ContactID:        selfContact.ID,
+		FirstName:        firstName,
+		LastName:         lastName,
 		RelationshipCode: "self",
 		IsPrimary:        true,
+		Email:            fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
+		Phone:            randomPhone(),
+		StreetAddress:    randomAddress(),
+		City:             pick(cities),
+		Province:         "QC",
+		CodePostal:       randomPostalCode(),
+		PreferredLanguage: lang,
 	})
 }
 
