@@ -1,6 +1,7 @@
 package types
 
 type CreateContactRequest struct {
+	ID               int    `json:"id,omitempty"`
 	FirstName        string `json:"first_name"`
 	LastName         string `json:"last_name"`
 	RelationshipCode string `json:"relationship_code"`

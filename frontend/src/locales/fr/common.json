@@ -74,6 +74,9 @@
     "success": "Participant modifié avec succès",
     "error": "Erreur lors de la modification du participant"
   },
+  "edit_contacts": {
+    "title": "Modifier les contacts"
+  },
   "participant_detail": {
     "section_identity": "Identité",
     "section_coordinates": "Coordonnées",

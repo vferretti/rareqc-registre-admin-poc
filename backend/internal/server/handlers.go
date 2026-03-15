@@ -11,6 +11,7 @@ import (
 	"registre-admin/internal/types"
 )
 
+// SetupRouter configures the Gin engine with CORS, Swagger, and all API routes.
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
@@ -39,6 +40,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	return r
 }
 
+// parsePaginationParams extracts and validates pagination, sorting, and search parameters from the query string.
 func parsePaginationParams(c *gin.Context, defaultSortField string) types.PaginationParams {
 	pageIndex, _ := strconv.Atoi(c.DefaultQuery("page_index", "0"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "25"))

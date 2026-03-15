@@ -114,7 +114,8 @@ export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const { participant, isLoading, error, mutate } = useParticipant(id);
-  const [editOpen, setEditOpen] = useState(false);
+  const [editParticipantOpen, setEditParticipantOpen] = useState(false);
+  const [editContactsOpen, setEditContactsOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -191,7 +192,7 @@ export default function ParticipantDetail() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => setEditOpen(true)}
+                    onClick={() => setEditParticipantOpen(true)}
                   >
                     <Pencil className="size-4" />
                   </Button>
@@ -270,6 +271,15 @@ export default function ParticipantDetail() {
                 <CardTitle>
                   {t("participant_detail.section_contacts")}
                 </CardTitle>
+                <CardAction>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setEditContactsOpen(true)}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                </CardAction>
               </CardHeader>
               <CardContent>
                 {otherContacts.length === 0 ? (
@@ -303,9 +313,19 @@ export default function ParticipantDetail() {
 
       {/* Edit participant dialog */}
       <ParticipantFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
+        open={editParticipantOpen}
+        onOpenChange={setEditParticipantOpen}
         participant={participant}
+        editSection="participant"
+        onSuccess={() => void mutate(undefined, { revalidate: true })}
+      />
+
+      {/* Edit contacts dialog */}
+      <ParticipantFormDialog
+        open={editContactsOpen}
+        onOpenChange={setEditContactsOpen}
+        participant={participant}
+        editSection="contacts"
         onSuccess={() => void mutate(undefined, { revalidate: true })}
       />
     </>

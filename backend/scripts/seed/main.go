@@ -189,17 +189,12 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 	}
 	db.Create(&motherContact)
 
-	// Activity: contact created (mother)
-	contactTs := ts.Add(time.Duration(rand.Intn(30)+1) * time.Minute)
-	createActivityLog(db, "contact_created", participant.ID, author,
-		fmt.Sprintf("Contact: %s %s (Mère)", motherFirst, motherLast), contactTs)
-
-	// ~30% chance mother contact was edited later
+	// ~30% chance participant was edited later
 	if rand.Intn(100) < 30 {
-		editTs := contactTs.Add(time.Duration(rand.Intn(48)+1) * time.Hour)
+		editTs := ts.Add(time.Duration(rand.Intn(48)+1) * time.Hour)
 		editAuthor := pick(authors)
-		createActivityLog(db, "contact_edited", participant.ID, editAuthor,
-			fmt.Sprintf("Contact: %s %s (Mère)", motherFirst, motherLast), editTs)
+		createActivityLog(db, "participant_edited", participant.ID, editAuthor,
+			fmt.Sprintf("%s %s", firstName, lastName), editTs)
 	}
 
 	// Father contact (~40% of children)
@@ -222,19 +217,6 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 			PreferredLanguage: lang,
 		}
 		db.Create(&fatherContact)
-
-		// Activity: contact created (father)
-		fatherTs := contactTs.Add(time.Duration(rand.Intn(10)+1) * time.Minute)
-		createActivityLog(db, "contact_created", participant.ID, author,
-			fmt.Sprintf("Contact: %s %s (Père)", fatherFirst, fatherLast), fatherTs)
-
-		// ~20% chance father contact was edited later
-		if rand.Intn(100) < 20 {
-			editTs := fatherTs.Add(time.Duration(rand.Intn(72)+1) * time.Hour)
-			editAuthor := pick(authors)
-			createActivityLog(db, "contact_edited", participant.ID, editAuthor,
-				fmt.Sprintf("Contact: %s %s (Père)", fatherFirst, fatherLast), editTs)
-		}
 	}
 }
 
@@ -286,17 +268,12 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 	}
 	db.Create(&selfContact)
 
-	// Activity: contact created (self)
-	contactTs := ts.Add(time.Duration(rand.Intn(15)+1) * time.Minute)
-	createActivityLog(db, "contact_created", participant.ID, author,
-		fmt.Sprintf("Contact: %s %s (Soi-même)", firstName, lastName), contactTs)
-
-	// ~25% chance self contact was edited
+	// ~25% chance participant was edited later
 	if rand.Intn(100) < 25 {
-		editTs := contactTs.Add(time.Duration(rand.Intn(96)+1) * time.Hour)
+		editTs := ts.Add(time.Duration(rand.Intn(96)+1) * time.Hour)
 		editAuthor := pick(authors)
-		createActivityLog(db, "contact_edited", participant.ID, editAuthor,
-			fmt.Sprintf("Contact: %s %s (Soi-même)", firstName, lastName), editTs)
+		createActivityLog(db, "participant_edited", participant.ID, editAuthor,
+			fmt.Sprintf("%s %s", firstName, lastName), editTs)
 	}
 }
 

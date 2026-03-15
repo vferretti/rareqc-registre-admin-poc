@@ -74,6 +74,9 @@
     "success": "Participant updated successfully",
     "error": "Error updating participant"
   },
+  "edit_contacts": {
+    "title": "Edit contacts"
+  },
   "participant_detail": {
     "section_identity": "Identity",
     "section_coordinates": "Contact information",

@@ -36,12 +36,16 @@ import {
 } from "@/components/base/ui/select";
 import type { Participant } from "@/types/participant";
 
+type EditSection = "participant" | "contacts";
+
 interface ParticipantFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-  /** When provided, the dialog opens in edit mode for the participant's identity + coordinates */
+  /** When provided, the dialog opens in edit mode */
   participant?: Participant | null;
+  /** Which section to edit — only used in edit mode */
+  editSection?: EditSection;
 }
 
 const DEFAULT_VALUES: ParticipantFormValues = {
@@ -86,6 +90,7 @@ function participantToFormValues(p: Participant): ParticipantFormValues {
       p.contacts
         ?.filter((c) => c.relationship_code !== "self")
         .map((c) => ({
+          id: c.id,
           first_name: c.first_name,
           last_name: c.last_name,
           relationship_code: c.relationship_code,
@@ -107,10 +112,13 @@ export function ParticipantFormDialog({
   onOpenChange,
   onSuccess,
   participant,
+  editSection = "participant",
 }: ParticipantFormDialogProps) {
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isEdit = !!participant;
+  const showParticipantFields = !isEdit || editSection === "participant";
+  const showContactFields = !isEdit || editSection === "contacts";
 
   const schema = participantSchema(t);
 
@@ -202,7 +210,13 @@ export function ParticipantFormDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {t(isEdit ? "edit_participant.title" : "create_participant.title")}
+            {t(
+              isEdit
+                ? editSection === "contacts"
+                  ? "edit_contacts.title"
+                  : "edit_participant.title"
+                : "create_participant.title",
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -213,6 +227,7 @@ export function ParticipantFormDialog({
             autoComplete="off"
             className="space-y-6"
           >
+            {showParticipantFields && (<>
             {/* Section 1: Participant */}
             <fieldset className="space-y-4">
               <legend className="text-sm font-semibold text-foreground">
@@ -463,9 +478,11 @@ export function ParticipantFormDialog({
                 <div />
               </div>
             </fieldset>
+            </>)}
 
+            {showContactFields && (<>
             {/* Section 3: Contacts */}
-            <hr className="border-border" />
+            {showParticipantFields && <hr className="border-border" />}
 
                 <fieldset className="space-y-4">
                   <legend className="text-sm font-semibold text-foreground">
@@ -733,6 +750,7 @@ export function ParticipantFormDialog({
                     {t("create_participant.add_contact")}
                   </Button>
                 </fieldset>
+            </>)}
 
             {submitError && (
               <p className="text-sm text-destructive">{submitError}</p>

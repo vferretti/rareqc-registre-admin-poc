@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// recordActivity inserts an activity log entry within the given transaction.
 func recordActivity(tx *gorm.DB, actionTypeCode string, participantID *int, author string, details *string) error {
 	log := types.ActivityLog{
 		ActionTypeCode: actionTypeCode,
@@ -17,6 +18,7 @@ func recordActivity(tx *gorm.DB, actionTypeCode string, participantID *int, auth
 	return tx.Create(&log).Error
 }
 
+// getAuthor extracts the author name from the X-Author header, falling back to a default value.
 func getAuthor(c *gin.Context) string {
 	author := c.GetHeader("X-Author")
 	if author == "" {

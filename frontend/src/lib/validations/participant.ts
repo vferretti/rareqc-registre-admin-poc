@@ -5,6 +5,7 @@ const RAMQ_PATTERN = /^[A-Z]{4} \d{4} \d{4}$/;
 
 export const contactSchema = (t: TFunction) =>
   z.object({
+    id: z.number().optional(),
     first_name: z.string().min(1, t("validation.required")),
     last_name: z.string().min(1, t("validation.required")),
     relationship_code: z.string().min(1, t("validation.required")),

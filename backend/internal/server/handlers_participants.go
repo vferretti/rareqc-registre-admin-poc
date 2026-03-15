@@ -12,26 +12,164 @@ import (
 	"registre-admin/internal/types"
 )
 
+// --- Shared helpers ---
+
+// parseDate parses a "YYYY-MM-DD" string into a *time.Time. Returns nil for empty strings.
+func parseDate(dateStr string) (*time.Time, error) {
+	if dateStr == "" {
+		return nil, nil
+	}
+	d, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+
+// toStringPtr returns a pointer to s, or nil if s is empty.
+func toStringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// findSelfContact returns a pointer to the "self" contact in the slice, or nil if none exists.
+func findSelfContact(contacts []types.Contact) *types.Contact {
+	for i := range contacts {
+		if contacts[i].RelationshipCode == "self" {
+			return &contacts[i]
+		}
+	}
+	return nil
+}
+
+// nonSelfContactIDs returns a set of IDs for all contacts that are not "self".
+func nonSelfContactIDs(contacts []types.Contact) map[int]bool {
+	ids := make(map[int]bool)
+	for _, c := range contacts {
+		if c.RelationshipCode != "self" {
+			ids[c.ID] = true
+		}
+	}
+	return ids
+}
+
+// selfContactSnapshot holds the coordinate fields of the "self" contact for before/after comparison.
+type selfContactSnapshot struct {
+	Email, Phone, StreetAddress, City, Province, CodePostal string
+}
+
+// snapshotSelfContact captures the current coordinate fields of the "self" contact.
+func snapshotSelfContact(contacts []types.Contact) selfContactSnapshot {
+	if sc := findSelfContact(contacts); sc != nil {
+		return selfContactSnapshot{
+			Email: sc.Email, Phone: sc.Phone,
+			StreetAddress: sc.StreetAddress, City: sc.City,
+			Province: sc.Province, CodePostal: sc.CodePostal,
+		}
+	}
+	return selfContactSnapshot{}
+}
+
+// buildContact creates a Contact from an update request. Uses participant coordinates when SameCoordinates is true.
+func buildContact(participantID int, cr types.CreateContactRequest, fallback types.UpdateParticipantRequest) types.Contact {
+	contact := types.Contact{
+		ParticipantID:     participantID,
+		FirstName:         cr.FirstName,
+		LastName:          cr.LastName,
+		RelationshipCode:  cr.RelationshipCode,
+		IsPrimary:         cr.IsPrimary,
+		PreferredLanguage: cr.PreferredLanguage,
+	}
+	if cr.SameCoordinates {
+		contact.Email = fallback.Email
+		contact.Phone = fallback.Phone
+		contact.StreetAddress = fallback.StreetAddress
+		contact.City = fallback.City
+		contact.Province = fallback.Province
+		contact.CodePostal = fallback.CodePostal
+	} else {
+		contact.Email = cr.Email
+		contact.Phone = cr.Phone
+		contact.StreetAddress = cr.StreetAddress
+		contact.City = cr.City
+		contact.Province = cr.Province
+		contact.CodePostal = cr.CodePostal
+	}
+	return contact
+}
+
+// buildContactFromCreate creates a Contact from a create request. Uses participant coordinates when SameCoordinates is true.
+func buildContactFromCreate(participantID int, cr types.CreateContactRequest, fallback types.CreateParticipantRequest) types.Contact {
+	contact := types.Contact{
+		ParticipantID:     participantID,
+		FirstName:         cr.FirstName,
+		LastName:          cr.LastName,
+		RelationshipCode:  cr.RelationshipCode,
+		IsPrimary:         cr.IsPrimary,
+		PreferredLanguage: cr.PreferredLanguage,
+	}
+	if cr.SameCoordinates {
+		contact.Email = fallback.Email
+		contact.Phone = fallback.Phone
+		contact.StreetAddress = fallback.StreetAddress
+		contact.City = fallback.City
+		contact.Province = fallback.Province
+		contact.CodePostal = fallback.CodePostal
+	} else {
+		contact.Email = cr.Email
+		contact.Phone = cr.Phone
+		contact.StreetAddress = cr.StreetAddress
+		contact.City = cr.City
+		contact.Province = cr.Province
+		contact.CodePostal = cr.CodePostal
+	}
+	return contact
+}
+
+// participantFieldsChanged compares the participant's current fields against the incoming request to detect changes.
+func participantFieldsChanged(p types.Participant, req types.UpdateParticipantRequest, dob time.Time, ramq *string, dateOfDeath *time.Time) bool {
+	if p.FirstName != req.FirstName || p.LastName != req.LastName || p.SexAtBirthCode != req.SexAtBirthCode || p.VitalStatusCode != req.VitalStatusCode {
+		return true
+	}
+	if !p.DateOfBirth.Equal(dob) {
+		return true
+	}
+	if (p.RAMQ == nil) != (ramq == nil) || (p.RAMQ != nil && ramq != nil && *p.RAMQ != *ramq) {
+		return true
+	}
+	if (p.DateOfDeath == nil) != (dateOfDeath == nil) || (p.DateOfDeath != nil && dateOfDeath != nil && !p.DateOfDeath.Equal(*dateOfDeath)) {
+		return true
+	}
+	return false
+}
+
+// selfContactChanged compares the old self-contact snapshot against the incoming coordinates.
+func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequest) bool {
+	return old.Email != req.Email ||
+		old.Phone != req.Phone ||
+		old.StreetAddress != req.StreetAddress ||
+		old.City != req.City ||
+		old.Province != req.Province ||
+		old.CodePostal != req.CodePostal
+}
+
+// --- Handlers ---
+
+// ListParticipantsHandler returns a paginated, sortable, searchable list of participants.
 func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
-	// Allowed sort fields to prevent SQL injection
 	allowedSortFields := map[string]string{
-		"id":                "id",
-		"first_name":        "first_name",
-		"last_name":         "last_name",
-		"date_of_birth":     "date_of_birth",
-		"sex_at_birth_code": "sex_at_birth_code",
-		"vital_status_code": "vital_status_code",
-		"ramq":              "ramq",
-		"created_at":        "created_at",
-		"updated_at":        "updated_at",
+		"id": "id", "first_name": "first_name", "last_name": "last_name",
+		"date_of_birth": "date_of_birth", "sex_at_birth_code": "sex_at_birth_code",
+		"vital_status_code": "vital_status_code", "ramq": "ramq",
+		"created_at": "created_at", "updated_at": "updated_at",
 	}
 
 	return func(c *gin.Context) {
 		params := parsePaginationParams(c, "last_name")
-
 		query := db.Model(&types.Participant{})
 
-		// Search filter (accent-insensitive via unaccent extension)
 		if params.Search != "" {
 			term := "%" + strings.ToLower(params.Search) + "%"
 			query = query.Where(
@@ -40,14 +178,12 @@ func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
 			)
 		}
 
-		// Count total
 		var total int64
 		if err := query.Count(&total).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to count participants"})
 			return
 		}
 
-		// Sort
 		sortCol, ok := allowedSortFields[params.SortField]
 		if !ok {
 			sortCol = "last_name"
@@ -59,30 +195,24 @@ func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
 			order += " ASC"
 		}
 
-		// Fetch page
 		var participants []types.Participant
-		err := query.
-			Order(order).
-			Offset(params.PageIndex * params.PageSize).
-			Limit(params.PageSize).
-			Find(&participants).Error
+		err := query.Order(order).Offset(params.PageIndex * params.PageSize).Limit(params.PageSize).Find(&participants).Error
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
 			return
 		}
-
-		totalPages := int(math.Ceil(float64(total) / float64(params.PageSize)))
 
 		c.JSON(http.StatusOK, types.PaginatedResponse[types.Participant]{
 			Data:       participants,
 			Total:      int(total),
 			PageIndex:  params.PageIndex,
 			PageSize:   params.PageSize,
-			TotalPages: totalPages,
+			TotalPages: int(math.Ceil(float64(total) / float64(params.PageSize))),
 		})
 	}
 }
 
+// GetParticipantHandler returns a single participant with its contacts.
 func GetParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -102,6 +232,8 @@ func GetParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+// UpdateParticipantHandler updates a participant, its self-contact coordinates, and replaces non-self contacts.
+// Activity logs are recorded based on what actually changed (participant_edited, contact_edited, contact_created).
 func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -128,25 +260,23 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		var dateOfDeath *time.Time
-		if req.DateOfDeath != "" {
-			d, err := time.Parse("2006-01-02", req.DateOfDeath)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
-				return
-			}
-			dateOfDeath = &d
+		dateOfDeath, err := parseDate(req.DateOfDeath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			return
 		}
 
-		var ramq *string
-		if req.RAMQ != "" {
-			ramq = &req.RAMQ
-		}
-
+		ramq := toStringPtr(req.RAMQ)
 		author := getAuthor(c)
 
+		// Snapshot old state for activity comparison
+		oldParticipantChanged := participantFieldsChanged(participant, req, dob, ramq, dateOfDeath)
+		oldSelfSnapshot := snapshotSelfContact(participant.Contacts)
+		oldSelfChanged := selfContactChanged(oldSelfSnapshot, req)
+		oldContactIDs := nonSelfContactIDs(participant.Contacts)
+
 		err = db.Transaction(func(tx *gorm.DB) error {
-			// Update participant fields
+			// Update participant
 			participant.FirstName = req.FirstName
 			participant.LastName = req.LastName
 			participant.DateOfBirth = dob
@@ -154,67 +284,51 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			participant.SexAtBirthCode = req.SexAtBirthCode
 			participant.VitalStatusCode = req.VitalStatusCode
 			participant.DateOfDeath = dateOfDeath
-
 			if err := tx.Save(&participant).Error; err != nil {
 				return err
 			}
 
-			// Update "self" contact with coordinates (if exists)
-			for i := range participant.Contacts {
-				if participant.Contacts[i].RelationshipCode == "self" {
-					participant.Contacts[i].FirstName = req.FirstName
-					participant.Contacts[i].LastName = req.LastName
-					participant.Contacts[i].Email = req.Email
-					participant.Contacts[i].Phone = req.Phone
-					participant.Contacts[i].StreetAddress = req.StreetAddress
-					participant.Contacts[i].City = req.City
-					participant.Contacts[i].Province = req.Province
-					participant.Contacts[i].CodePostal = req.CodePostal
-					if err := tx.Save(&participant.Contacts[i]).Error; err != nil {
-						return err
-					}
-					break
-				}
-			}
-
-			// Delete old non-self contacts and recreate
-			if err := tx.Where("participant_id = ? AND relationship_code != ?", participant.ID, "self").Delete(&types.Contact{}).Error; err != nil {
-				return err
-			}
-
-			for _, cr := range req.Contacts {
-				contact := types.Contact{
-					ParticipantID:     participant.ID,
-					FirstName:         cr.FirstName,
-					LastName:          cr.LastName,
-					RelationshipCode:  cr.RelationshipCode,
-					IsPrimary:         cr.IsPrimary,
-					PreferredLanguage: cr.PreferredLanguage,
-				}
-				if cr.SameCoordinates {
-					contact.Email = req.Email
-					contact.Phone = req.Phone
-					contact.StreetAddress = req.StreetAddress
-					contact.City = req.City
-					contact.Province = req.Province
-					contact.CodePostal = req.CodePostal
-				} else {
-					contact.Email = cr.Email
-					contact.Phone = cr.Phone
-					contact.StreetAddress = cr.StreetAddress
-					contact.City = cr.City
-					contact.Province = cr.Province
-					contact.CodePostal = cr.CodePostal
-				}
-				if err := tx.Create(&contact).Error; err != nil {
+			// Update self contact (if exists)
+			if sc := findSelfContact(participant.Contacts); sc != nil {
+				sc.FirstName = req.FirstName
+				sc.LastName = req.LastName
+				sc.Email = req.Email
+				sc.Phone = req.Phone
+				sc.StreetAddress = req.StreetAddress
+				sc.City = req.City
+				sc.Province = req.Province
+				sc.CodePostal = req.CodePostal
+				if err := tx.Save(sc).Error; err != nil {
 					return err
 				}
 			}
 
-			// Record activity
-			details := fmt.Sprintf("%s %s", req.FirstName, req.LastName)
-			if err := recordActivity(tx, "participant_edited", &participant.ID, author, &details); err != nil {
+			// Replace non-self contacts
+			if err := tx.Where("participant_id = ? AND relationship_code != ?", participant.ID, "self").Delete(&types.Contact{}).Error; err != nil {
 				return err
+			}
+			for _, cr := range req.Contacts {
+				contact := buildContact(participant.ID, cr, req)
+				if err := tx.Create(&contact).Error; err != nil {
+					return err
+				}
+
+				contactDesc := fmt.Sprintf("Contact: %s %s (%s)", cr.FirstName, cr.LastName, cr.RelationshipCode)
+				action := "contact_created"
+				if cr.ID > 0 && oldContactIDs[cr.ID] {
+					action = "contact_edited"
+				}
+				if err := recordActivity(tx, action, &participant.ID, author, &contactDesc); err != nil {
+					return err
+				}
+			}
+
+			// Log participant_edited only if participant or self-contact actually changed
+			if oldParticipantChanged || oldSelfChanged {
+				details := fmt.Sprintf("%s %s", req.FirstName, req.LastName)
+				if err := recordActivity(tx, "participant_edited", &participant.ID, author, &details); err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -225,12 +339,12 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Reload with contacts
 		db.Preload("Contacts").First(&participant, participant.ID)
 		c.JSON(http.StatusOK, participant)
 	}
 }
 
+// CreateParticipantHandler creates a new participant with a "self" contact and optional additional contacts.
 func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.CreateParticipantRequest
@@ -239,35 +353,23 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Parse date of birth
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
 			return
 		}
 
-		// Parse optional date of death
-		var dateOfDeath *time.Time
-		if req.DateOfDeath != "" {
-			d, err := time.Parse("2006-01-02", req.DateOfDeath)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
-				return
-			}
-			dateOfDeath = &d
-		}
-
-		// Optional RAMQ
-		var ramq *string
-		if req.RAMQ != "" {
-			ramq = &req.RAMQ
+		dateOfDeath, err := parseDate(req.DateOfDeath)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			return
 		}
 
 		participant := types.Participant{
 			FirstName:       req.FirstName,
 			LastName:        req.LastName,
 			DateOfBirth:     dob,
-			RAMQ:            ramq,
+			RAMQ:            toStringPtr(req.RAMQ),
 			SexAtBirthCode:  req.SexAtBirthCode,
 			VitalStatusCode: req.VitalStatusCode,
 			DateOfDeath:     dateOfDeath,
@@ -280,24 +382,23 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 				return err
 			}
 
-			// Record activity: participant created
 			if err := recordActivity(tx, "participant_created", &participant.ID, author, nil); err != nil {
 				return err
 			}
 
-			// Create "self" contact with participant's coordinates
+			// Create self contact
 			selfContact := types.Contact{
-				ParticipantID:     participant.ID,
-				FirstName:         req.FirstName,
-				LastName:          req.LastName,
-				RelationshipCode:  "self",
-				IsPrimary:         true,
-				Email:             req.Email,
-				Phone:             req.Phone,
-				StreetAddress:     req.StreetAddress,
-				City:              req.City,
-				Province:          req.Province,
-				CodePostal:        req.CodePostal,
+				ParticipantID:    participant.ID,
+				FirstName:        req.FirstName,
+				LastName:         req.LastName,
+				RelationshipCode: "self",
+				IsPrimary:        true,
+				Email:            req.Email,
+				Phone:            req.Phone,
+				StreetAddress:    req.StreetAddress,
+				City:             req.City,
+				Province:         req.Province,
+				CodePostal:       req.CodePostal,
 				PreferredLanguage: "fr",
 			}
 			if err := tx.Create(&selfContact).Error; err != nil {
@@ -306,29 +407,7 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 
 			// Create additional contacts
 			for _, cr := range req.Contacts {
-				contact := types.Contact{
-					ParticipantID:     participant.ID,
-					FirstName:         cr.FirstName,
-					LastName:          cr.LastName,
-					RelationshipCode:  cr.RelationshipCode,
-					IsPrimary:         cr.IsPrimary,
-					PreferredLanguage: cr.PreferredLanguage,
-				}
-				if cr.SameCoordinates {
-					contact.Email = req.Email
-					contact.Phone = req.Phone
-					contact.StreetAddress = req.StreetAddress
-					contact.City = req.City
-					contact.Province = req.Province
-					contact.CodePostal = req.CodePostal
-				} else {
-					contact.Email = cr.Email
-					contact.Phone = cr.Phone
-					contact.StreetAddress = cr.StreetAddress
-					contact.City = cr.City
-					contact.Province = cr.Province
-					contact.CodePostal = cr.CodePostal
-				}
+				contact := buildContactFromCreate(participant.ID, cr, req)
 				if err := tx.Create(&contact).Error; err != nil {
 					return err
 				}
@@ -342,9 +421,7 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Reload with contacts
 		db.Preload("Contacts").First(&participant, participant.ID)
-
 		c.JSON(http.StatusCreated, participant)
 	}
 }
