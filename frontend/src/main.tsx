@@ -7,6 +7,8 @@ import "./lib/i18n";
 import { LandingPage } from "./components/feature/landing-page";
 import Root from "./routes/root";
 import Participants from "./routes/participants";
+import ParticipantDetail from "./routes/participant";
+import ActivityLogs from "./routes/activity-logs";
 
 const router = createBrowserRouter([
   {
@@ -19,6 +21,14 @@ const router = createBrowserRouter([
       {
         path: "participants",
         element: <Participants />,
+      },
+      {
+        path: "participants/:id",
+        element: <ParticipantDetail />,
+      },
+      {
+        path: "activity",
+        element: <ActivityLogs />,
       },
     ],
   },

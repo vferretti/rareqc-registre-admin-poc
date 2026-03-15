@@ -10,7 +10,8 @@
   },
   "nav": {
     "home": "Home",
-    "patients": "Participants"
+    "patients": "Participants",
+    "activity": "Activity"
   },
   "common": {
     "loading": "Loading…",
@@ -30,6 +31,7 @@
     "add": "Add participant",
     "search_placeholder": "Search by name or RAMQ…",
     "columns": {
+      "id": "ID",
       "last_name": "Last name",
       "first_name": "First name",
       "date_of_birth": "Date of birth",
@@ -66,6 +68,37 @@
     "success": "Participant added successfully",
     "error": "Error creating participant"
   },
+  "edit_participant": {
+    "title": "Edit participant",
+    "submit": "Save changes",
+    "success": "Participant updated successfully",
+    "error": "Error updating participant"
+  },
+  "participant_detail": {
+    "section_identity": "Identity",
+    "section_coordinates": "Contact information",
+    "section_contacts": "Contact persons",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "date_of_birth": "Date of birth",
+    "sex_at_birth": "Sex at birth",
+    "vital_status": "Vital status",
+    "date_of_death": "Date of death",
+    "ramq": "RAMQ",
+    "email": "Email",
+    "phone": "Phone",
+    "street_address": "Address",
+    "city": "City",
+    "province": "Province",
+    "code_postal": "Postal code",
+    "preferred_language": "Preferred language",
+    "relationship": "Relationship",
+    "primary_contact": "Primary contact",
+    "not_found": "Participant not found",
+    "back": "Back to list",
+    "no_contacts": "No contacts",
+    "na": "—"
+  },
   "enums": {
     "sex_at_birth": {
       "male": "Male",
@@ -87,7 +120,26 @@
     "language": {
       "fr": "French",
       "en": "English"
+    },
+    "action_type": {
+      "participant_created": "Participant created",
+      "contact_created": "Contact created",
+      "contact_edited": "Contact edited",
+      "participant_edited": "Participant edited"
     }
+  },
+  "activity_log": {
+    "title": "Activity Log",
+    "description": "Portal action history",
+    "columns": {
+      "date": "Date",
+      "author": "Author",
+      "action": "Action",
+      "participant": "Participant",
+      "details": "Details"
+    },
+    "empty": "No activity recorded",
+    "participant_section_title": "History"
   },
   "validation": {
     "required": "This field is required",
@@ -104,5 +156,10 @@
     "pin_left": "Pin left",
     "pin_right": "Pin right",
     "unpin": "Unpin"
+  },
+  "user_menu": {
+    "connected_as": "Connected as {{email}}",
+    "profile_settings": "Profile Settings",
+    "logout": "Log out"
   }
 }

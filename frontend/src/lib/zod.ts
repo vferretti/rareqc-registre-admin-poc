@@ -1,61 +1,42 @@
 import { z } from "zod";
 
 /**
- * Helper function to check if a field is required in the Zod schema
+ * Check if a field is required in the Zod schema (Zod v4 API).
+ * A field is considered required if it has a min(1+) check on a string type.
+ * Fields that are optional, have defaults, or are plain strings without min are not required.
  */
 export function isFieldRequired(
   schema: z.ZodObject<Record<string, z.ZodTypeAny>>,
   fieldName: string,
 ): boolean {
   try {
-    const shape =
-      typeof schema._def.shape === "function"
-        ? schema._def.shape()
-        : schema._def.shape;
-
-    if (!shape || !(fieldName in shape)) return false;
-
-    const fieldSchema = shape[fieldName];
+    const fieldSchema = schema.shape[fieldName];
     if (!fieldSchema) return false;
 
-    return !isOptionalField(fieldSchema);
+    return isRequiredField(fieldSchema);
   } catch {
     return false;
   }
 }
 
-function isOptionalField(fieldSchema: z.ZodTypeAny): boolean {
-  const typeName = fieldSchema._def?.typeName;
+function isRequiredField(fieldSchema: z.ZodTypeAny): boolean {
+  // Optional or has a default → not required
+  if (fieldSchema.isOptional()) return false;
 
-  if (typeName === "ZodOptional") return true;
+  const defType = (fieldSchema as { _zod?: { def?: { type?: string } } })._zod
+    ?.def?.type;
 
-  // Has a default value → user doesn't need to fill it
-  if (typeName === "ZodDefault") return true;
-
-  if (typeName === "ZodNullable") {
-    return isOptionalField(fieldSchema._def.innerType);
+  // Nullable → check inner type
+  if (defType === "nullable") {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const inner = (fieldSchema as any)._zod.def.innerType as z.ZodTypeAny;
+    return isRequiredField(inner);
   }
 
-  // .refine() / .transform() — unwrap and check inner type
-  if (typeName === "ZodEffects") {
-    return isOptionalField(fieldSchema._def.schema);
-  }
-
-  if (typeName === "ZodUnion") {
-    return fieldSchema._def.options.some(
-      (option: z.ZodTypeAny) =>
-        option._def.typeName === "ZodUndefined" ||
-        option._def.typeName === "ZodNull",
-    );
-  }
-
-  // A string with min(0) or no min constraint is effectively optional for display
-  if (typeName === "ZodString") {
-    const checks = fieldSchema._def.checks ?? [];
-    return !checks.some(
-      (c: { kind: string }) =>
-        c.kind === "min" && (c as { value: number }).value > 0,
-    );
+  // String → required only if it has a min(1+) constraint
+  if (defType === "string") {
+    const minLength = (fieldSchema as z.ZodString).minLength;
+    return minLength != null && minLength > 0;
   }
 
   return false;

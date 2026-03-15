@@ -1,14 +1,31 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users } from "lucide-react";
+import { Users, History, ChevronDown, UserRound, LogOut } from "lucide-react";
+import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+} from "@/components/base/ui/dropdown-menu";
+
+const FAKE_USER = {
+  id: "fake-user-1",
+  name: "John Smith",
+  email: "john.smith@gmail.com",
+};
 
 export function Navbar() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const links = [
     { to: "/participants", label: t("nav.patients"), icon: Users },
+    { to: "/activity", label: t("nav.activity"), icon: History },
   ];
 
   const toggleLanguage = () => {
@@ -40,12 +57,35 @@ export function Navbar() {
           </Link>
         ))}
       </div>
-      <button
-        onClick={toggleLanguage}
-        className="text-sm text-navbar-muted hover:text-navbar-active transition-colors uppercase"
-      >
-        {i18n.language === "fr" ? "EN" : "FR"}
-      </button>
+      <div className="flex items-center gap-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-navbar-accent transition-colors outline-none cursor-pointer">
+            <UserAvatar userId={FAKE_USER.id} name={FAKE_USER.name} />
+            <span className="font-medium">{FAKE_USER.name}</span>
+            <ChevronDown className="size-3.5 text-navbar-muted" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel className="font-normal text-muted-foreground">
+              {t("user_menu.connected_as", { email: FAKE_USER.email })}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <UserRound />
+              {t("user_menu.profile_settings")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/")}>
+              <LogOut />
+              {t("user_menu.logout")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <button
+          onClick={toggleLanguage}
+          className="text-sm text-navbar-muted hover:text-navbar-active transition-colors uppercase"
+        >
+          {i18n.language === "fr" ? "EN" : "FR"}
+        </button>
+      </div>
     </nav>
   );
 }

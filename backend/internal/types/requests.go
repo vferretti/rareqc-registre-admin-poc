@@ -15,6 +15,25 @@ type CreateContactRequest struct {
 	PreferredLanguage string `json:"preferred_language"`
 }
 
+type UpdateParticipantRequest struct {
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	DateOfBirth     string `json:"date_of_birth"`
+	SexAtBirthCode  string `json:"sex_at_birth_code"`
+	RAMQ            string `json:"ramq"`
+	VitalStatusCode string `json:"vital_status_code"`
+	DateOfDeath     string `json:"date_of_death"`
+	// Coordinates (update "self" contact)
+	Email         string `json:"email"`
+	Phone         string `json:"phone"`
+	StreetAddress string `json:"street_address"`
+	City          string `json:"city"`
+	Province      string `json:"province"`
+	CodePostal    string `json:"code_postal"`
+	// Additional contacts
+	Contacts []CreateContactRequest `json:"contacts"`
+}
+
 type CreateParticipantRequest struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`

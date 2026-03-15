@@ -26,3 +26,12 @@ type Relationship struct {
 }
 
 func (Relationship) TableName() string { return "relationship" }
+
+// ActionType reference table
+type ActionType struct {
+	Code   string `json:"code" gorm:"primaryKey;type:text"`
+	NameEn string `json:"name_en" gorm:"not null"`
+	NameFr string `json:"name_fr" gorm:"not null"`
+}
+
+func (ActionType) TableName() string { return "action_type" }

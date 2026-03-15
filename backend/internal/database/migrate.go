@@ -21,6 +21,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.SexAtBirth{},
 		&types.VitalStatus{},
 		&types.Relationship{},
+		&types.ActionType{},
 	); err != nil {
 		return err
 	}
@@ -49,6 +50,7 @@ func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&types.Participant{},
 		&types.Contact{},
+		&types.ActivityLog{},
 	)
 }
 
@@ -82,6 +84,16 @@ func seedReferenceData(db *gorm.DB) error {
 		return err
 	}
 	if err := db.Clauses(upsert).Create(&relationshipValues).Error; err != nil {
+		return err
+	}
+
+	actionTypeValues := []types.ActionType{
+		{Code: "participant_created", NameEn: "Participant created", NameFr: "Participant créé"},
+		{Code: "contact_created", NameEn: "Contact created", NameFr: "Contact créé"},
+		{Code: "contact_edited", NameEn: "Contact edited", NameFr: "Contact modifié"},
+		{Code: "participant_edited", NameEn: "Participant edited", NameFr: "Participant modifié"},
+	}
+	if err := db.Clauses(upsert).Create(&actionTypeValues).Error; err != nil {
 		return err
 	}
 

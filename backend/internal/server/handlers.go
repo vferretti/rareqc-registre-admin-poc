@@ -17,7 +17,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Author"},
 		AllowCredentials: false,
 	}))
 
@@ -28,7 +28,12 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.GET("/health", HealthHandler())
 
 		api.GET("/participants", ListParticipantsHandler(db))
+		api.GET("/participants/:id", GetParticipantHandler(db))
 		api.POST("/participants", CreateParticipantHandler(db))
+		api.PUT("/participants/:id", UpdateParticipantHandler(db))
+
+		api.GET("/activity-logs", ListActivityLogsHandler(db))
+		api.GET("/participants/:id/activity-logs", ListParticipantActivityLogsHandler(db))
 	}
 
 	return r

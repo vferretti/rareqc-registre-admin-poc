@@ -1,0 +1,298 @@
+import { useMemo, useState } from "react";
+import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
+import {
+  type ColumnDef,
+  type SortingState,
+  type PaginationState,
+  type ColumnPinningState,
+  type ColumnSizingState,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/base/table/table";
+import { PaginationBar } from "@/components/base/table/pagination";
+import { SortableHeader } from "@/components/base/table/sortable-header";
+import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
+import { PageHeader } from "@/components/base/page/page-header";
+import { useActivityLogs } from "@/hooks/useActivityLogs";
+import {
+  getColumnPinningHeaderCN,
+  getColumnPinningCellCN,
+  getColumnPinningHeaderStyle,
+  getColumnPinningCellStyle,
+} from "@/lib/table-pinning";
+import { cn } from "@/lib/utils";
+import type { ActivityLog } from "@/types/activity-log";
+
+const ACTION_BADGE: Record<string, "green" | "blue" | "amber" | "secondary"> = {
+  participant_created: "green",
+  contact_created: "blue",
+  contact_edited: "amber",
+};
+
+export default function ActivityLogs() {
+  const { t, i18n } = useTranslation();
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "created_at", desc: true },
+  ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({
+    left: [],
+    right: [],
+  });
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+
+  const sortField = sorting[0]?.id ?? "created_at";
+  const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+
+  const { logs, total, totalPages, isLoading, error } = useActivityLogs({
+    pageIndex: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    sortField,
+    sortOrder,
+  });
+
+  const columns = useMemo<ColumnDef<ActivityLog>[]>(
+    () => [
+      {
+        accessorKey: "created_at",
+        size: 160,
+        header: ({ column }) => (
+          <SortableHeader
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
+            {t("activity_log.columns.date")}
+          </SortableHeader>
+        ),
+        cell: ({ getValue }) => <DateCell date={getValue<string | null>()} />,
+      },
+      {
+        accessorKey: "author",
+        size: 150,
+        header: ({ column }) => (
+          <SortableHeader
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
+            {t("activity_log.columns.author")}
+          </SortableHeader>
+        ),
+        cell: ({ getValue }) => <TextCell>{getValue<string>()}</TextCell>,
+      },
+      {
+        accessorKey: "action_type_code",
+        size: 160,
+        header: ({ column }) => (
+          <SortableHeader
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
+            {t("activity_log.columns.action")}
+          </SortableHeader>
+        ),
+        cell: ({ getValue }) => {
+          const code = getValue<string>();
+          return (
+            <BadgeCell variant={ACTION_BADGE[code] ?? "secondary"}>
+              {t(`enums.action_type.${code}`, { defaultValue: code })}
+            </BadgeCell>
+          );
+        },
+      },
+      {
+        accessorKey: "participant_name",
+        size: 180,
+        enableSorting: false,
+        header: () => t("activity_log.columns.participant"),
+        cell: ({ row }) => {
+          const name = row.original.participant_name;
+          const id = row.original.participant_id;
+          if (!name || !id) return <TextCell>—</TextCell>;
+          return (
+            <Link
+              to={`/participants/${id}`}
+              className="text-primary underline hover:text-primary/80"
+            >
+              {name}
+            </Link>
+          );
+        },
+      },
+      {
+        accessorKey: "details",
+        size: 250,
+        enableSorting: false,
+        header: () => t("activity_log.columns.details"),
+        cell: ({ getValue }) => (
+          <TextCell>{getValue<string | null>() ?? "—"}</TextCell>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const table = useReactTable({
+    data: logs,
+    columns,
+    columnResizeMode: "onChange",
+    columnResizeDirection: "ltr",
+    enableColumnResizing: true,
+    manualSorting: true,
+    manualPagination: true,
+    pageCount: totalPages,
+    state: { sorting, pagination, columnPinning, columnSizing },
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    onColumnPinningChange: setColumnPinning,
+    onColumnSizingChange: setColumnSizing,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
+  return (
+    <>
+      <PageHeader
+        title={t("activity_log.title")}
+        description={t("activity_log.description")}
+      />
+      <div className="p-8">
+        <div className="rounded-lg border bg-background p-6">
+          {error && (
+            <p className="text-destructive mb-4">{t("common.error")}</p>
+          )}
+          <div className={cn("transition-opacity", isLoading && "opacity-50")}>
+            <div className="text-sm text-muted-foreground mb-1">
+              {t("pagination.results", {
+                from:
+                  total > 0
+                    ? (
+                        pagination.pageIndex * pagination.pageSize +
+                        1
+                      ).toLocaleString(i18n.language)
+                    : "0",
+                to: Math.min(
+                  (pagination.pageIndex + 1) * pagination.pageSize,
+                  total,
+                ).toLocaleString(i18n.language),
+                total: total.toLocaleString(i18n.language),
+              })}
+            </div>
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className={getColumnPinningHeaderCN(header)}
+                        style={getColumnPinningHeaderStyle(header)}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                        {header.column.getCanResize() && (
+                          <div
+                            onDoubleClick={() => header.column.resetSize()}
+                            onMouseDown={header.getResizeHandler()}
+                            onTouchStart={header.getResizeHandler()}
+                            className={cn(
+                              "absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-foreground/50 opacity-0 hover:opacity-50",
+                              header.column.getIsResizing() && "opacity-100",
+                            )}
+                          />
+                        )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      {isLoading
+                        ? t("common.loading")
+                        : t("activity_log.empty")}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className={getColumnPinningCellCN(cell.column)}
+                          style={getColumnPinningCellStyle(cell.column)}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+            <PaginationBar
+              page={pagination.pageIndex + 1}
+              totalPages={totalPages}
+              totalResults={total}
+              pageSize={pagination.pageSize}
+              showResults={false}
+              onPageChange={(p) => table.setPageIndex(p - 1)}
+              onPageSizeChange={(size) => {
+                table.setPageSize(size);
+                table.setPageIndex(0);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

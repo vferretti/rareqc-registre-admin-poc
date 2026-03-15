@@ -27,37 +27,40 @@ docker compose up --build
 
 | Service    | URL                          |
 |------------|------------------------------|
-| Frontend   | http://localhost:3000         |
-| API        | http://localhost:8081/api     |
-| Swagger    | http://localhost:8081/swagger |
+| Frontend   | http://localhost:3001         |
+| API        | http://localhost:8082/api     |
+| Swagger    | http://localhost:8082/swagger |
 | PostgreSQL | localhost:5440               |
 
-### Développement local
+### Développement local (recommandé)
 
 ```bash
-# Terminal 1 — Base de données
-docker compose up postgres
+# Terminal 1 — Base de données + API
+docker compose up --build api
 
-# Terminal 2 — Backend
-cd backend
-export POSTGRES_HOST=localhost POSTGRES_PORT=5440 POSTGRES_USER=rareqc POSTGRES_PASSWORD=rareqc POSTGRES_DB=rareqc_registre
-go run ./cmd/api/
-
-# Terminal 3 — Frontend
+# Terminal 2 — Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-Le frontend sera disponible sur http://localhost:5173 avec proxy automatique vers l'API sur le port 8080.
+Le frontend sera disponible sur http://localhost:5173 avec proxy automatique vers l'API sur le port 8082.
 
 ### Données de test (seed)
 
-Génère 100 participants réalistes (noms québécois, RAMQ, contacts) :
+Génère 100 participants réalistes (noms québécois, RAMQ, contacts). Le seed est dans un profil Docker `dev` séparé et n'est **jamais inclus dans l'image de production**.
 
 ```bash
-cd backend
-go run ./scripts/seed/main.go
+# Première fois ou après un reset de la BD
+docker compose --profile dev run --rm seed
+```
+
+Pour repartir de zéro (supprime le volume PostgreSQL et re-seed) :
+
+```bash
+docker compose down -v
+docker compose up --build -d api
+docker compose --profile dev run --rm seed
 ```
 
 ## Architecture

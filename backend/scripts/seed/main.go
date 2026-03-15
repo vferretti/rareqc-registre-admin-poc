@@ -65,6 +65,10 @@ var streets = []string{
 	"rue Saint-Joseph", "avenue Maguire", "rue du Pont", "boulevard Hamel",
 }
 
+var authors = []string{
+	"John Smith", "Marie Tremblay", "Pierre Gagnon", "Sophie Lavoie",
+}
+
 func main() {
 	db, err := database.NewPostgresDB()
 	if err != nil {
@@ -72,26 +76,46 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM activity_logs")
 	db.Exec("DELETE FROM contacts")
 	db.Exec("DELETE FROM participants")
 
 	log.Println("Seeding 100 participants...")
+
+	// Base time: 30 days ago, we'll stagger forward
+	baseTime := time.Now().Add(-30 * 24 * time.Hour)
 
 	// 85 children, 15 adults
 	childCount := 85
 	adultCount := 15
 
 	for i := 0; i < childCount; i++ {
-		seedChild(db, i)
+		ts := baseTime.Add(time.Duration(i) * 7 * time.Hour)
+		seedChild(db, i, ts)
 	}
 	for i := 0; i < adultCount; i++ {
-		seedAdult(db, childCount+i)
+		ts := baseTime.Add(time.Duration(childCount+i) * 7 * time.Hour)
+		seedAdult(db, childCount+i, ts)
 	}
 
-	log.Println("Seed complete: 100 participants created")
+	log.Println("Seed complete: 100 participants created with activity logs")
 }
 
-func seedChild(db *gorm.DB, index int) {
+func createActivityLog(db *gorm.DB, actionTypeCode string, participantID int, author string, details string, createdAt time.Time) {
+	var detailsPtr *string
+	if details != "" {
+		detailsPtr = &details
+	}
+	db.Create(&types.ActivityLog{
+		ActionTypeCode: actionTypeCode,
+		ParticipantID:  &participantID,
+		Author:         author,
+		Details:        detailsPtr,
+		CreatedAt:      createdAt,
+	})
+}
+
+func seedChild(db *gorm.DB, index int, ts time.Time) {
 	isFemale := index%2 == 0
 	sex := "male"
 	firstName := pick(boysNames)
@@ -107,6 +131,7 @@ func seedChild(db *gorm.DB, index int) {
 	address := randomAddress()
 	contactCity := pick(cities)
 	postalCode := randomPostalCode()
+	author := pick(authors)
 
 	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
@@ -120,6 +145,27 @@ func seedChild(db *gorm.DB, index int) {
 	}
 	db.Create(&participant)
 
+	// Activity: participant created
+	createActivityLog(db, "participant_created", participant.ID, author,
+		fmt.Sprintf("%s %s", firstName, lastName), ts)
+
+	// Self contact (participant's own coordinates)
+	selfContact := types.Contact{
+		ParticipantID:     participant.ID,
+		FirstName:         firstName,
+		LastName:          lastName,
+		RelationshipCode:  "self",
+		IsPrimary:         false,
+		Email:             fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
+		Phone:             randomPhone(),
+		StreetAddress:     address,
+		City:              contactCity,
+		Province:          "QC",
+		CodePostal:        postalCode,
+		PreferredLanguage: lang,
+	}
+	db.Create(&selfContact)
+
 	// Mother contact (always present for children, is primary)
 	motherFirst := pick(girlsNames)
 	motherLast := lastName
@@ -127,44 +173,72 @@ func seedChild(db *gorm.DB, index int) {
 		motherLast = pick(lastNames) // ~20% different last name
 	}
 
-	db.Create(&types.Contact{
-		ParticipantID:    participant.ID,
-		FirstName:        motherFirst,
-		LastName:         motherLast,
-		RelationshipCode: "mother",
-		IsPrimary:        true,
-		Email:            fmt.Sprintf("%s.%s@%s", lower(motherFirst), lower(motherLast), randomDomain()),
-		Phone:            randomPhone(),
-		StreetAddress:    address,
-		City:             contactCity,
-		Province:         "QC",
-		CodePostal:       postalCode,
+	motherContact := types.Contact{
+		ParticipantID:     participant.ID,
+		FirstName:         motherFirst,
+		LastName:          motherLast,
+		RelationshipCode:  "mother",
+		IsPrimary:         true,
+		Email:             fmt.Sprintf("%s.%s@%s", lower(motherFirst), lower(motherLast), randomDomain()),
+		Phone:             randomPhone(),
+		StreetAddress:     address,
+		City:              contactCity,
+		Province:          "QC",
+		CodePostal:        postalCode,
 		PreferredLanguage: lang,
-	})
+	}
+	db.Create(&motherContact)
+
+	// Activity: contact created (mother)
+	contactTs := ts.Add(time.Duration(rand.Intn(30)+1) * time.Minute)
+	createActivityLog(db, "contact_created", participant.ID, author,
+		fmt.Sprintf("Contact: %s %s (Mère)", motherFirst, motherLast), contactTs)
+
+	// ~30% chance mother contact was edited later
+	if rand.Intn(100) < 30 {
+		editTs := contactTs.Add(time.Duration(rand.Intn(48)+1) * time.Hour)
+		editAuthor := pick(authors)
+		createActivityLog(db, "contact_edited", participant.ID, editAuthor,
+			fmt.Sprintf("Contact: %s %s (Mère)", motherFirst, motherLast), editTs)
+	}
 
 	// Father contact (~40% of children)
 	if rand.Intn(5) < 2 {
 		fatherFirst := pick(boysNames)
 		fatherLast := lastName
 
-		db.Create(&types.Contact{
-			ParticipantID:    participant.ID,
-			FirstName:        fatherFirst,
-			LastName:         fatherLast,
-			RelationshipCode: "father",
-			IsPrimary:        false,
-			Email:            fmt.Sprintf("%s.%s@%s", lower(fatherFirst), lower(fatherLast), randomDomain()),
-			Phone:            randomPhone(),
-			StreetAddress:    address,
-			City:             contactCity,
-			Province:         "QC",
-			CodePostal:       postalCode,
+		fatherContact := types.Contact{
+			ParticipantID:     participant.ID,
+			FirstName:         fatherFirst,
+			LastName:          fatherLast,
+			RelationshipCode:  "father",
+			IsPrimary:         false,
+			Email:             fmt.Sprintf("%s.%s@%s", lower(fatherFirst), lower(fatherLast), randomDomain()),
+			Phone:             randomPhone(),
+			StreetAddress:     address,
+			City:              contactCity,
+			Province:          "QC",
+			CodePostal:        postalCode,
 			PreferredLanguage: lang,
-		})
+		}
+		db.Create(&fatherContact)
+
+		// Activity: contact created (father)
+		fatherTs := contactTs.Add(time.Duration(rand.Intn(10)+1) * time.Minute)
+		createActivityLog(db, "contact_created", participant.ID, author,
+			fmt.Sprintf("Contact: %s %s (Père)", fatherFirst, fatherLast), fatherTs)
+
+		// ~20% chance father contact was edited later
+		if rand.Intn(100) < 20 {
+			editTs := fatherTs.Add(time.Duration(rand.Intn(72)+1) * time.Hour)
+			editAuthor := pick(authors)
+			createActivityLog(db, "contact_edited", participant.ID, editAuthor,
+				fmt.Sprintf("Contact: %s %s (Père)", fatherFirst, fatherLast), editTs)
+		}
 	}
 }
 
-func seedAdult(db *gorm.DB, index int) {
+func seedAdult(db *gorm.DB, index int, ts time.Time) {
 	isFemale := index%2 == 0
 	sex := "male"
 	firstName := pick(boysNames)
@@ -176,6 +250,7 @@ func seedAdult(db *gorm.DB, index int) {
 	lastName := pick(lastNames)
 	dob := randomAdultDOB()
 	city := pick(cities)
+	author := pick(authors)
 
 	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
 	participant := types.Participant{
@@ -189,22 +264,40 @@ func seedAdult(db *gorm.DB, index int) {
 	}
 	db.Create(&participant)
 
+	// Activity: participant created
+	createActivityLog(db, "participant_created", participant.ID, author,
+		fmt.Sprintf("%s %s", firstName, lastName), ts)
+
 	// Adult is their own primary contact
 	lang := langForName(firstName)
-	db.Create(&types.Contact{
-		ParticipantID:    participant.ID,
-		FirstName:        firstName,
-		LastName:         lastName,
-		RelationshipCode: "self",
-		IsPrimary:        true,
-		Email:            fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
-		Phone:            randomPhone(),
-		StreetAddress:    randomAddress(),
-		City:             pick(cities),
-		Province:         "QC",
-		CodePostal:       randomPostalCode(),
+	selfContact := types.Contact{
+		ParticipantID:     participant.ID,
+		FirstName:         firstName,
+		LastName:          lastName,
+		RelationshipCode:  "self",
+		IsPrimary:         true,
+		Email:             fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
+		Phone:             randomPhone(),
+		StreetAddress:     randomAddress(),
+		City:              pick(cities),
+		Province:          "QC",
+		CodePostal:        randomPostalCode(),
 		PreferredLanguage: lang,
-	})
+	}
+	db.Create(&selfContact)
+
+	// Activity: contact created (self)
+	contactTs := ts.Add(time.Duration(rand.Intn(15)+1) * time.Minute)
+	createActivityLog(db, "contact_created", participant.ID, author,
+		fmt.Sprintf("Contact: %s %s (Soi-même)", firstName, lastName), contactTs)
+
+	// ~25% chance self contact was edited
+	if rand.Intn(100) < 25 {
+		editTs := contactTs.Add(time.Duration(rand.Intn(96)+1) * time.Hour)
+		editAuthor := pick(authors)
+		createActivityLog(db, "contact_edited", participant.ID, editAuthor,
+			fmt.Sprintf("Contact: %s %s (Soi-même)", firstName, lastName), editTs)
+	}
 }
 
 // --- Helpers ---

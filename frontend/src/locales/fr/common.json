@@ -10,7 +10,8 @@
   },
   "nav": {
     "home": "Accueil",
-    "patients": "Participants"
+    "patients": "Participants",
+    "activity": "Activité"
   },
   "common": {
     "loading": "Chargement…",
@@ -30,6 +31,7 @@
     "add": "Ajouter un participant",
     "search_placeholder": "Rechercher par nom ou RAMQ…",
     "columns": {
+      "id": "ID",
       "last_name": "Nom",
       "first_name": "Prénom",
       "date_of_birth": "Date de naissance",
@@ -66,6 +68,37 @@
     "success": "Participant ajouté avec succès",
     "error": "Erreur lors de la création du participant"
   },
+  "edit_participant": {
+    "title": "Modifier le participant",
+    "submit": "Enregistrer les modifications",
+    "success": "Participant modifié avec succès",
+    "error": "Erreur lors de la modification du participant"
+  },
+  "participant_detail": {
+    "section_identity": "Identité",
+    "section_coordinates": "Coordonnées",
+    "section_contacts": "Personnes contact",
+    "first_name": "Prénom",
+    "last_name": "Nom",
+    "date_of_birth": "Date de naissance",
+    "sex_at_birth": "Sexe à la naissance",
+    "vital_status": "Statut vital",
+    "date_of_death": "Date de décès",
+    "ramq": "RAMQ",
+    "email": "Courriel",
+    "phone": "Téléphone",
+    "street_address": "Adresse",
+    "city": "Ville",
+    "province": "Province",
+    "code_postal": "Code postal",
+    "preferred_language": "Langue préférée",
+    "relationship": "Relation",
+    "primary_contact": "Contact principal",
+    "not_found": "Participant introuvable",
+    "back": "Retour à la liste",
+    "no_contacts": "Aucun contact",
+    "na": "—"
+  },
   "enums": {
     "sex_at_birth": {
       "male": "Masculin",
@@ -87,7 +120,26 @@
     "language": {
       "fr": "Français",
       "en": "Anglais"
+    },
+    "action_type": {
+      "participant_created": "Participant créé",
+      "contact_created": "Contact créé",
+      "contact_edited": "Contact modifié",
+      "participant_edited": "Participant modifié"
     }
+  },
+  "activity_log": {
+    "title": "Journal d'activité",
+    "description": "Historique des actions sur le portail",
+    "columns": {
+      "date": "Date",
+      "author": "Auteur",
+      "action": "Action",
+      "participant": "Participant",
+      "details": "Détails"
+    },
+    "empty": "Aucune activité enregistrée",
+    "participant_section_title": "Historique"
   },
   "validation": {
     "required": "Ce champ est obligatoire",
@@ -104,5 +156,10 @@
     "pin_left": "Épingler à gauche",
     "pin_right": "Épingler à droite",
     "unpin": "Désépingler"
+  },
+  "user_menu": {
+    "connected_as": "Connecté en tant que {{email}}",
+    "profile_settings": "Paramètres du profil",
+    "logout": "Déconnexion"
   }
 }

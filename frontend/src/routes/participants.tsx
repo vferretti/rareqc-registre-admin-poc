@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
@@ -85,6 +86,34 @@ export default function Participants() {
 
   const columns = useMemo<ColumnDef<Participant>[]>(
     () => [
+      {
+        accessorKey: "id",
+        size: 80,
+        header: ({ column }) => (
+          <SortableHeader
+            sortDirection={
+              column.getIsSorted() === "asc"
+                ? "asc"
+                : column.getIsSorted() === "desc"
+                  ? "desc"
+                  : null
+            }
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
+            {t("participants.columns.id")}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <Link
+            to={`/participants/${row.original.id}`}
+            className="text-primary underline hover:text-primary/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.original.id}
+          </Link>
+        ),
+      },
       {
         accessorKey: "last_name",
         size: 160,
