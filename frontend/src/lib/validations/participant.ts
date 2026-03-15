@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type TFunction } from "i18next";
 
+/** RAMQ format: 4 uppercase letters, space, 4 digits, space, 4 digits (e.g. "TREB 1503 1412"). */
 const RAMQ_PATTERN = /^[A-Z]{4} \d{4} \d{4}$/;
 
+/** Zod schema for a contact form entry (used in the contacts array). */
 export const contactSchema = (t: TFunction) =>
   z.object({
     id: z.number().optional(),
@@ -20,6 +22,7 @@ export const contactSchema = (t: TFunction) =>
     code_postal: z.string(),
   });
 
+/** Zod schema for the participant form (identity + coordinates + contacts). */
 export const participantSchema = (t: TFunction) =>
   z.object({
     first_name: z.string().min(1, t("validation.required")),

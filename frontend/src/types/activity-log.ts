@@ -1,3 +1,4 @@
+/** An entry in the activity log tracking actions on participants and contacts. */
 export interface ActivityLog {
   id: number;
   action_type_code: string;

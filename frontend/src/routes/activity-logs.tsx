@@ -33,14 +33,10 @@ import {
   getColumnPinningCellStyle,
 } from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
+import { ACTION_BADGE } from "@/lib/badge-variants";
 import type { ActivityLog } from "@/types/activity-log";
 
-const ACTION_BADGE: Record<string, "green" | "blue" | "amber" | "secondary"> = {
-  participant_created: "green",
-  contact_created: "blue",
-  contact_edited: "amber",
-};
-
+/** Global activity logs page with server-side pagination and sorting. */
 export default function ActivityLogs() {
   const { t, i18n } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([
@@ -56,14 +52,11 @@ export default function ActivityLogs() {
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
 
-  const sortField = sorting[0]?.id ?? "created_at";
-  const sortOrder = sorting[0]?.desc ? "desc" : "asc";
-
   const { logs, total, totalPages, isLoading, error } = useActivityLogs({
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
-    sortField,
-    sortOrder,
+    sortField: sorting[0]?.id ?? "created_at",
+    sortOrder: sorting[0]?.desc ? "desc" : "asc",
   });
 
   const columns = useMemo<ColumnDef<ActivityLog>[]>(
@@ -73,13 +66,7 @@ export default function ActivityLogs() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -93,13 +80,7 @@ export default function ActivityLogs() {
         size: 150,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -113,13 +94,7 @@ export default function ActivityLogs() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -141,8 +116,7 @@ export default function ActivityLogs() {
         enableSorting: false,
         header: () => t("activity_log.columns.participant"),
         cell: ({ row }) => {
-          const name = row.original.participant_name;
-          const id = row.original.participant_id;
+          const { participant_name: name, participant_id: id } = row.original;
           if (!name || !id) return <TextCell>—</TextCell>;
           return (
             <Link

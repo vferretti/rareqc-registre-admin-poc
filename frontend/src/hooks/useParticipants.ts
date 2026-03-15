@@ -12,6 +12,7 @@ interface UseParticipantsParams {
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
+/** Fetches a paginated, sortable, searchable list of participants. */
 export function useParticipants({
   pageIndex,
   pageSize,

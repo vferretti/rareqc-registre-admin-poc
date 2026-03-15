@@ -388,15 +388,16 @@ func generateRAMQ(firstName, lastName string, dob time.Time, isFemale bool) stri
 	}
 
 	year := dob.Year() % 100
+	month := int(dob.Month())
 	if isFemale {
-		year += 50
+		month += 50
 	}
 
 	seq := rand.Intn(99) + 1
 
 	return fmt.Sprintf("%s%s %02d%02d %02d%02d",
 		ln[:3], fn[:1],
-		year, int(dob.Month()),
+		year, month,
 		dob.Day(), seq,
 	)
 }

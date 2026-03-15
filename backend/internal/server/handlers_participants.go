@@ -303,6 +303,25 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 				}
 			}
 
+			// Detect deleted contacts (old non-self IDs not present in request)
+			newContactIDs := make(map[int]bool)
+			for _, cr := range req.Contacts {
+				if cr.ID > 0 {
+					newContactIDs[cr.ID] = true
+				}
+			}
+			for _, c := range participant.Contacts {
+				if c.RelationshipCode == "self" {
+					continue
+				}
+				if !newContactIDs[c.ID] {
+					delDesc := fmt.Sprintf("Contact: %s %s (%s)", c.FirstName, c.LastName, c.RelationshipCode)
+					if err := recordActivity(tx, "contact_deleted", &participant.ID, author, &delDesc); err != nil {
+						return err
+					}
+				}
+			}
+
 			// Replace non-self contacts
 			if err := tx.Where("participant_id = ? AND relationship_code != ?", participant.ID, "self").Delete(&types.Contact{}).Error; err != nil {
 				return err

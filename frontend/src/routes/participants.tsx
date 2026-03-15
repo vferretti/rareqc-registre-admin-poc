@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Plus } from "lucide-react";
 import {
   type ColumnDef,
   type SortingState,
@@ -29,8 +29,8 @@ import { InputSearch } from "@/components/base/input-search";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
 import { CreateParticipantDialog } from "@/components/feature/create-participant-dialog";
-import { Plus } from "lucide-react";
 import { useParticipants } from "@/hooks/useParticipants";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   getColumnPinningHeaderCN,
   getColumnPinningCellCN,
@@ -38,21 +38,10 @@ import {
   getColumnPinningCellStyle,
 } from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
+import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import type { Participant } from "@/types/participant";
 
-const SEX_BADGE: Record<string, "blue" | "violet" | "secondary"> = {
-  male: "blue",
-  female: "violet",
-};
-
-const VITAL_STATUS_BADGE: Record<
-  string,
-  "green" | "destructive" | "secondary"
-> = {
-  alive: "green",
-  deceased: "destructive",
-};
-
+/** Participants list page with server-side pagination, sorting, and search. */
 export default function Participants() {
   const { t, i18n } = useTranslation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -72,15 +61,12 @@ export default function Participants() {
 
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
-  const sortField = sorting[0]?.id ?? "last_name";
-  const sortOrder = sorting[0]?.desc ? "desc" : "asc";
-
   const { participants, total, totalPages, isLoading, error, mutate } =
     useParticipants({
       pageIndex: pagination.pageIndex,
       pageSize: pagination.pageSize,
-      sortField,
-      sortOrder,
+      sortField: sorting[0]?.id ?? "last_name",
+      sortOrder: sorting[0]?.desc ? "desc" : "asc",
       search: debouncedSearch || undefined,
     });
 
@@ -91,13 +77,7 @@ export default function Participants() {
         size: 80,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -119,13 +99,7 @@ export default function Participants() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -143,13 +117,7 @@ export default function Participants() {
         size: 160,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -163,13 +131,7 @@ export default function Participants() {
         size: 130,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -183,13 +145,7 @@ export default function Participants() {
         size: 120,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -210,13 +166,7 @@ export default function Participants() {
         size: 120,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -237,13 +187,7 @@ export default function Participants() {
         size: 150,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >
@@ -261,13 +205,7 @@ export default function Participants() {
         size: 130,
         header: ({ column }) => (
           <SortableHeader
-            sortDirection={
-              column.getIsSorted() === "asc"
-                ? "asc"
-                : column.getIsSorted() === "desc"
-                  ? "desc"
-                  : null
-            }
+            sortDirection={column.getIsSorted() || null}
             onSort={column.getToggleSortingHandler()}
             column={column}
           >

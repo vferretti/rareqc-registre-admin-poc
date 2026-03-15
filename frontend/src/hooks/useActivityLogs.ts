@@ -8,11 +8,13 @@ interface UseActivityLogsParams {
   pageSize: number;
   sortField: string;
   sortOrder: string;
+  /** When provided, fetches logs scoped to a specific participant. */
   participantId?: number;
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
+/** Fetches a paginated list of activity logs, optionally scoped to a participant. */
 export function useActivityLogs({
   pageIndex,
   pageSize,

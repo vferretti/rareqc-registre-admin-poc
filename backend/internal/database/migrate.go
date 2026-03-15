@@ -92,6 +92,7 @@ func seedReferenceData(db *gorm.DB) error {
 		{Code: "contact_created", NameEn: "Contact created", NameFr: "Contact créé"},
 		{Code: "contact_edited", NameEn: "Contact edited", NameFr: "Contact modifié"},
 		{Code: "participant_edited", NameEn: "Participant edited", NameFr: "Participant modifié"},
+		{Code: "contact_deleted", NameEn: "Contact deleted", NameFr: "Contact supprimé"},
 	}
 	if err := db.Clauses(upsert).Create(&actionTypeValues).Error; err != nil {
 		return err

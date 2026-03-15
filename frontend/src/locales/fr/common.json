@@ -128,7 +128,8 @@
       "participant_created": "Participant créé",
       "contact_created": "Contact créé",
       "contact_edited": "Contact modifié",
-      "participant_edited": "Participant modifié"
+      "participant_edited": "Participant modifié",
+      "contact_deleted": "Contact supprimé"
     }
   },
   "activity_log": {

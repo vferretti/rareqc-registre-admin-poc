@@ -1,3 +1,4 @@
+/** A contact person associated with a participant (including the "self" contact for own coordinates). */
 export interface Contact {
   id: number;
   participant_id: number;
@@ -16,6 +17,7 @@ export interface Contact {
   updated_at: string;
 }
 
+/** A patient in the rare disease registry. */
 export interface Participant {
   id: number;
   first_name: string;
@@ -31,6 +33,7 @@ export interface Participant {
   updated_at: string;
 }
 
+/** Generic paginated API response wrapper. */
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { format, parseISO } from "date-fns";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { useParticipant } from "@/hooks/useParticipant";
 import { PageHeader } from "@/components/base/page/page-header";
@@ -15,31 +14,12 @@ import {
 } from "@/components/base/ui/card";
 import { Badge } from "@/components/base/badges/badge";
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
-import type { Contact } from "@/types/participant";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
+import { formatDate, formatAddress } from "@/lib/format";
+import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
+import type { Contact } from "@/types/participant";
 
-const SEX_BADGE: Record<string, "blue" | "violet" | "secondary"> = {
-  male: "blue",
-  female: "violet",
-};
-
-const VITAL_STATUS_BADGE: Record<
-  string,
-  "green" | "destructive" | "secondary"
-> = {
-  alive: "green",
-  deceased: "destructive",
-};
-
-function formatDate(date: string | null | undefined): string {
-  if (!date) return "—";
-  try {
-    return format(parseISO(date), "yyyy-MM-dd");
-  } catch {
-    return "—";
-  }
-}
-
+/** Displays a label/value pair inside a definition list. */
 function Field({
   label,
   children,
@@ -55,6 +35,7 @@ function Field({
   );
 }
 
+/** Renders a single contact card with name, relationship, and coordinates. */
 function ContactCard({
   contact,
   t,
@@ -62,15 +43,6 @@ function ContactCard({
   contact: Contact;
   t: (key: string, options?: Record<string, string>) => string;
 }) {
-  const address = [
-    contact.street_address,
-    contact.city,
-    contact.province,
-    contact.code_postal,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
@@ -98,7 +70,12 @@ function ContactCard({
           {contact.phone || "—"}
         </Field>
         <Field label={t("participant_detail.street_address")}>
-          {address || "—"}
+          {formatAddress(
+            contact.street_address,
+            contact.city,
+            contact.province,
+            contact.code_postal,
+          )}
         </Field>
         <Field label={t("participant_detail.preferred_language")}>
           {t(`enums.language.${contact.preferred_language}`, {
@@ -110,6 +87,7 @@ function ContactCard({
   );
 }
 
+/** Participant detail page — identity, coordinates, contacts, and activity history. */
 export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
@@ -153,16 +131,7 @@ export default function ParticipantDetail() {
   const otherContacts =
     participant.contacts?.filter((c) => c.relationship_code !== "self") ?? [];
 
-  const address = selfContact
-    ? [
-        selfContact.street_address,
-        selfContact.city,
-        selfContact.province,
-        selfContact.code_postal,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "";
+  const handleSuccess = () => void mutate(undefined, { revalidate: true });
 
   return (
     <>
@@ -259,7 +228,14 @@ export default function ParticipantDetail() {
                     {selfContact?.phone || "—"}
                   </Field>
                   <Field label={t("participant_detail.street_address")}>
-                    {address || "—"}
+                    {selfContact
+                      ? formatAddress(
+                          selfContact.street_address,
+                          selfContact.city,
+                          selfContact.province,
+                          selfContact.code_postal,
+                        )
+                      : "—"}
                   </Field>
                 </dl>
               </CardContent>
@@ -317,7 +293,7 @@ export default function ParticipantDetail() {
         onOpenChange={setEditParticipantOpen}
         participant={participant}
         editSection="participant"
-        onSuccess={() => void mutate(undefined, { revalidate: true })}
+        onSuccess={handleSuccess}
       />
 
       {/* Edit contacts dialog */}
@@ -326,7 +302,7 @@ export default function ParticipantDetail() {
         onOpenChange={setEditContactsOpen}
         participant={participant}
         editSection="contacts"
-        onSuccess={() => void mutate(undefined, { revalidate: true })}
+        onSuccess={handleSuccess}
       />
     </>
   );
