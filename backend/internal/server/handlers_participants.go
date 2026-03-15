@@ -44,6 +44,21 @@ func findSelfContact(contacts []types.Contact) *types.Contact {
 	return nil
 }
 
+// enforceSinglePrimary ensures exactly one contact is primary per participant.
+// If a new contact is primary, the self contact loses the flag. Otherwise, self becomes primary.
+func enforceSinglePrimary(tx *gorm.DB, participantID int, newContacts []types.CreateContactRequest) error {
+	hasPrimary := false
+	for _, c := range newContacts {
+		if c.IsPrimary {
+			hasPrimary = true
+			break
+		}
+	}
+	return tx.Model(&types.Contact{}).
+		Where("participant_id = ? AND relationship_code = ?", participantID, "self").
+		Update("is_primary", !hasPrimary).Error
+}
+
 // nonSelfContactIDs returns a set of IDs for all contacts that are not "self".
 func nonSelfContactIDs(contacts []types.Contact) map[int]bool {
 	ids := make(map[int]bool)
@@ -340,6 +355,11 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 				if err := recordActivity(tx, action, &participant.ID, author, &contactDesc); err != nil {
 					return err
 				}
+			}
+
+			// Ensure at least one contact is primary (fallback to self)
+			if err := enforceSinglePrimary(tx, participant.ID, req.Contacts); err != nil {
+				return err
 			}
 
 			// Log participant_edited only if participant or self-contact actually changed
