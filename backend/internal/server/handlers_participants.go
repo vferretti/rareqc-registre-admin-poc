@@ -227,6 +227,58 @@ func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
+// DeleteContactHandler removes a contact by ID and records the activity.
+func DeleteContactHandler(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		contactID := c.Param("contactId")
+
+		var contact types.Contact
+		if err := db.First(&contact, contactID).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
+			return
+		}
+
+		if contact.RelationshipCode == "self" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete self contact"})
+			return
+		}
+
+		author := getAuthor(c)
+
+		err := db.Transaction(func(tx *gorm.DB) error {
+			wasPrimary := contact.IsPrimary
+			if err := tx.Delete(&contact).Error; err != nil {
+				return err
+			}
+			// If deleted contact was primary, check if another non-self is primary; if not, self becomes primary
+			if wasPrimary {
+				var hasPrimary int64
+				tx.Model(&types.Contact{}).
+					Where("participant_id = ? AND relationship_code != ? AND is_primary = ?", contact.ParticipantID, "self", true).
+					Count(&hasPrimary)
+				if hasPrimary == 0 {
+					tx.Model(&types.Contact{}).
+						Where("participant_id = ? AND relationship_code = ?", contact.ParticipantID, "self").
+						Update("is_primary", true)
+				}
+			}
+			details := fmt.Sprintf("%s %s", contact.FirstName, contact.LastName)
+			return recordActivity(tx, "contact_deleted", &contact.ParticipantID, author, &details)
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete contact"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})
+	}
+}
+
 // GetParticipantHandler returns a single participant with its contacts.
 func GetParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -450,6 +502,11 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 				if err := tx.Create(&contact).Error; err != nil {
 					return err
 				}
+			}
+
+			// If a non-self contact is primary, self loses the flag
+			if err := enforceSinglePrimary(tx, participant.ID, req.Contacts); err != nil {
+				return err
 			}
 
 			return nil

@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/base/ui/select";
-import type { Participant } from "@/types/participant";
+import type { Contact, Participant } from "@/types/participant";
 
 type EditSection = "participant" | "contacts";
 
@@ -46,6 +46,10 @@ interface ParticipantFormDialogProps {
   participant?: Participant | null;
   /** Which section to edit — only used in edit mode */
   editSection?: EditSection;
+  /** When true, opens the contacts section with an empty list + one blank contact */
+  addContactsOnly?: boolean;
+  /** When provided, opens the contacts section pre-filled with this single contact */
+  editContact?: Contact | null;
 }
 
 const DEFAULT_VALUES: ParticipantFormValues = {
@@ -113,6 +117,8 @@ export function ParticipantFormDialog({
   onSuccess,
   participant,
   editSection = "participant",
+  addContactsOnly = false,
+  editContact = null,
 }: ParticipantFormDialogProps) {
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -133,12 +139,34 @@ export function ParticipantFormDialog({
   useEffect(() => {
     if (open) {
       if (participant) {
-        form.reset(participantToFormValues(participant));
+        const values = participantToFormValues(participant);
+        if (editContact) {
+          values.contacts = [
+            {
+              id: editContact.id,
+              first_name: editContact.first_name,
+              last_name: editContact.last_name,
+              relationship_code: editContact.relationship_code,
+              preferred_language: editContact.preferred_language,
+              same_coordinates: false,
+              is_primary: editContact.is_primary,
+              email: editContact.email,
+              phone: editContact.phone,
+              street_address: editContact.street_address,
+              city: editContact.city,
+              province: editContact.province,
+              code_postal: editContact.code_postal,
+            },
+          ];
+        } else if (addContactsOnly) {
+          values.contacts = [];
+        }
+        form.reset(values);
       } else {
         form.reset(DEFAULT_VALUES);
       }
     }
-  }, [open, participant, form]);
+  }, [open, participant, addContactsOnly, editContact, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -187,7 +215,7 @@ export function ParticipantFormDialog({
       relationship_code: "",
       preferred_language: "fr",
       same_coordinates: true,
-      is_primary: fields.length === 0,
+      is_primary: false,
       email: "",
       phone: "",
       street_address: "",
@@ -199,10 +227,6 @@ export function ParticipantFormDialog({
 
   const removeContact = (index: number) => {
     remove(index);
-    const contacts = form.getValues("contacts");
-    if (contacts.length > 0 && !contacts.some((c) => c.is_primary)) {
-      form.setValue("contacts.0.is_primary", true);
-    }
   };
 
   const vitalStatus = form.watch("vital_status_code");
@@ -214,9 +238,13 @@ export function ParticipantFormDialog({
           <DialogTitle>
             {t(
               isEdit
-                ? editSection === "contacts"
-                  ? "edit_contacts.title"
-                  : "edit_participant.title"
+                ? editContact
+                  ? "participant_detail.edit_contact_title"
+                  : addContactsOnly
+                    ? "participant_detail.add_contacts_title"
+                    : editSection === "contacts"
+                      ? "edit_contacts.title"
+                      : "edit_participant.title"
                 : "create_participant.title",
             )}
           </DialogTitle>
@@ -487,9 +515,11 @@ export function ParticipantFormDialog({
             {showParticipantFields && <hr className="border-border" />}
 
                 <fieldset className="space-y-4">
-                  <legend className="text-sm font-semibold text-foreground">
-                    {t("create_participant.section_contacts")}
-                  </legend>
+                  {!addContactsOnly && (
+                    <legend className="text-sm font-semibold text-foreground">
+                      {t("create_participant.section_contacts")}
+                    </legend>
+                  )}
 
                   {fields.map((field, index) => {
                     const sameCoordinates = form.watch(

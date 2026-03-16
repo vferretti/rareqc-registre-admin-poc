@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useParticipant } from "@/hooks/useParticipant";
+import api from "@/lib/api";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
 import {
@@ -35,13 +36,17 @@ function Field({
   );
 }
 
-/** Renders a single contact card with name, relationship, and coordinates. */
+/** Renders a single contact card with name, relationship, coordinates, and action buttons. */
 function ContactCard({
   contact,
   t,
+  onEdit,
+  onDelete,
 }: {
   contact: Contact;
   t: (key: string, options?: Record<string, string>) => string;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
@@ -55,12 +60,30 @@ function ContactCard({
               defaultValue: contact.relationship_code,
             })}
           </Badge>
+          {contact.is_primary && (
+            <Badge variant="blue">
+              {t("participant_detail.primary_contact")}
+            </Badge>
+          )}
         </div>
-        {contact.is_primary && (
-          <Badge variant="blue">
-            {t("participant_detail.primary_contact")}
-          </Badge>
-        )}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t("common.edit")}
+            onClick={onEdit}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t("common.delete")}
+            onClick={onDelete}
+          >
+            <Trash2 className="size-3.5 text-destructive" />
+          </Button>
+        </div>
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
         <Field label={t("participant_detail.email")}>
@@ -94,6 +117,20 @@ export default function ParticipantDetail() {
   const { participant, isLoading, error, mutate } = useParticipant(id);
   const [editParticipantOpen, setEditParticipantOpen] = useState(false);
   const [editContactsOpen, setEditContactsOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+
+  /** Deletes a contact after user confirmation. */
+  const handleDeleteContact = async (contact: Contact) => {
+    if (!confirm(t("participant_detail.confirm_delete_contact", { name: `${contact.first_name} ${contact.last_name}` }))) {
+      return;
+    }
+    try {
+      await api.delete(`/contacts/${contact.id}`);
+      mutate(undefined, { revalidate: true });
+    } catch {
+      // silently fail — API error
+    }
+  };
 
   if (isLoading) {
     return (
@@ -251,9 +288,10 @@ export default function ParticipantDetail() {
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    title={t("participant_detail.add_contacts")}
                     onClick={() => setEditContactsOpen(true)}
                   >
-                    <Pencil className="size-4" />
+                    <UserPlus className="size-4" />
                   </Button>
                 </CardAction>
               </CardHeader>
@@ -265,7 +303,13 @@ export default function ParticipantDetail() {
                 ) : (
                   <div className="space-y-3">
                     {otherContacts.map((contact) => (
-                      <ContactCard key={contact.id} contact={contact} t={t} />
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        t={t}
+                        onEdit={() => setEditingContact(contact)}
+                        onDelete={() => handleDeleteContact(contact)}
+                      />
                     ))}
                   </div>
                 )}
@@ -296,13 +340,24 @@ export default function ParticipantDetail() {
         onSuccess={handleSuccess}
       />
 
-      {/* Edit contacts dialog */}
+      {/* Add contacts dialog */}
       <ParticipantFormDialog
         open={editContactsOpen}
         onOpenChange={setEditContactsOpen}
         participant={participant}
         editSection="contacts"
+        addContactsOnly
         onSuccess={handleSuccess}
+      />
+
+      {/* Edit single contact dialog */}
+      <ParticipantFormDialog
+        open={!!editingContact}
+        onOpenChange={(open) => { if (!open) setEditingContact(null); }}
+        participant={participant}
+        editSection="contacts"
+        editContact={editingContact}
+        onSuccess={() => { setEditingContact(null); handleSuccess(); }}
       />
     </>
   );

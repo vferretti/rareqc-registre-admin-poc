@@ -80,7 +80,7 @@
   "participant_detail": {
     "section_identity": "Identité",
     "section_coordinates": "Coordonnées",
-    "section_contacts": "Personnes contact",
+    "section_contacts": "Contacts",
     "first_name": "Prénom",
     "last_name": "Nom",
     "date_of_birth": "Date de naissance",
@@ -99,7 +99,11 @@
     "primary_contact": "Contact principal",
     "not_found": "Participant introuvable",
     "back": "Retour à la liste",
-    "no_contacts": "Aucun contact",
+    "add_contacts": "Ajouter des contacts",
+    "add_contacts_title": "Ajouter des contacts pour ce participant",
+    "edit_contact_title": "Modifier le contact",
+    "confirm_delete_contact": "Supprimer le contact {{name}} ?",
+    "no_contacts": "Aucun contact inscrit pour ce participant",
     "na": "—"
   },
   "enums": {

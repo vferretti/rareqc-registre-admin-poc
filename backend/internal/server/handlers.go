@@ -33,6 +33,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/participants", CreateParticipantHandler(db))
 		api.PUT("/participants/:id", UpdateParticipantHandler(db))
 
+		api.DELETE("/contacts/:contactId", DeleteContactHandler(db))
+
 		api.GET("/activity-logs", ListActivityLogsHandler(db))
 		api.GET("/participants/:id/activity-logs", ListParticipantActivityLogsHandler(db))
 	}
