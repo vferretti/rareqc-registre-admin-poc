@@ -332,7 +332,7 @@ func randomAdultDOB() time.Time {
 func randomPhone() string {
 	// Quebec area codes
 	areaCodes := []string{"514", "438", "450", "418", "581", "819", "873", "367"}
-	return fmt.Sprintf("(%s) %03d-%04d", pick(areaCodes), rand.Intn(1000), rand.Intn(10000))
+	return fmt.Sprintf("%s%03d%04d", pick(areaCodes), rand.Intn(1000), rand.Intn(10000))
 }
 
 func randomAddress() string {

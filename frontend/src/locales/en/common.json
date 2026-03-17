@@ -3,6 +3,19 @@
     "title": "RareQC — Registry Admin",
     "description": "Quebec registry for patients with rare diseases"
   },
+  "home": {
+    "title": "Dashboard",
+    "description": "Welcome to the registry administration portal",
+    "search_placeholder": "Search a participant by name or RAMQ…",
+    "explore_title": "Navigation",
+    "explore_participants": "Participants",
+    "explore_participants_description": "View and manage participant records",
+    "explore_activity": "Activities",
+    "explore_activity_description": "View the registry action log",
+    "recent_activity": "Recent activity",
+    "view_all_activity": "View all activities →",
+    "search_no_results": "No results found"
+  },
   "landing": {
     "title": "Administration portal for managing registry participants",
     "description": "",
@@ -23,7 +36,8 @@
     "add": "Add",
     "search": "Search",
     "noResults": "No results",
-    "search_placeholder": "Search…"
+    "search_placeholder": "Search…",
+    "clear": "Clear"
   },
   "participants": {
     "title": "Participants",
@@ -145,6 +159,9 @@
       "participant": "Participant",
       "details": "Details"
     },
+    "search_placeholder": "Search by author, participant or details…",
+    "filter_action_type": "Action type",
+    "all_actions": "All actions",
     "empty": "No activity recorded",
     "participant_section_title": "History"
   },

@@ -9,6 +9,7 @@ import Root from "./routes/root";
 import Participants from "./routes/participants";
 import ParticipantDetail from "./routes/participant";
 import ActivityLogs from "./routes/activity-logs";
+import Home from "./routes/home";
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     element: <Root />,
     children: [
+      {
+        path: "home",
+        element: <Home />,
+      },
       {
         path: "participants",
         element: <Participants />,

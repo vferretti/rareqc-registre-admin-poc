@@ -40,7 +40,7 @@ export function LandingPage() {
           <Button
             size="lg"
             className="bg-cta text-cta-foreground hover:bg-cta/90"
-            onClick={() => navigate("/participants")}
+            onClick={() => navigate("/home")}
           >
             {t("landing.enter")}
           </Button>

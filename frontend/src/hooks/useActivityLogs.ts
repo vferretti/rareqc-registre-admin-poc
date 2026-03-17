@@ -10,6 +10,10 @@ interface UseActivityLogsParams {
   sortOrder: string;
   /** When provided, fetches logs scoped to a specific participant. */
   participantId?: number;
+  /** Free-text search on author, details and participant name. */
+  search?: string;
+  /** Filter by action type code. */
+  actionType?: string;
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
@@ -21,6 +25,8 @@ export function useActivityLogs({
   sortField,
   sortOrder,
   participantId,
+  search,
+  actionType,
 }: UseActivityLogsParams) {
   const params = new URLSearchParams({
     page_index: String(pageIndex),
@@ -28,6 +34,13 @@ export function useActivityLogs({
     sort_field: sortField,
     sort_order: sortOrder,
   });
+
+  if (search) {
+    params.set("search", search);
+  }
+  if (actionType) {
+    params.set("action_type", actionType);
+  }
 
   const url = participantId
     ? `/participants/${participantId}/activity-logs?${params.toString()}`

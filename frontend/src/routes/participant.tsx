@@ -27,7 +27,7 @@ import {
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
 import { ContactFormDialog } from "@/components/feature/contact-form-dialog";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
-import { formatDate, formatAddress } from "@/lib/format";
+import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import type { Contact } from "@/types/participant";
 
@@ -101,7 +101,7 @@ function ContactCard({
           {contact.email || "—"}
         </Field>
         <Field label={t("participant_detail.phone")}>
-          {contact.phone || "—"}
+          {formatPhone(contact.phone)}
         </Field>
         <Field label={t("participant_detail.street_address")}>
           {formatAddress(
@@ -274,7 +274,7 @@ export default function ParticipantDetail() {
                     {selfContact?.email || "—"}
                   </Field>
                   <Field label={t("participant_detail.phone")}>
-                    {selfContact?.phone || "—"}
+                    {formatPhone(selfContact?.phone)}
                   </Field>
                   <Field label={t("participant_detail.street_address")}>
                     {selfContact

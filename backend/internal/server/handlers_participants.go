@@ -2,13 +2,12 @@ package server
 
 import (
 	"fmt"
-	"math"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
 
@@ -58,21 +57,6 @@ func validateSinglePrimary(contacts []types.CreateContactRequest) error {
 	return nil
 }
 
-// enforceSinglePrimary ensures exactly one contact is primary per participant.
-// If a non-self contact is primary, self loses the flag. Otherwise, self becomes primary.
-func enforceSinglePrimary(tx *gorm.DB, participantID int, newContacts []types.CreateContactRequest) error {
-	hasPrimary := false
-	for _, c := range newContacts {
-		if c.IsPrimary {
-			hasPrimary = true
-			break
-		}
-	}
-	return tx.Model(&types.Contact{}).
-		Where("participant_id = ? AND relationship_code = ?", participantID, "self").
-		Update("is_primary", !hasPrimary).Error
-}
-
 // nonSelfContactIDs returns a set of IDs for all contacts that are not "self".
 func nonSelfContactIDs(contacts []types.Contact) map[int]bool {
 	ids := make(map[int]bool)
@@ -101,8 +85,8 @@ func snapshotSelfContact(contacts []types.Contact) selfContactSnapshot {
 	return selfContactSnapshot{}
 }
 
-// buildContact creates a Contact from an update request. Uses participant coordinates when SameCoordinates is true.
-func buildContact(participantID int, cr types.CreateContactRequest, fallback types.UpdateParticipantRequest) types.Contact {
+// buildContact creates a Contact from a request. Uses participant coordinates when SameCoordinates is true.
+func buildContact(participantID int, cr types.CreateContactRequest, email, phone, street, city, province, postal string) types.Contact {
 	contact := types.Contact{
 		ParticipantID:     participantID,
 		FirstName:         cr.FirstName,
@@ -112,12 +96,12 @@ func buildContact(participantID int, cr types.CreateContactRequest, fallback typ
 		PreferredLanguage: cr.PreferredLanguage,
 	}
 	if cr.SameCoordinates {
-		contact.Email = fallback.Email
-		contact.Phone = fallback.Phone
-		contact.StreetAddress = fallback.StreetAddress
-		contact.City = fallback.City
-		contact.Province = fallback.Province
-		contact.CodePostal = fallback.CodePostal
+		contact.Email = email
+		contact.Phone = phone
+		contact.StreetAddress = street
+		contact.City = city
+		contact.Province = province
+		contact.CodePostal = postal
 	} else {
 		contact.Email = cr.Email
 		contact.Phone = cr.Phone
@@ -129,35 +113,7 @@ func buildContact(participantID int, cr types.CreateContactRequest, fallback typ
 	return contact
 }
 
-// buildContactFromCreate creates a Contact from a create request. Uses participant coordinates when SameCoordinates is true.
-func buildContactFromCreate(participantID int, cr types.CreateContactRequest, fallback types.CreateParticipantRequest) types.Contact {
-	contact := types.Contact{
-		ParticipantID:     participantID,
-		FirstName:         cr.FirstName,
-		LastName:          cr.LastName,
-		RelationshipCode:  cr.RelationshipCode,
-		IsPrimary:         cr.IsPrimary,
-		PreferredLanguage: cr.PreferredLanguage,
-	}
-	if cr.SameCoordinates {
-		contact.Email = fallback.Email
-		contact.Phone = fallback.Phone
-		contact.StreetAddress = fallback.StreetAddress
-		contact.City = fallback.City
-		contact.Province = fallback.Province
-		contact.CodePostal = fallback.CodePostal
-	} else {
-		contact.Email = cr.Email
-		contact.Phone = cr.Phone
-		contact.StreetAddress = cr.StreetAddress
-		contact.City = cr.City
-		contact.Province = cr.Province
-		contact.CodePostal = cr.CodePostal
-	}
-	return contact
-}
-
-// participantFieldsChanged compares the participant's current fields against the incoming request to detect changes.
+// participantFieldsChanged compares the participant's current fields against the incoming request.
 func participantFieldsChanged(p types.Participant, req types.UpdateParticipantRequest, dob time.Time, ramq *string, dateOfDeath *time.Time) bool {
 	if p.FirstName != req.FirstName || p.LastName != req.LastName || p.SexAtBirthCode != req.SexAtBirthCode || p.VitalStatusCode != req.VitalStatusCode {
 		return true
@@ -176,56 +132,19 @@ func participantFieldsChanged(p types.Participant, req types.UpdateParticipantRe
 
 // selfContactChanged compares the old self-contact snapshot against the incoming coordinates.
 func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequest) bool {
-	return old.Email != req.Email ||
-		old.Phone != req.Phone ||
-		old.StreetAddress != req.StreetAddress ||
-		old.City != req.City ||
-		old.Province != req.Province ||
-		old.CodePostal != req.CodePostal
+	return old.Email != req.Email || old.Phone != req.Phone ||
+		old.StreetAddress != req.StreetAddress || old.City != req.City ||
+		old.Province != req.Province || old.CodePostal != req.CodePostal
 }
 
 // --- Handlers ---
 
 // ListParticipantsHandler returns a paginated, sortable, searchable list of participants.
-func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
-	allowedSortFields := map[string]string{
-		"id": "id", "first_name": "first_name", "last_name": "last_name",
-		"date_of_birth": "date_of_birth", "sex_at_birth_code": "sex_at_birth_code",
-		"vital_status_code": "vital_status_code", "ramq": "ramq",
-		"created_at": "created_at", "updated_at": "updated_at",
-	}
-
+func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := parsePaginationParams(c, "last_name")
-		query := db.Model(&types.Participant{})
 
-		if params.Search != "" {
-			term := "%" + strings.ToLower(params.Search) + "%"
-			query = query.Where(
-				"LOWER(unaccent(first_name)) LIKE unaccent(?) OR LOWER(unaccent(last_name)) LIKE unaccent(?) OR ramq LIKE ?",
-				term, term, term,
-			)
-		}
-
-		var total int64
-		if err := query.Count(&total).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to count participants"})
-			return
-		}
-
-		sortCol, ok := allowedSortFields[params.SortField]
-		if !ok {
-			sortCol = "last_name"
-		}
-		order := sortCol
-		if params.SortOrder == "desc" {
-			order += " DESC"
-		} else {
-			order += " ASC"
-		}
-
-		var participants []types.Participant
-		err := query.Order(order).Offset(params.PageIndex * params.PageSize).Limit(params.PageSize).Find(&participants).Error
+		participants, total, totalPages, err := repo.List(params)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
 			return
@@ -233,21 +152,35 @@ func ListParticipantsHandler(db *gorm.DB) gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, types.PaginatedResponse[types.Participant]{
 			Data:       participants,
-			Total:      int(total),
+			Total:      total,
 			PageIndex:  params.PageIndex,
 			PageSize:   params.PageSize,
-			TotalPages: int(math.Ceil(float64(total) / float64(params.PageSize))),
+			TotalPages: totalPages,
 		})
 	}
 }
 
-// DeleteContactHandler removes a contact by ID and records the activity.
-func DeleteContactHandler(db *gorm.DB) gin.HandlerFunc {
+// GetParticipantHandler returns a single participant with its contacts.
+func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		contactID := c.Param("contactId")
+		participant, err := repo.FindByID(c.Param("id"))
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			return
+		}
+		c.JSON(http.StatusOK, participant)
+	}
+}
 
-		var contact types.Contact
-		if err := db.First(&contact, contactID).Error; err != nil {
+// DeleteContactHandler removes a contact by ID and records the activity.
+func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		contact, err := contactRepo.FindByID(c.Param("contactId"))
+		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
 				return
@@ -263,64 +196,34 @@ func DeleteContactHandler(db *gorm.DB) gin.HandlerFunc {
 
 		author := getAuthor(c)
 
-		err := db.Transaction(func(tx *gorm.DB) error {
+		err = contactRepo.Transaction(func(tx *gorm.DB) error {
 			wasPrimary := contact.IsPrimary
-			if err := tx.Delete(&contact).Error; err != nil {
+			if err := contactRepo.Delete(tx, &contact); err != nil {
 				return err
 			}
-			// If deleted contact was primary, check if another non-self is primary; if not, self becomes primary
 			if wasPrimary {
-				var hasPrimary int64
-				tx.Model(&types.Contact{}).
-					Where("participant_id = ? AND relationship_code != ? AND is_primary = ?", contact.ParticipantID, "self", true).
-					Count(&hasPrimary)
-				if hasPrimary == 0 {
-					tx.Model(&types.Contact{}).
-						Where("participant_id = ? AND relationship_code = ?", contact.ParticipantID, "self").
-						Update("is_primary", true)
+				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if count == 0 {
+					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
 				}
 			}
 			details := fmt.Sprintf("%s %s", contact.FirstName, contact.LastName)
-			return recordActivity(tx, "contact_deleted", &contact.ParticipantID, author, &details)
+			return activityRepo.Record(tx, "contact_deleted", &contact.ParticipantID, author, &details)
 		})
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete contact"})
 			return
 		}
-
 		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})
 	}
 }
 
-// GetParticipantHandler returns a single participant with its contacts.
-func GetParticipantHandler(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id := c.Param("id")
-
-		var participant types.Participant
-		err := db.Preload("Contacts").First(&participant, id).Error
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
-			return
-		}
-
-		c.JSON(http.StatusOK, participant)
-	}
-}
-
 // UpdateParticipantHandler updates a participant, its self-contact coordinates, and replaces non-self contacts.
-// Activity logs are recorded based on what actually changed (participant_edited, contact_edited, contact_created).
-func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
+func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
-
-		var participant types.Participant
-		if err := db.Preload("Contacts").First(&participant, id).Error; err != nil {
+		participant, err := participantRepo.FindByID(c.Param("id"))
+		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
 				return
@@ -360,7 +263,7 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 		oldSelfChanged := selfContactChanged(oldSelfSnapshot, req)
 		oldContactIDs := nonSelfContactIDs(participant.Contacts)
 
-		err = db.Transaction(func(tx *gorm.DB) error {
+		err = participantRepo.Transaction(func(tx *gorm.DB) error {
 			// Update participant
 			participant.FirstName = req.FirstName
 			participant.LastName = req.LastName
@@ -369,11 +272,11 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			participant.SexAtBirthCode = req.SexAtBirthCode
 			participant.VitalStatusCode = req.VitalStatusCode
 			participant.DateOfDeath = dateOfDeath
-			if err := tx.Save(&participant).Error; err != nil {
+			if err := participantRepo.Save(tx, &participant); err != nil {
 				return err
 			}
 
-			// Update self contact (if exists)
+			// Update self contact
 			if sc := findSelfContact(participant.Contacts); sc != nil {
 				sc.FirstName = req.FirstName
 				sc.LastName = req.LastName
@@ -383,59 +286,65 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 				sc.City = req.City
 				sc.Province = req.Province
 				sc.CodePostal = req.CodePostal
-				if err := tx.Save(sc).Error; err != nil {
+				if err := contactRepo.Save(tx, sc); err != nil {
 					return err
 				}
 			}
 
-			// Detect deleted contacts (old non-self IDs not present in request)
+			// Detect deleted contacts
 			newContactIDs := make(map[int]bool)
 			for _, cr := range req.Contacts {
 				if cr.ID > 0 {
 					newContactIDs[cr.ID] = true
 				}
 			}
-			for _, c := range participant.Contacts {
-				if c.RelationshipCode == "self" {
+			for _, ct := range participant.Contacts {
+				if ct.RelationshipCode == "self" {
 					continue
 				}
-				if !newContactIDs[c.ID] {
-					delDesc := fmt.Sprintf("Contact: %s %s (%s)", c.FirstName, c.LastName, c.RelationshipCode)
-					if err := recordActivity(tx, "contact_deleted", &participant.ID, author, &delDesc); err != nil {
+				if !newContactIDs[ct.ID] {
+					delDesc := fmt.Sprintf("Contact: %s %s (%s)", ct.FirstName, ct.LastName, ct.RelationshipCode)
+					if err := activityRepo.Record(tx, "contact_deleted", &participant.ID, author, &delDesc); err != nil {
 						return err
 					}
 				}
 			}
 
 			// Replace non-self contacts
-			if err := tx.Where("participant_id = ? AND relationship_code != ?", participant.ID, "self").Delete(&types.Contact{}).Error; err != nil {
+			if err := contactRepo.DeleteNonSelf(tx, participant.ID); err != nil {
 				return err
 			}
 			for _, cr := range req.Contacts {
-				contact := buildContact(participant.ID, cr, req)
-				if err := tx.Create(&contact).Error; err != nil {
+				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.StreetAddress, req.City, req.Province, req.CodePostal)
+				if err := contactRepo.Create(tx, &contact); err != nil {
 					return err
 				}
-
 				contactDesc := fmt.Sprintf("Contact: %s %s (%s)", cr.FirstName, cr.LastName, cr.RelationshipCode)
 				action := "contact_created"
 				if cr.ID > 0 && oldContactIDs[cr.ID] {
 					action = "contact_edited"
 				}
-				if err := recordActivity(tx, action, &participant.ID, author, &contactDesc); err != nil {
+				if err := activityRepo.Record(tx, action, &participant.ID, author, &contactDesc); err != nil {
 					return err
 				}
 			}
 
-			// Ensure at least one contact is primary (fallback to self)
-			if err := enforceSinglePrimary(tx, participant.ID, req.Contacts); err != nil {
+			// Ensure single primary
+			hasPrimary := false
+			for _, cr := range req.Contacts {
+				if cr.IsPrimary {
+					hasPrimary = true
+					break
+				}
+			}
+			if err := contactRepo.SetSelfPrimary(tx, participant.ID, !hasPrimary); err != nil {
 				return err
 			}
 
 			// Log participant_edited only if participant or self-contact actually changed
 			if oldParticipantChanged || oldSelfChanged {
 				details := fmt.Sprintf("%s %s", req.FirstName, req.LastName)
-				if err := recordActivity(tx, "participant_edited", &participant.ID, author, &details); err != nil {
+				if err := activityRepo.Record(tx, "participant_edited", &participant.ID, author, &details); err != nil {
 					return err
 				}
 			}
@@ -448,13 +357,13 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		db.Preload("Contacts").First(&participant, participant.ID)
+		participantRepo.Reload(&participant)
 		c.JSON(http.StatusOK, participant)
 	}
 }
 
 // CreateParticipantHandler creates a new participant with a "self" contact and optional additional contacts.
-func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
+func CreateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.CreateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -490,47 +399,52 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 
 		author := getAuthor(c)
 
-		err = db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Create(&participant).Error; err != nil {
+		err = participantRepo.Transaction(func(tx *gorm.DB) error {
+			if err := participantRepo.Create(tx, &participant); err != nil {
 				return err
 			}
-
-			if err := recordActivity(tx, "participant_created", &participant.ID, author, nil); err != nil {
+			if err := activityRepo.Record(tx, "participant_created", &participant.ID, author, nil); err != nil {
 				return err
 			}
 
 			// Create self contact
 			selfContact := types.Contact{
-				ParticipantID:    participant.ID,
-				FirstName:        req.FirstName,
-				LastName:         req.LastName,
-				RelationshipCode: "self",
-				IsPrimary:        true,
-				Email:            req.Email,
-				Phone:            req.Phone,
-				StreetAddress:    req.StreetAddress,
-				City:             req.City,
-				Province:         req.Province,
-				CodePostal:       req.CodePostal,
+				ParticipantID:     participant.ID,
+				FirstName:         req.FirstName,
+				LastName:          req.LastName,
+				RelationshipCode:  "self",
+				IsPrimary:         true,
+				Email:             req.Email,
+				Phone:             req.Phone,
+				StreetAddress:     req.StreetAddress,
+				City:              req.City,
+				Province:          req.Province,
+				CodePostal:        req.CodePostal,
 				PreferredLanguage: "fr",
 			}
-			if err := tx.Create(&selfContact).Error; err != nil {
+			if err := contactRepo.Create(tx, &selfContact); err != nil {
 				return err
 			}
 
 			// Create additional contacts
 			for _, cr := range req.Contacts {
-				contact := buildContactFromCreate(participant.ID, cr, req)
-				if err := tx.Create(&contact).Error; err != nil {
+				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.StreetAddress, req.City, req.Province, req.CodePostal)
+				if err := contactRepo.Create(tx, &contact); err != nil {
 					return err
 				}
 			}
 
 			// If a non-self contact is primary, self loses the flag
-			if err := enforceSinglePrimary(tx, participant.ID, req.Contacts); err != nil {
-				return err
+			hasPrimary := false
+			for _, cr := range req.Contacts {
+				if cr.IsPrimary {
+					hasPrimary = true
+					break
+				}
 			}
-
+			if hasPrimary {
+				return contactRepo.SetSelfPrimary(tx, participant.ID, false)
+			}
 			return nil
 		})
 
@@ -539,7 +453,7 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		db.Preload("Contacts").First(&participant, participant.ID)
+		participantRepo.Reload(&participant)
 		c.JSON(http.StatusCreated, participant)
 	}
 }

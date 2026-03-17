@@ -35,7 +35,7 @@ export function Navbar() {
 
   return (
     <nav className="h-[var(--height-navbar)] bg-navbar text-navbar-foreground flex items-center px-4">
-      <Link to="/" className="mr-8 hover:opacity-80 transition-opacity">
+      <Link to="/home" className="mr-8 hover:opacity-80 transition-opacity">
         <img
           src="/RARE-Qc_Logo-Colour-300px.png"
           alt="RareQC"

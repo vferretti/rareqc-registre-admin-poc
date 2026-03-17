@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/components/base/table/table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
-import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
+import { TextCell, BadgeCell, TimestampCell } from "@/components/base/table/cells";
 import { PageHeader } from "@/components/base/page/page-header";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
 import {
@@ -34,7 +34,25 @@ import {
 } from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
 import { ACTION_BADGE } from "@/lib/badge-variants";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/base/ui/select";
+import { InputSearch } from "@/components/base/input-search";
+import { HighlightText } from "@/components/base/highlight-text";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { ActivityLog } from "@/types/activity-log";
+
+const ACTION_TYPES = [
+  "participant_created",
+  "participant_edited",
+  "contact_created",
+  "contact_edited",
+  "contact_deleted",
+] as const;
 
 /** Global activity logs page with server-side pagination and sorting. */
 export default function ActivityLogs() {
@@ -51,12 +69,22 @@ export default function ActivityLogs() {
     right: [],
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const [search, setSearch] = useState("");
+  const [actionType, setActionType] = useState("");
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch, actionType]);
 
   const { logs, total, totalPages, isLoading, error } = useActivityLogs({
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     sortField: sorting[0]?.id ?? "created_at",
     sortOrder: sorting[0]?.desc ? "desc" : "asc",
+    search: debouncedSearch || undefined,
+    actionType: actionType || undefined,
   });
 
   const columns = useMemo<ColumnDef<ActivityLog>[]>(
@@ -73,7 +101,9 @@ export default function ActivityLogs() {
             {t("activity_log.columns.date")}
           </SortableHeader>
         ),
-        cell: ({ getValue }) => <DateCell date={getValue<string | null>()} />,
+        cell: ({ getValue }) => (
+          <TimestampCell date={getValue<string | null>()} />
+        ),
       },
       {
         accessorKey: "author",
@@ -87,7 +117,11 @@ export default function ActivityLogs() {
             {t("activity_log.columns.author")}
           </SortableHeader>
         ),
-        cell: ({ getValue }) => <TextCell>{getValue<string>()}</TextCell>,
+        cell: ({ getValue }) => (
+          <TextCell>
+            <HighlightText text={getValue<string>()} highlight={debouncedSearch} />
+          </TextCell>
+        ),
       },
       {
         accessorKey: "action_type_code",
@@ -123,7 +157,7 @@ export default function ActivityLogs() {
               to={`/participants/${id}`}
               className="text-primary underline hover:text-primary/80"
             >
-              {name}
+              <HighlightText text={name} highlight={debouncedSearch} />
             </Link>
           );
         },
@@ -133,9 +167,15 @@ export default function ActivityLogs() {
         size: 250,
         enableSorting: false,
         header: () => t("activity_log.columns.details"),
-        cell: ({ getValue }) => (
-          <TextCell>{getValue<string | null>() ?? "—"}</TextCell>
-        ),
+        cell: ({ getValue }) => {
+          const val = getValue<string | null>();
+          if (!val) return <TextCell>—</TextCell>;
+          return (
+            <TextCell>
+              <HighlightText text={val} highlight={debouncedSearch} />
+            </TextCell>
+          );
+        },
       },
     ],
     [t],
@@ -168,6 +208,34 @@ export default function ActivityLogs() {
       />
       <div className="p-8">
         <div className="rounded-lg border bg-background p-6">
+          <div className="flex gap-3 mb-6 items-center">
+            <InputSearch
+              value={search}
+              onChange={setSearch}
+              placeholder={t("activity_log.search_placeholder")}
+              className="max-w-2xl flex-1"
+            />
+            <Select
+              value={actionType}
+              onValueChange={(v) => setActionType(v === "all" ? "" : v)}
+            >
+              <SelectTrigger className="w-52">
+                <SelectValue
+                  placeholder={t("activity_log.filter_action_type")}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("activity_log.all_actions")}
+                </SelectItem>
+                {ACTION_TYPES.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {t(`enums.action_type.${code}`, { defaultValue: code })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {error && (
             <p className="text-destructive mb-4">{t("common.error")}</p>
           )}

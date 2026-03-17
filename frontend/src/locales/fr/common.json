@@ -3,6 +3,19 @@
     "title": "RareQC — Registre Admin",
     "description": "Registre québécois de patients atteints de maladies rares"
   },
+  "home": {
+    "title": "Tableau de bord",
+    "description": "Bienvenue sur le portail d'administration du registre",
+    "search_placeholder": "Rechercher un participant par nom, prénom ou RAMQ…",
+    "explore_title": "Navigation",
+    "explore_participants": "Participants",
+    "explore_participants_description": "Consulter et gérer les dossiers des participants",
+    "explore_activity": "Activités",
+    "explore_activity_description": "Consulter le journal des actions sur le registre",
+    "recent_activity": "Activités récentes",
+    "view_all_activity": "Voir toutes les activités →",
+    "search_no_results": "Aucun résultat"
+  },
   "landing": {
     "title": "Portail d'administration du registre des participants",
     "description": "",
@@ -23,7 +36,8 @@
     "add": "Ajouter",
     "search": "Rechercher",
     "noResults": "Aucun résultat",
-    "search_placeholder": "Rechercher…"
+    "search_placeholder": "Rechercher…",
+    "clear": "Effacer"
   },
   "participants": {
     "title": "Participants",
@@ -145,6 +159,9 @@
       "participant": "Participant",
       "details": "Détails"
     },
+    "search_placeholder": "Rechercher par auteur, participant ou détails…",
+    "filter_action_type": "Type d'action",
+    "all_actions": "Toutes les actions",
     "empty": "Aucune activité enregistrée",
     "participant_section_title": "Historique"
   },

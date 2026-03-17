@@ -8,6 +8,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
+	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
 
@@ -24,19 +25,27 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Repositories
+	participantRepo := repository.NewParticipantRepository(db)
+	contactRepo := repository.NewContactRepository(db)
+	activityRepo := repository.NewActivityRepository(db)
+	searchRepo := repository.NewSearchRepository(db)
+
 	api := r.Group("/api")
 	{
 		api.GET("/health", HealthHandler())
 
-		api.GET("/participants", ListParticipantsHandler(db))
-		api.GET("/participants/:id", GetParticipantHandler(db))
-		api.POST("/participants", CreateParticipantHandler(db))
-		api.PUT("/participants/:id", UpdateParticipantHandler(db))
+		api.GET("/participants", ListParticipantsHandler(participantRepo))
+		api.GET("/participants/:id", GetParticipantHandler(participantRepo))
+		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
+		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
 
-		api.DELETE("/contacts/:contactId", DeleteContactHandler(db))
+		api.DELETE("/contacts/:contactId", DeleteContactHandler(contactRepo, activityRepo))
 
-		api.GET("/activity-logs", ListActivityLogsHandler(db))
-		api.GET("/participants/:id/activity-logs", ListParticipantActivityLogsHandler(db))
+		api.GET("/search", SearchHandler(searchRepo))
+
+		api.GET("/activity-logs", ListActivityLogsHandler(activityRepo))
+		api.GET("/participants/:id/activity-logs", ListParticipantActivityLogsHandler(participantRepo, activityRepo))
 	}
 
 	return r

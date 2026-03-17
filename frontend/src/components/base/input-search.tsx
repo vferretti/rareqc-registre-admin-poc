@@ -6,13 +6,18 @@ interface InputSearchProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  onFocus?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
 }
 
+/** Text input with search icon and clearable value. */
 function InputSearch({
   value,
   onChange,
   placeholder,
   className,
+  onFocus,
+  onKeyDown,
 }: InputSearchProps) {
   return (
     <div className={className}>
@@ -23,6 +28,9 @@ function InputSearch({
           placeholder={placeholder}
           className="pr-8"
           startIcon={<SearchIcon />}
+          onFocus={onFocus}
+          onKeyDown={onKeyDown}
+          autoComplete="off"
         />
         {value && (
           <button
