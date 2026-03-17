@@ -8,6 +8,7 @@ export interface Contact {
   is_primary: boolean;
   email: string;
   phone: string;
+  apartment_number: string;
   street_address: string;
   city: string;
   province: string;
@@ -31,6 +32,21 @@ export interface Participant {
   contacts?: Contact[];
   created_at: string;
   updated_at: string;
+}
+
+/** A reference table entry (enum). */
+export interface EnumValue {
+  code: string;
+  name_en: string;
+  name_fr: string;
+}
+
+/** All reference data returned by GET /api/enums. */
+export interface EnumsResponse {
+  sex_at_birth: EnumValue[];
+  vital_status: EnumValue[];
+  relationship: EnumValue[];
+  action_type: EnumValue[];
 }
 
 /** Generic paginated API response wrapper. */

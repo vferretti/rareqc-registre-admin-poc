@@ -13,6 +13,7 @@ type Contact struct {
 	IsPrimary         bool         `json:"is_primary" gorm:"not null;default:false"`
 	Email             string       `json:"email"`
 	Phone             string       `json:"phone"`
+	ApartmentNumber   string       `json:"apartment_number"`
 	StreetAddress     string       `json:"street_address"`
 	City              string       `json:"city"`
 	Province          string       `json:"province"`

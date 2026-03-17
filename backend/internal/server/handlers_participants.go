@@ -70,7 +70,7 @@ func nonSelfContactIDs(contacts []types.Contact) map[int]bool {
 
 // selfContactSnapshot holds the coordinate fields of the "self" contact for before/after comparison.
 type selfContactSnapshot struct {
-	Email, Phone, StreetAddress, City, Province, CodePostal string
+	Email, Phone, ApartmentNumber, StreetAddress, City, Province, CodePostal, PreferredLanguage string
 }
 
 // snapshotSelfContact captures the current coordinate fields of the "self" contact.
@@ -78,15 +78,16 @@ func snapshotSelfContact(contacts []types.Contact) selfContactSnapshot {
 	if sc := findSelfContact(contacts); sc != nil {
 		return selfContactSnapshot{
 			Email: sc.Email, Phone: sc.Phone,
-			StreetAddress: sc.StreetAddress, City: sc.City,
-			Province: sc.Province, CodePostal: sc.CodePostal,
+			ApartmentNumber: sc.ApartmentNumber, StreetAddress: sc.StreetAddress,
+			City: sc.City, Province: sc.Province, CodePostal: sc.CodePostal,
+			PreferredLanguage: sc.PreferredLanguage,
 		}
 	}
 	return selfContactSnapshot{}
 }
 
 // buildContact creates a Contact from a request. Uses participant coordinates when SameCoordinates is true.
-func buildContact(participantID int, cr types.CreateContactRequest, email, phone, street, city, province, postal string) types.Contact {
+func buildContact(participantID int, cr types.CreateContactRequest, email, phone, apt, street, city, province, postal string) types.Contact {
 	contact := types.Contact{
 		ParticipantID:     participantID,
 		FirstName:         cr.FirstName,
@@ -98,6 +99,7 @@ func buildContact(participantID int, cr types.CreateContactRequest, email, phone
 	if cr.SameCoordinates {
 		contact.Email = email
 		contact.Phone = phone
+		contact.ApartmentNumber = apt
 		contact.StreetAddress = street
 		contact.City = city
 		contact.Province = province
@@ -105,6 +107,7 @@ func buildContact(participantID int, cr types.CreateContactRequest, email, phone
 	} else {
 		contact.Email = cr.Email
 		contact.Phone = cr.Phone
+		contact.ApartmentNumber = cr.ApartmentNumber
 		contact.StreetAddress = cr.StreetAddress
 		contact.City = cr.City
 		contact.Province = cr.Province
@@ -133,8 +136,10 @@ func participantFieldsChanged(p types.Participant, req types.UpdateParticipantRe
 // selfContactChanged compares the old self-contact snapshot against the incoming coordinates.
 func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequest) bool {
 	return old.Email != req.Email || old.Phone != req.Phone ||
+		old.ApartmentNumber != req.ApartmentNumber ||
 		old.StreetAddress != req.StreetAddress || old.City != req.City ||
-		old.Province != req.Province || old.CodePostal != req.CodePostal
+		old.Province != req.Province || old.CodePostal != req.CodePostal ||
+		old.PreferredLanguage != req.PreferredLanguage
 }
 
 // --- Handlers ---
@@ -282,10 +287,12 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				sc.LastName = req.LastName
 				sc.Email = req.Email
 				sc.Phone = req.Phone
+				sc.ApartmentNumber = req.ApartmentNumber
 				sc.StreetAddress = req.StreetAddress
 				sc.City = req.City
 				sc.Province = req.Province
 				sc.CodePostal = req.CodePostal
+				sc.PreferredLanguage = req.PreferredLanguage
 				if err := contactRepo.Save(tx, sc); err != nil {
 					return err
 				}
@@ -315,7 +322,7 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				return err
 			}
 			for _, cr := range req.Contacts {
-				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.StreetAddress, req.City, req.Province, req.CodePostal)
+				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.ApartmentNumber, req.StreetAddress, req.City, req.Province, req.CodePostal)
 				if err := contactRepo.Create(tx, &contact); err != nil {
 					return err
 				}
@@ -416,11 +423,12 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				IsPrimary:         true,
 				Email:             req.Email,
 				Phone:             req.Phone,
+				ApartmentNumber:   req.ApartmentNumber,
 				StreetAddress:     req.StreetAddress,
 				City:              req.City,
 				Province:          req.Province,
 				CodePostal:        req.CodePostal,
-				PreferredLanguage: "fr",
+				PreferredLanguage: req.PreferredLanguage,
 			}
 			if err := contactRepo.Create(tx, &selfContact); err != nil {
 				return err
@@ -428,7 +436,7 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 
 			// Create additional contacts
 			for _, cr := range req.Contacts {
-				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.StreetAddress, req.City, req.Province, req.CodePostal)
+				contact := buildContact(participant.ID, cr, req.Email, req.Phone, req.ApartmentNumber, req.StreetAddress, req.City, req.Province, req.CodePostal)
 				if err := contactRepo.Create(tx, &contact); err != nil {
 					return err
 				}

@@ -20,9 +20,17 @@ export function formatPhone(phone: string | null | undefined): string {
   return phone;
 }
 
-/** Joins non-empty address parts (street, city, province, postal code) with ", ". */
+/** Formats a full address line. If apartment is provided, prepends it to street (e.g. "apt. 4, 123 Rue Principale"). */
 export function formatAddress(
-  ...parts: (string | null | undefined)[]
+  apartment: string | null | undefined,
+  street: string | null | undefined,
+  city: string | null | undefined,
+  province: string | null | undefined,
+  postalCode: string | null | undefined,
 ): string {
-  return parts.filter(Boolean).join(", ") || "—";
+  const streetPart =
+    apartment && street
+      ? `${apartment}-${street}`
+      : street || "";
+  return [streetPart, city, province, postalCode].filter(Boolean).join(", ") || "—";
 }

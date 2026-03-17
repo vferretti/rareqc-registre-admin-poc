@@ -10,6 +10,7 @@ type CreateContactRequest struct {
 	SameCoordinates  bool   `json:"same_coordinates"`
 	Email            string `json:"email"`
 	Phone            string `json:"phone"`
+	ApartmentNumber  string `json:"apartment_number"`
 	StreetAddress    string `json:"street_address"`
 	City             string `json:"city"`
 	Province         string `json:"province"`
@@ -27,12 +28,14 @@ type UpdateParticipantRequest struct {
 	VitalStatusCode string `json:"vital_status_code"`
 	DateOfDeath     string `json:"date_of_death"`
 	// Coordinates (update "self" contact)
-	Email         string `json:"email"`
-	Phone         string `json:"phone"`
-	StreetAddress string `json:"street_address"`
-	City          string `json:"city"`
-	Province      string `json:"province"`
-	CodePostal    string `json:"code_postal"`
+	Email           string `json:"email"`
+	Phone           string `json:"phone"`
+	ApartmentNumber string `json:"apartment_number"`
+	StreetAddress   string `json:"street_address"`
+	City            string `json:"city"`
+	Province        string `json:"province"`
+	CodePostal        string `json:"code_postal"`
+	PreferredLanguage string `json:"preferred_language"`
 	// Additional contacts
 	Contacts []CreateContactRequest `json:"contacts"`
 }
@@ -47,12 +50,14 @@ type CreateParticipantRequest struct {
 	VitalStatusCode string `json:"vital_status_code"`
 	DateOfDeath     string `json:"date_of_death"`
 	// Coordinates (become "self" contact)
-	Email         string `json:"email"`
-	Phone         string `json:"phone"`
-	StreetAddress string `json:"street_address"`
-	City          string `json:"city"`
-	Province      string `json:"province"`
-	CodePostal    string `json:"code_postal"`
+	Email             string `json:"email"`
+	Phone             string `json:"phone"`
+	ApartmentNumber   string `json:"apartment_number"`
+	StreetAddress     string `json:"street_address"`
+	City              string `json:"city"`
+	Province          string `json:"province"`
+	CodePostal        string `json:"code_postal"`
+	PreferredLanguage string `json:"preferred_language"`
 	// Additional contacts
 	Contacts []CreateContactRequest `json:"contacts"`
 }

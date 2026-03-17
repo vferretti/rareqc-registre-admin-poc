@@ -43,7 +43,7 @@
     "title": "Participants",
     "description": "List of registry participants",
     "add": "Add participant",
-    "search_placeholder": "Search by name or RAMQ…",
+    "search_placeholder": "Search by last name, first name, RAMQ or phone number.",
     "columns": {
       "id": "ID",
       "last_name": "Last name",
@@ -70,6 +70,7 @@
     "ramq": "RAMQ",
     "email": "Email",
     "phone": "Phone",
+    "apartment_number": "Apt. number",
     "street_address": "Address",
     "city": "City",
     "province": "Province",
@@ -137,6 +138,21 @@
       "guardian": "Guardian",
       "other": "Other"
     },
+    "province": {
+      "AB": "Alberta",
+      "BC": "British Columbia",
+      "MB": "Manitoba",
+      "NB": "New Brunswick",
+      "NL": "Newfoundland and Labrador",
+      "NS": "Nova Scotia",
+      "NT": "Northwest Territories",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "Prince Edward Island",
+      "QC": "Quebec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    },
     "language": {
       "fr": "French",
       "en": "English"
@@ -163,7 +179,11 @@
     "filter_action_type": "Action type",
     "all_actions": "All actions",
     "empty": "No activity recorded",
-    "participant_section_title": "History"
+    "participant_section_title": "History",
+    "show_more": "Show more",
+    "show_less": "Show less",
+    "activity_count_one": "{{count}} activity",
+    "activity_count_other": "{{count}} activities"
   },
   "validation": {
     "required": "This field is required",

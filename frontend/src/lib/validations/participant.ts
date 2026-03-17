@@ -16,6 +16,7 @@ export const contactSchema = (t: TFunction) =>
     is_primary: z.boolean(),
     email: z.string(),
     phone: z.string(),
+    apartment_number: z.string(),
     street_address: z.string(),
     city: z.string(),
     province: z.string(),
@@ -36,10 +37,12 @@ export const participantSchema = (t: TFunction) =>
     date_of_death: z.string(),
     email: z.string(),
     phone: z.string(),
+    apartment_number: z.string(),
     street_address: z.string(),
     city: z.string(),
     province: z.string(),
     code_postal: z.string(),
+    preferred_language: z.string(),
     contacts: z.array(contactSchema(t)),
   });
 

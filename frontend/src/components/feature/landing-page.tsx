@@ -20,6 +20,13 @@ export function LandingPage() {
         {i18n.language === "fr" ? "EN" : "FR"}
       </button>
       <div className="flex w-full max-w-lg flex-col items-center gap-12 p-6">
+        {/* Scientist illustration */}
+        <img
+          src="/RARE-Qc_Scientist-magnifying-glass-1000px.png"
+          alt=""
+          className="h-40"
+        />
+
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
           <img

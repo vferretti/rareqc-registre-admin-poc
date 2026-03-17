@@ -35,6 +35,8 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { Contact, Participant } from "@/types/participant";
+import { useEnums } from "@/hooks/useEnums";
+import { LANGUAGE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/constants";
 
 interface ContactFormDialogProps {
   open: boolean;
@@ -45,9 +47,6 @@ interface ContactFormDialogProps {
   contact?: Contact | null;
 }
 
-const RELATIONSHIP_OPTIONS = ["mother", "father", "guardian", "other"] as const;
-const LANGUAGE_OPTIONS = ["fr", "en"] as const;
-
 const EMPTY_CONTACT: ContactFormValues = {
   first_name: "",
   last_name: "",
@@ -57,6 +56,7 @@ const EMPTY_CONTACT: ContactFormValues = {
   is_primary: false,
   email: "",
   phone: "",
+  apartment_number: "",
   street_address: "",
   city: "",
   province: "QC",
@@ -75,6 +75,7 @@ function contactToFormValues(c: Contact): ContactFormValues {
     is_primary: c.is_primary,
     email: c.email,
     phone: c.phone,
+    apartment_number: c.apartment_number,
     street_address: c.street_address,
     city: c.city,
     province: c.province,
@@ -88,6 +89,7 @@ function getParticipantCoordinates(participant: Participant) {
   return {
     email: self?.email ?? "",
     phone: self?.phone ?? "",
+    apartment_number: self?.apartment_number ?? "",
     street_address: self?.street_address ?? "",
     city: self?.city ?? "",
     province: self?.province ?? "QC",
@@ -114,6 +116,7 @@ function buildContactsPayload(
         is_primary: hasPrimaryInNew ? false : c.is_primary,
         email: c.email,
         phone: c.phone,
+        apartment_number: c.apartment_number,
         street_address: c.street_address,
         city: c.city,
         province: c.province,
@@ -140,6 +143,7 @@ function buildEditContactPayload(
         is_primary: editedContact.is_primary ? false : c.is_primary,
         email: c.email,
         phone: c.phone,
+        apartment_number: c.apartment_number,
         street_address: c.street_address,
         city: c.city,
         province: c.province,
@@ -160,9 +164,11 @@ export function ContactFormDialog({
   participant,
   contact = null,
 }: ContactFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { enums } = useEnums();
   const isEdit = !!contact;
+  const lang = i18n.language === "fr" ? "name_fr" : "name_en";
 
   const schema = contactsFormSchema(t);
 
@@ -225,10 +231,12 @@ export function ContactFormDialog({
         date_of_death: participant.date_of_death?.slice(0, 10) ?? "",
         email: selfContact?.email ?? "",
         phone: selfContact?.phone ?? "",
+        apartment_number: selfContact?.apartment_number ?? "",
         street_address: selfContact?.street_address ?? "",
         city: selfContact?.city ?? "",
         province: selfContact?.province ?? "QC",
         code_postal: selfContact?.code_postal ?? "",
+        preferred_language: selfContact?.preferred_language ?? "fr",
         contacts,
       });
       form.reset({ contacts: [{ ...EMPTY_CONTACT }] });
@@ -325,9 +333,9 @@ export function ContactFormDialog({
                               <SelectTrigger><SelectValue /></SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {RELATIONSHIP_OPTIONS.map((code) => (
-                                <SelectItem key={code} value={code}>
-                                  {t(`enums.relationship.${code}`)}
+                              {enums?.relationship.filter((e) => e.code !== "self").map((e) => (
+                                <SelectItem key={e.code} value={e.code}>
+                                  {e[lang]}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -386,6 +394,7 @@ export function ContactFormDialog({
                         if (isSame) {
                           form.setValue(`contacts.${index}.email`, coords.email);
                           form.setValue(`contacts.${index}.phone`, coords.phone);
+                          form.setValue(`contacts.${index}.apartment_number`, coords.apartment_number);
                           form.setValue(`contacts.${index}.street_address`, coords.street_address);
                           form.setValue(`contacts.${index}.city`, coords.city);
                           form.setValue(`contacts.${index}.province`, coords.province);
@@ -427,19 +436,34 @@ export function ContactFormDialog({
                         )}
                       />
                     </div>
-                    <FormField
-                      schema={null}
-                      control={form.control}
-                      name={`contacts.${index}.street_address`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("create_participant.street_address")}</FormLabel>
-                          <FormControl>
-                            <Input {...field} disabled={sameCoordinates} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        schema={null}
+                        control={form.control}
+                        name={`contacts.${index}.street_address`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("create_participant.street_address")}</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={sameCoordinates} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        schema={null}
+                        control={form.control}
+                        name={`contacts.${index}.apartment_number`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("create_participant.apartment_number")}</FormLabel>
+                            <FormControl>
+                              <Input {...field} disabled={sameCoordinates} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         schema={null}
@@ -461,9 +485,18 @@ export function ContactFormDialog({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>{t("create_participant.province")}</FormLabel>
-                            <FormControl>
-                              <Input {...field} disabled={sameCoordinates} />
-                            </FormControl>
+                            <Select value={field.value} onValueChange={field.onChange} disabled={sameCoordinates}>
+                              <FormControl>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {PROVINCE_OPTIONS.map((code) => (
+                                  <SelectItem key={code} value={code}>
+                                    {t(`enums.province.${code}`)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormItem>
                         )}
                       />

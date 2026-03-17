@@ -32,6 +32,8 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { Participant } from "@/types/participant";
+import { useEnums } from "@/hooks/useEnums";
+import { LANGUAGE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/constants";
 
 interface ParticipantFormDialogProps {
   open: boolean;
@@ -51,15 +53,14 @@ const DEFAULT_VALUES: ParticipantFormValues = {
   date_of_death: "",
   email: "",
   phone: "",
+  apartment_number: "",
   street_address: "",
   city: "",
   province: "QC",
   code_postal: "",
+  preferred_language: "fr",
   contacts: [],
 };
-
-const SEX_OPTIONS = ["male", "female", "unknown"] as const;
-const VITAL_STATUS_OPTIONS = ["alive", "deceased", "unknown"] as const;
 
 function participantToFormValues(p: Participant): ParticipantFormValues {
   const selfContact = p.contacts?.find((c) => c.relationship_code === "self");
@@ -73,10 +74,12 @@ function participantToFormValues(p: Participant): ParticipantFormValues {
     date_of_death: p.date_of_death ? p.date_of_death.slice(0, 10) : "",
     email: selfContact?.email ?? "",
     phone: selfContact?.phone ?? "",
+    apartment_number: selfContact?.apartment_number ?? "",
     street_address: selfContact?.street_address ?? "",
     city: selfContact?.city ?? "",
     province: selfContact?.province ?? "QC",
     code_postal: selfContact?.code_postal ?? "",
+    preferred_language: selfContact?.preferred_language ?? "fr",
     contacts:
       p.contacts
         ?.filter((c) => c.relationship_code !== "self")
@@ -90,6 +93,7 @@ function participantToFormValues(p: Participant): ParticipantFormValues {
           is_primary: c.is_primary,
           email: c.email,
           phone: c.phone,
+          apartment_number: c.apartment_number,
           street_address: c.street_address,
           city: c.city,
           province: c.province,
@@ -104,9 +108,11 @@ export function ParticipantFormDialog({
   onSuccess,
   participant,
 }: ParticipantFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { enums } = useEnums();
   const isEdit = !!participant;
+  const lang = i18n.language === "fr" ? "name_fr" : "name_en";
 
   const schema = participantSchema(t);
 
@@ -247,9 +253,9 @@ export function ParticipantFormDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {SEX_OPTIONS.map((code) => (
-                            <SelectItem key={code} value={code}>
-                              {t(`enums.sex_at_birth.${code}`)}
+                          {enums?.sex_at_birth.map((e) => (
+                            <SelectItem key={e.code} value={e.code}>
+                              {e[lang]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -297,9 +303,9 @@ export function ParticipantFormDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {VITAL_STATUS_OPTIONS.map((code) => (
-                            <SelectItem key={code} value={code}>
-                              {t(`enums.vital_status.${code}`)}
+                          {enums?.vital_status.map((e) => (
+                            <SelectItem key={e.code} value={e.code}>
+                              {e[lang]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -365,21 +371,38 @@ export function ParticipantFormDialog({
                   )}
                 />
               </div>
-              <FormField
-                schema={schema}
-                control={form.control}
-                name="street_address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("create_participant.street_address")}
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  schema={schema}
+                  control={form.control}
+                  name="street_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("create_participant.street_address")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  schema={schema}
+                  control={form.control}
+                  name="apartment_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("create_participant.apartment_number")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   schema={schema}
@@ -401,9 +424,18 @@ export function ParticipantFormDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t("create_participant.province")}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROVINCE_OPTIONS.map((code) => (
+                            <SelectItem key={code} value={code}>
+                              {t(`enums.province.${code}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
@@ -424,7 +456,30 @@ export function ParticipantFormDialog({
                     </FormItem>
                   )}
                 />
-                <div />
+                <FormField
+                  schema={schema}
+                  control={form.control}
+                  name="preferred_language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("create_participant.preferred_language")}
+                      </FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {LANGUAGE_OPTIONS.map((code) => (
+                            <SelectItem key={code} value={code}>
+                              {t(`enums.language.${code}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
               </div>
             </fieldset>
 

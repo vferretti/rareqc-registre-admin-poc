@@ -43,7 +43,7 @@
     "title": "Participants",
     "description": "Liste des participants du registre",
     "add": "Ajouter un participant",
-    "search_placeholder": "Rechercher par nom ou RAMQ…",
+    "search_placeholder": "Rechercher par nom, prénom, RAMQ ou numéro de téléphone.",
     "columns": {
       "id": "ID",
       "last_name": "Nom",
@@ -70,6 +70,7 @@
     "ramq": "RAMQ",
     "email": "Courriel",
     "phone": "Téléphone",
+    "apartment_number": "N° d'appartement",
     "street_address": "Adresse",
     "city": "Ville",
     "province": "Province",
@@ -137,6 +138,21 @@
       "guardian": "Tuteur/Tutrice",
       "other": "Autre"
     },
+    "province": {
+      "AB": "Alberta",
+      "BC": "Colombie-Britannique",
+      "MB": "Manitoba",
+      "NB": "Nouveau-Brunswick",
+      "NL": "Terre-Neuve-et-Labrador",
+      "NS": "Nouvelle-Écosse",
+      "NT": "Territoires du Nord-Ouest",
+      "NU": "Nunavut",
+      "ON": "Ontario",
+      "PE": "Île-du-Prince-Édouard",
+      "QC": "Québec",
+      "SK": "Saskatchewan",
+      "YT": "Yukon"
+    },
     "language": {
       "fr": "Français",
       "en": "Anglais"
@@ -163,7 +179,11 @@
     "filter_action_type": "Type d'action",
     "all_actions": "Toutes les actions",
     "empty": "Aucune activité enregistrée",
-    "participant_section_title": "Historique"
+    "participant_section_title": "Historique",
+    "show_more": "Voir plus",
+    "show_less": "Voir moins",
+    "activity_count_one": "{{count}} activité",
+    "activity_count_other": "{{count}} activités"
   },
   "validation": {
     "required": "Ce champ est obligatoire",

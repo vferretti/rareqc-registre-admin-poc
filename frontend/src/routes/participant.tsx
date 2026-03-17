@@ -105,6 +105,7 @@ function ContactCard({
         </Field>
         <Field label={t("participant_detail.street_address")}>
           {formatAddress(
+            contact.apartment_number,
             contact.street_address,
             contact.city,
             contact.province,
@@ -279,11 +280,19 @@ export default function ParticipantDetail() {
                   <Field label={t("participant_detail.street_address")}>
                     {selfContact
                       ? formatAddress(
+                          selfContact.apartment_number,
                           selfContact.street_address,
                           selfContact.city,
                           selfContact.province,
                           selfContact.code_postal,
                         )
+                      : "—"}
+                  </Field>
+                  <Field label={t("participant_detail.preferred_language")}>
+                    {selfContact
+                      ? t(`enums.language.${selfContact.preferred_language}`, {
+                          defaultValue: selfContact.preferred_language,
+                        })
                       : "—"}
                   </Field>
                 </dl>
@@ -330,16 +339,7 @@ export default function ParticipantDetail() {
           </div>
 
           {/* Right column — Activity history */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {t("activity_log.participant_section_title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ParticipantActivityLog participantId={participant.id} />
-            </CardContent>
-          </Card>
+          <ParticipantActivityLog participantId={participant.id} />
         </div>
       </div>
 
