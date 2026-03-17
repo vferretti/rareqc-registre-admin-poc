@@ -24,5 +24,5 @@ type Contact struct {
 }
 
 func (Contact) TableName() string {
-	return "contacts"
+	return "contact"
 }

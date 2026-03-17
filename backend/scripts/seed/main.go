@@ -76,9 +76,9 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
-	db.Exec("DELETE FROM activity_logs")
-	db.Exec("DELETE FROM contacts")
-	db.Exec("DELETE FROM participants")
+	db.Exec("DELETE FROM activity_log")
+	db.Exec("DELETE FROM contact")
+	db.Exec("DELETE FROM participant")
 
 	log.Println("Seeding 100 participants...")
 

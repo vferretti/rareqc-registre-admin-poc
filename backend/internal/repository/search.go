@@ -8,7 +8,7 @@ import (
 	"registre-admin/internal/types"
 )
 
-// SearchRepository handles search queries across participants and contacts.
+// SearchRepository handles search queries across participants and contact.
 type SearchRepository struct {
 	db *gorm.DB
 }
@@ -26,7 +26,7 @@ type SearchSuggestion struct {
 	MatchValue      string `json:"match_value"`
 }
 
-// Search returns up to 10 suggestions matching a query across participants and contacts.
+// Search returns up to 10 suggestions matching a query across participants and contact.
 func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	like := fmt.Sprintf("%%%s%%", strings.ToLower(q))
 	var suggestions []SearchSuggestion
@@ -34,9 +34,9 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	// Search by participant name, RAMQ, or self-contact phone/email
 	var participants []types.Participant
 	r.db.Preload("Contacts", "relationship_code = 'self'").
-		Joins("LEFT JOIN contacts ON contacts.participant_id = participants.id AND contacts.relationship_code = 'self'").
+		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
 		Where(
-			"unaccent(lower(participants.first_name)) LIKE unaccent(?) OR unaccent(lower(participants.last_name)) LIKE unaccent(?) OR unaccent(lower(participants.first_name || ' ' || participants.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participants.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contacts.email) LIKE ? OR contacts.phone LIKE ?",
+			"unaccent(lower(participant.first_name)) LIKE unaccent(?) OR unaccent(lower(participant.last_name)) LIKE unaccent(?) OR unaccent(lower(participant.first_name || ' ' || participant.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
 			like, like, like, like, like, like,
 		).Limit(10).Find(&participants)
 

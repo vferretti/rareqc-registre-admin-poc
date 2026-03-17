@@ -40,9 +40,9 @@ func AutoMigrate(db *gorm.DB) error {
 		log.Println("Dropped legacy participant_has_contacts table")
 	}
 	// Clear old contacts that lack participant_id column (pre-1:n schema)
-	if db.Migrator().HasTable("contacts") && !db.Migrator().HasColumn(&types.Contact{}, "participant_id") {
-		db.Exec("DELETE FROM contacts")
-		db.Exec("DELETE FROM participants")
+	if db.Migrator().HasTable("contact") && !db.Migrator().HasColumn(&types.Contact{}, "participant_id") {
+		db.Exec("DELETE FROM contact")
+		db.Exec("DELETE FROM participant")
 		log.Println("Cleared legacy n:n data from contacts/participants")
 	}
 

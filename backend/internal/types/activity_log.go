@@ -13,4 +13,4 @@ type ActivityLog struct {
 	CreatedAt      time.Time    `json:"created_at" gorm:"autoCreateTime;index"`
 }
 
-func (ActivityLog) TableName() string { return "activity_logs" }
+func (ActivityLog) TableName() string { return "activity_log" }

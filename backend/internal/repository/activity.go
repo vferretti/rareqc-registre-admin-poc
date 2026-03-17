@@ -45,10 +45,10 @@ type ListParams struct {
 
 // activitySortFields maps allowed query sort fields to their qualified column names.
 var activitySortFields = map[string]string{
-	"id":               "activity_logs.id",
-	"created_at":       "activity_logs.created_at",
-	"action_type_code": "activity_logs.action_type_code",
-	"author":           "activity_logs.author",
+	"id":               "activity_log.id",
+	"created_at":       "activity_log.created_at",
+	"action_type_code": "activity_log.action_type_code",
+	"author":           "activity_log.author",
 }
 
 // List returns a paginated list of activity logs with optional filtering and participant names.
@@ -64,9 +64,9 @@ func (r *ActivityRepository) List(p ListParams) ([]ActivityLogResponse, int, int
 	if p.Search != "" {
 		like := "%" + p.Search + "%"
 		query = query.
-			Joins("LEFT JOIN participants ON participants.id = activity_logs.participant_id").
+			Joins("LEFT JOIN participant ON participant.id = activity_log.participant_id").
 			Where(
-				"activity_logs.author ILIKE ? OR activity_logs.details ILIKE ? OR CONCAT(participants.first_name, ' ', participants.last_name) ILIKE ?",
+				"activity_log.author ILIKE ? OR activity_log.details ILIKE ? OR CONCAT(participant.first_name, ' ', participant.last_name) ILIKE ?",
 				like, like, like,
 			)
 	}
@@ -79,7 +79,7 @@ func (r *ActivityRepository) List(p ListParams) ([]ActivityLogResponse, int, int
 	// Sort
 	sortCol, ok := activitySortFields[p.SortField]
 	if !ok {
-		sortCol = "activity_logs.created_at"
+		sortCol = "activity_log.created_at"
 	}
 	order := sortCol
 	if p.SortOrder == "desc" {
