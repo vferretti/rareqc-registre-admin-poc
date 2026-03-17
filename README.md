@@ -79,8 +79,6 @@ docker compose --profile dev run --rm seed
 
 ---
 
---
-
 ## Données de test (seed)
 
 Le seed génère 100 participants réalistes :
