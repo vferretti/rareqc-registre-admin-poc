@@ -1,5 +1,6 @@
 package types
 
+// CreateContactRequest represents the payload for creating or updating a contact.
 type CreateContactRequest struct {
 	ID               int    `json:"id,omitempty"`
 	FirstName        string `json:"first_name"`
@@ -16,6 +17,7 @@ type CreateContactRequest struct {
 	PreferredLanguage string `json:"preferred_language"`
 }
 
+// UpdateParticipantRequest represents the payload for updating a participant's identity and contacts.
 type UpdateParticipantRequest struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`
@@ -35,6 +37,7 @@ type UpdateParticipantRequest struct {
 	Contacts []CreateContactRequest `json:"contacts"`
 }
 
+// CreateParticipantRequest represents the payload for registering a new participant.
 type CreateParticipantRequest struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`

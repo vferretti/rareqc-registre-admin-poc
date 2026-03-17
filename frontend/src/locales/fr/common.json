@@ -11,7 +11,7 @@
   "nav": {
     "home": "Accueil",
     "patients": "Participants",
-    "activity": "Activité"
+    "activity": "Activités"
   },
   "common": {
     "loading": "Chargement…",
@@ -46,6 +46,7 @@
     "section_participant": "Participant",
     "section_coordinates": "Coordonnées",
     "section_contacts": "Personnes contact",
+    "contact_ordinal": "Contact {{number}}",
     "first_name": "Prénom",
     "last_name": "Nom",
     "date_of_birth": "Date de naissance",
@@ -74,9 +75,6 @@
     "success": "Participant modifié avec succès",
     "error": "Erreur lors de la modification du participant"
   },
-  "edit_contacts": {
-    "title": "Modifier les contacts"
-  },
   "participant_detail": {
     "section_identity": "Identité",
     "section_coordinates": "Coordonnées",
@@ -102,7 +100,8 @@
     "add_contacts": "Ajouter des contacts",
     "add_contacts_title": "Ajouter des contacts pour ce participant",
     "edit_contact_title": "Modifier le contact",
-    "confirm_delete_contact": "Supprimer le contact {{name}} ?",
+    "delete_contact_title": "Supprimer un contact",
+    "confirm_delete_contact": "Êtes-vous certain de vouloir supprimer le contact {{name}} ? Cette action est irréversible.",
     "no_contacts": "Aucun contact inscrit pour ce participant",
     "na": "—"
   },
@@ -137,8 +136,8 @@
     }
   },
   "activity_log": {
-    "title": "Journal d'activité",
-    "description": "Historique des actions sur le portail",
+    "title": "Journal d'activités",
+    "description": "Historique des actions sur le registre",
     "columns": {
       "date": "Date",
       "author": "Auteur",

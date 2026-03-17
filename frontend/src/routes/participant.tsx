@@ -14,7 +14,18 @@ import {
   CardTitle,
 } from "@/components/base/ui/card";
 import { Badge } from "@/components/base/badges/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/base/ui/alert-dialog";
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
+import { ContactFormDialog } from "@/components/feature/contact-form-dialog";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
 import { formatDate, formatAddress } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
@@ -118,17 +129,18 @@ export default function ParticipantDetail() {
   const [editParticipantOpen, setEditParticipantOpen] = useState(false);
   const [editContactsOpen, setEditContactsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
 
   /** Deletes a contact after user confirmation. */
-  const handleDeleteContact = async (contact: Contact) => {
-    if (!confirm(t("participant_detail.confirm_delete_contact", { name: `${contact.first_name} ${contact.last_name}` }))) {
-      return;
-    }
+  const confirmDeleteContact = async () => {
+    if (!deletingContact) return;
     try {
-      await api.delete(`/contacts/${contact.id}`);
+      await api.delete(`/contacts/${deletingContact.id}`);
       mutate(undefined, { revalidate: true });
     } catch {
       // silently fail — API error
+    } finally {
+      setDeletingContact(null);
     }
   };
 
@@ -308,7 +320,7 @@ export default function ParticipantDetail() {
                         contact={contact}
                         t={t}
                         onEdit={() => setEditingContact(contact)}
-                        onDelete={() => handleDeleteContact(contact)}
+                        onDelete={() => setDeletingContact(contact)}
                       />
                     ))}
                   </div>
@@ -336,29 +348,52 @@ export default function ParticipantDetail() {
         open={editParticipantOpen}
         onOpenChange={setEditParticipantOpen}
         participant={participant}
-        editSection="participant"
         onSuccess={handleSuccess}
       />
 
-      {/* Add contacts dialog */}
-      <ParticipantFormDialog
+      {/* Add contact dialog */}
+      <ContactFormDialog
         open={editContactsOpen}
         onOpenChange={setEditContactsOpen}
         participant={participant}
-        editSection="contacts"
-        addContactsOnly
         onSuccess={handleSuccess}
       />
 
       {/* Edit single contact dialog */}
-      <ParticipantFormDialog
+      <ContactFormDialog
         open={!!editingContact}
         onOpenChange={(open) => { if (!open) setEditingContact(null); }}
         participant={participant}
-        editSection="contacts"
-        editContact={editingContact}
+        contact={editingContact}
         onSuccess={() => { setEditingContact(null); handleSuccess(); }}
       />
+
+      {/* Delete contact confirmation */}
+      <AlertDialog
+        open={!!deletingContact}
+        onOpenChange={(open) => { if (!open) setDeletingContact(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("participant_detail.delete_contact_title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("participant_detail.confirm_delete_contact", {
+                name: deletingContact
+                  ? `${deletingContact.first_name} ${deletingContact.last_name}`
+                  : "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteContact}>
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

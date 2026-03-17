@@ -11,7 +11,7 @@
   "nav": {
     "home": "Home",
     "patients": "Participants",
-    "activity": "Activity"
+    "activity": "Activities"
   },
   "common": {
     "loading": "Loading…",
@@ -46,6 +46,7 @@
     "section_participant": "Participant",
     "section_coordinates": "Contact information",
     "section_contacts": "Contact persons",
+    "contact_ordinal": "Contact {{number}}",
     "first_name": "First name",
     "last_name": "Last name",
     "date_of_birth": "Date of birth",
@@ -74,9 +75,6 @@
     "success": "Participant updated successfully",
     "error": "Error updating participant"
   },
-  "edit_contacts": {
-    "title": "Edit contacts"
-  },
   "participant_detail": {
     "section_identity": "Identity",
     "section_coordinates": "Contact information",
@@ -102,7 +100,8 @@
     "add_contacts": "Add contacts",
     "add_contacts_title": "Add contacts for this participant",
     "edit_contact_title": "Edit contact",
-    "confirm_delete_contact": "Delete contact {{name}}?",
+    "delete_contact_title": "Delete contact",
+    "confirm_delete_contact": "Are you sure you want to delete the contact {{name}}? This action cannot be undone.",
     "no_contacts": "No contacts registered for this participant",
     "na": "—"
   },

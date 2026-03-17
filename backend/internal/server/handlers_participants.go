@@ -44,8 +44,22 @@ func findSelfContact(contacts []types.Contact) *types.Contact {
 	return nil
 }
 
+// validateSinglePrimary returns an error if more than one contact in the request is primary.
+func validateSinglePrimary(contacts []types.CreateContactRequest) error {
+	count := 0
+	for _, c := range contacts {
+		if c.IsPrimary {
+			count++
+		}
+	}
+	if count > 1 {
+		return fmt.Errorf("only one contact can be primary")
+	}
+	return nil
+}
+
 // enforceSinglePrimary ensures exactly one contact is primary per participant.
-// If a new contact is primary, the self contact loses the flag. Otherwise, self becomes primary.
+// If a non-self contact is primary, self loses the flag. Otherwise, self becomes primary.
 func enforceSinglePrimary(tx *gorm.DB, participantID int, newContacts []types.CreateContactRequest) error {
 	hasPrimary := false
 	for _, c := range newContacts {
@@ -320,6 +334,10 @@ func UpdateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
 			return
 		}
+		if err := validateSinglePrimary(req.Contacts); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			return
+		}
 
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
@@ -441,6 +459,10 @@ func CreateParticipantHandler(db *gorm.DB) gin.HandlerFunc {
 		var req types.CreateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			return
+		}
+		if err := validateSinglePrimary(req.Contacts); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
 			return
 		}
 

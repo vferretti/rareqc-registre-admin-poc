@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { formatRAMQ } from "@/lib/validation";
 import {
@@ -25,8 +24,6 @@ import {
 } from "@/components/base/ui/form";
 import { Button } from "@/components/base/ui/button";
 import { Input } from "@/components/base/ui/input";
-import { Label } from "@/components/base/ui/label";
-import { Checkbox } from "@/components/base/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -34,9 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/base/ui/select";
-import type { Contact, Participant } from "@/types/participant";
-
-type EditSection = "participant" | "contacts";
+import type { Participant } from "@/types/participant";
 
 interface ParticipantFormDialogProps {
   open: boolean;
@@ -44,12 +39,6 @@ interface ParticipantFormDialogProps {
   onSuccess?: () => void;
   /** When provided, the dialog opens in edit mode */
   participant?: Participant | null;
-  /** Which section to edit — only used in edit mode */
-  editSection?: EditSection;
-  /** When true, opens the contacts section with an empty list + one blank contact */
-  addContactsOnly?: boolean;
-  /** When provided, opens the contacts section pre-filled with this single contact */
-  editContact?: Contact | null;
 }
 
 const DEFAULT_VALUES: ParticipantFormValues = {
@@ -71,8 +60,6 @@ const DEFAULT_VALUES: ParticipantFormValues = {
 
 const SEX_OPTIONS = ["male", "female", "unknown"] as const;
 const VITAL_STATUS_OPTIONS = ["alive", "deceased", "unknown"] as const;
-const RELATIONSHIP_OPTIONS = ["mother", "father", "guardian", "other"] as const;
-const LANGUAGE_OPTIONS = ["fr", "en"] as const;
 
 function participantToFormValues(p: Participant): ParticipantFormValues {
   const selfContact = p.contacts?.find((c) => c.relationship_code === "self");
@@ -116,15 +103,10 @@ export function ParticipantFormDialog({
   onOpenChange,
   onSuccess,
   participant,
-  editSection = "participant",
-  addContactsOnly = false,
-  editContact = null,
 }: ParticipantFormDialogProps) {
   const { t } = useTranslation();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isEdit = !!participant;
-  const showParticipantFields = !isEdit || editSection === "participant";
-  const showContactFields = !isEdit || editSection === "contacts";
 
   const schema = participantSchema(t);
 
@@ -140,38 +122,12 @@ export function ParticipantFormDialog({
     if (open) {
       if (participant) {
         const values = participantToFormValues(participant);
-        if (editContact) {
-          values.contacts = [
-            {
-              id: editContact.id,
-              first_name: editContact.first_name,
-              last_name: editContact.last_name,
-              relationship_code: editContact.relationship_code,
-              preferred_language: editContact.preferred_language,
-              same_coordinates: false,
-              is_primary: editContact.is_primary,
-              email: editContact.email,
-              phone: editContact.phone,
-              street_address: editContact.street_address,
-              city: editContact.city,
-              province: editContact.province,
-              code_postal: editContact.code_postal,
-            },
-          ];
-        } else if (addContactsOnly) {
-          values.contacts = [];
-        }
         form.reset(values);
       } else {
         form.reset(DEFAULT_VALUES);
       }
     }
-  }, [open, participant, addContactsOnly, editContact, form]);
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "contacts",
-  });
+  }, [open, participant, form]);
 
   const handleOpenChange = (value: boolean) => {
     if (!value) {
@@ -199,36 +155,6 @@ export function ParticipantFormDialog({
     }
   };
 
-  /** Toggles the primary flag: only one contact can be primary at a time, or none. */
-  const togglePrimaryContact = (index: number) => {
-    const contacts = form.getValues("contacts");
-    const isAlreadyPrimary = contacts[index]?.is_primary;
-    contacts.forEach((_, i) => {
-      form.setValue(`contacts.${i}.is_primary`, !isAlreadyPrimary && i === index);
-    });
-  };
-
-  const addContact = () => {
-    append({
-      first_name: "",
-      last_name: "",
-      relationship_code: "",
-      preferred_language: "fr",
-      same_coordinates: true,
-      is_primary: false,
-      email: "",
-      phone: "",
-      street_address: "",
-      city: "",
-      province: "QC",
-      code_postal: "",
-    });
-  };
-
-  const removeContact = (index: number) => {
-    remove(index);
-  };
-
   const vitalStatus = form.watch("vital_status_code");
 
   return (
@@ -238,13 +164,7 @@ export function ParticipantFormDialog({
           <DialogTitle>
             {t(
               isEdit
-                ? editContact
-                  ? "participant_detail.edit_contact_title"
-                  : addContactsOnly
-                    ? "participant_detail.add_contacts_title"
-                    : editSection === "contacts"
-                      ? "edit_contacts.title"
-                      : "edit_participant.title"
+                ? "edit_participant.title"
                 : "create_participant.title",
             )}
           </DialogTitle>
@@ -257,7 +177,6 @@ export function ParticipantFormDialog({
             autoComplete="off"
             className="space-y-6"
           >
-            {showParticipantFields && (<>
             {/* Section 1: Participant */}
             <fieldset className="space-y-4">
               <legend className="text-sm font-semibold text-foreground">
@@ -508,281 +427,6 @@ export function ParticipantFormDialog({
                 <div />
               </div>
             </fieldset>
-            </>)}
-
-            {showContactFields && (<>
-            {/* Section 3: Contacts */}
-            {showParticipantFields && <hr className="border-border" />}
-
-                <fieldset className="space-y-4">
-                  {!addContactsOnly && (
-                    <legend className="text-sm font-semibold text-foreground">
-                      {t("create_participant.section_contacts")}
-                    </legend>
-                  )}
-
-                  {fields.map((field, index) => {
-                    const sameCoordinates = form.watch(
-                      `contacts.${index}.same_coordinates`,
-                    );
-                    return (
-                      <div
-                        key={field.id}
-                        className="space-y-3 rounded-md border border-border p-4"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id={`c-${index}-is-primary`}
-                              checked={form.watch(
-                                `contacts.${index}.is_primary`,
-                              )}
-                              onCheckedChange={() => togglePrimaryContact(index)}
-                            />
-                            <Label
-                              htmlFor={`c-${index}-is-primary`}
-                              className="font-normal"
-                            >
-                              {t("create_participant.is_primary")}
-                            </Label>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeContact(index)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            schema={null}
-                            control={form.control}
-                            name={`contacts.${index}.first_name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {t("create_participant.first_name")}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            schema={null}
-                            control={form.control}
-                            name={`contacts.${index}.last_name`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {t("create_participant.last_name")}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            schema={null}
-                            control={form.control}
-                            name={`contacts.${index}.relationship_code`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {t("create_participant.relationship")}
-                                </FormLabel>
-                                <Select
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {RELATIONSHIP_OPTIONS.map((code) => (
-                                      <SelectItem key={code} value={code}>
-                                        {t(`enums.relationship.${code}`)}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            schema={null}
-                            control={form.control}
-                            name={`contacts.${index}.preferred_language`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {t("create_participant.preferred_language")}
-                                </FormLabel>
-                                <Select
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {LANGUAGE_OPTIONS.map((code) => (
-                                      <SelectItem key={code} value={code}>
-                                        {t(`enums.language.${code}`)}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id={`c-${index}-same-coordinates`}
-                            checked={sameCoordinates}
-                            onCheckedChange={(checked) =>
-                              form.setValue(
-                                `contacts.${index}.same_coordinates`,
-                                checked === true,
-                              )
-                            }
-                          />
-                          <Label
-                            htmlFor={`c-${index}-same-coordinates`}
-                            className="font-normal"
-                          >
-                            {t("create_participant.same_coordinates")}
-                          </Label>
-                        </div>
-
-                        {!sameCoordinates && (
-                          <div className="space-y-3 rounded-md border border-dashed border-border p-3">
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                schema={null}
-                                control={form.control}
-                                name={`contacts.${index}.email`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      {t("create_participant.email")}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input type="email" {...field} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                schema={null}
-                                control={form.control}
-                                name={`contacts.${index}.phone`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      {t("create_participant.phone")}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input type="tel" {...field} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            <FormField
-                              schema={null}
-                              control={form.control}
-                              name={`contacts.${index}.street_address`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>
-                                    {t("create_participant.street_address")}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input {...field} />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                schema={null}
-                                control={form.control}
-                                name={`contacts.${index}.city`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      {t("create_participant.city")}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                schema={null}
-                                control={form.control}
-                                name={`contacts.${index}.province`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      {t("create_participant.province")}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                schema={null}
-                                control={form.control}
-                                name={`contacts.${index}.code_postal`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      {t("create_participant.code_postal")}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input {...field} />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <div />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addContact}
-                  >
-                    <Plus className="mr-1 size-4" />
-                    {t("create_participant.add_contact")}
-                  </Button>
-                </fieldset>
-            </>)}
 
             {submitError && (
               <p className="text-sm text-destructive">{submitError}</p>
