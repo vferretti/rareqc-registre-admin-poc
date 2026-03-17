@@ -6,7 +6,7 @@
   "home": {
     "title": "Tableau de bord",
     "description": "Bienvenue sur le portail d'administration du registre",
-    "search_placeholder": "Rechercher un participant par nom, prénom ou RAMQ…",
+    "search_placeholder": "Rechercher par nom, prénom, RAMQ ou numéro de téléphone.",
     "explore_title": "Navigation",
     "explore_participants": "Participants",
     "explore_participants_description": "Consulter et gérer les dossiers des participants",
