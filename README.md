@@ -1,6 +1,6 @@
 # RareQC — Registre Admin (POC)
 
-Application web d'administration pour un registre québécois de maladies rares. Permet la gestion des dossiers patients, de leurs contacts et des métadonnées du registre.
+Application web d'administration pour un registre québécois de maladies rares. Permet la gestion des participants (patients), de leurs contacts, et le suivi de l'historique des modifications.
 
 ## Stack technique
 
@@ -9,35 +9,45 @@ Application web d'administration pour un registre québécois de maladies rares.
 | **Backend**  | Go 1.24, Gin, GORM, PostgreSQL 16, Swagger (swaggo)               |
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, i18next   |
 | **Infra**    | Docker Compose (PostgreSQL, Go API, Nginx)                         |
-| **Qualité**  | ESLint, Prettier, Husky + lint-staged, Conventional Commits        |
+| **Qualité**  | ESLint, Prettier, Husky + lint-staged                              |
 
 ## Prérequis
 
 - [Docker](https://docs.docker.com/get-docker/) et Docker Compose
-- [Go 1.24+](https://go.dev/dl/) (développement local backend)
-- [Node.js 22+](https://nodejs.org/) via nvm (développement local frontend)
+- [Go 1.24+](https://go.dev/dl/) (développement backend local)
+- [Node.js 22+](https://nodejs.org/) via nvm (développement frontend local)
+
+---
 
 ## Démarrage rapide
 
-### 1. Lancer la stack (API + PostgreSQL)
+### Option 1 — Stack Docker complète
 
 ```bash
-docker compose up --build api
-```
+# Démarrer tous les services (API + PostgreSQL + Frontend)
+docker compose up --build
 
-L'API attend automatiquement que PostgreSQL soit prêt (healthcheck) avant de démarrer. Les migrations sont appliquées au démarrage.
-
-### 2. Charger les données de test
-
-```bash
+# Charger les données de test (dans un autre terminal)
 docker compose --profile dev run --rm seed
 ```
 
-Le seed attend que l'API soit healthy (migrations terminées) avant de s'exécuter. Génère 100 participants réalistes (noms québécois, RAMQ, contacts). Le seed est dans un profil Docker `dev` séparé et n'est **jamais inclus dans l'image de production**.
+| Service    | URL                          |
+|------------|------------------------------|
+| Frontend   | http://localhost:3001         |
+| API        | http://localhost:8082/api     |
+| Swagger    | http://localhost:8082/swagger |
+| PostgreSQL | localhost:5440               |
 
-### 3. Lancer le frontend (dev)
+### Option 2 — Développement local (frontend)
 
 ```bash
+# 1. Démarrer l'API + PostgreSQL avec Docker
+docker compose up --build api
+
+# 2. Charger les données de test
+docker compose --profile dev run --rm seed
+
+# 3. Lancer le frontend en mode dev
 cd frontend
 npm install
 npm run dev
@@ -45,183 +55,70 @@ npm run dev
 
 | Service    | URL                          |
 |------------|------------------------------|
-| Frontend   | http://localhost:5173 (dev)   |
+| Frontend   | http://localhost:5173         |
 | API        | http://localhost:8082/api     |
 | Swagger    | http://localhost:8082/swagger |
 | PostgreSQL | localhost:5440               |
 
 Le serveur Vite proxy automatiquement `/api` vers le port 8082.
 
-### Stack Docker complète (prod)
+### Réinitialiser la base de données
+
+Si la base de données est dans un état incohérent ou si le schéma a changé, on peut tout supprimer et recréer :
 
 ```bash
-docker compose up --build
-```
-
-Le frontend sera sur http://localhost:3001.
-
-### Repartir de zéro
-
-Supprime le volume PostgreSQL et recrée tout :
-
-```bash
+# 1. Arrêter les services et supprimer le volume PostgreSQL (efface toutes les données)
 docker compose down -v
+
+# 2. Relancer l'API (recrée la BD vide avec les migrations)
 docker compose up --build api -d
+
+# 3. Recharger les données de test
 docker compose --profile dev run --rm seed
 ```
 
-## Architecture
+---
 
-```
-├── backend/
-│   ├── cmd/api/main.go                 # Point d'entrée
-│   ├── internal/
-│   │   ├── database/
-│   │   │   ├── postgres.go             # Connexion PostgreSQL
-│   │   │   └── migrate.go             # AutoMigrate + tables de référence
-│   │   ├── server/
-│   │   │   ├── handlers.go            # Routes Gin
-│   │   │   ├── handlers_health.go     # GET /api/health
-│   │   │   └── handlers_participants.go # CRUD participants
-│   │   ├── types/                     # Modèles GORM + DTOs
-│   │   └── repository/               # Interfaces DAO (à venir)
-│   ├── scripts/seed/                  # Seed réaliste
-│   └── Dockerfile                     # Multi-stage build
-├── frontend/
-│   ├── src/
-│   │   ├── main.tsx                   # Router React Router v7
-│   │   ├── components/
-│   │   │   ├── base/ui/              # shadcn/ui (Button, Dialog, Form…)
-│   │   │   ├── base/table/           # Table, Pagination, SortableHeader
-│   │   │   ├── feature/              # CreateParticipantDialog, LandingPage
-│   │   │   └── layout/               # Navbar
-│   │   ├── routes/                    # Pages (participants, root)
-│   │   ├── hooks/                     # useParticipants, useDebouncedValue
-│   │   ├── lib/                       # API client, i18n, validation, Zod
-│   │   ├── locales/{fr,en}/           # Traductions
-│   │   └── styles/                    # Tailwind v4 + thème RareQC
-│   ├── nginx.conf                     # Reverse proxy (prod)
-│   └── Dockerfile                     # Multi-stage build
-└── docker-compose.yml
+--
+
+## Données de test (seed)
+
+Le seed génère 100 participants réalistes :
+- **85 enfants** (0-17 ans) avec contact mère (primaire) et optionnellement père
+- **15 adultes** (18-65 ans) avec contact « soi-même » (primaire)
+- Noms québécois, numéros RAMQ, codes postaux et indicatifs régionaux réalistes
+- Entrées d'activité réparties sur 30 jours
+
+```bash
+docker compose --profile dev run --rm seed
 ```
 
-## API
+Le seed est dans un profil Docker `dev` séparé et n'est jamais inclus dans l'image de production.
 
-### Endpoints
-
-| Méthode | Route               | Description                              |
-|---------|----------------------|------------------------------------------|
-| GET     | `/api/health`        | Vérification de santé                    |
-| GET     | `/api/participants`  | Liste paginée, triable, recherche        |
-| POST    | `/api/participants`  | Création d'un participant avec contacts  |
-
-### GET /api/participants — Paramètres
-
-| Paramètre    | Type   | Défaut      | Description                                  |
-|--------------|--------|-------------|----------------------------------------------|
-| `page_index` | int    | `0`         | Index de la page (0-based)                   |
-| `page_size`  | int    | `25`        | Nombre d'éléments par page (max 200)         |
-| `sort_field`  | string | `last_name` | Champ de tri (`first_name`, `last_name`, `date_of_birth`, `sex_at_birth_code`, `vital_status_code`, `ramq`, `created_at`) |
-| `sort_order` | string | `asc`       | Ordre de tri (`asc` ou `desc`)               |
-| `search`     | string | —           | Recherche insensible aux accents (nom, prénom, RAMQ) |
-
-### POST /api/participants — Body
-
-```json
-{
-  "first_name": "Jean",
-  "last_name": "Tremblay",
-  "date_of_birth": "2015-03-14",
-  "sex_at_birth_code": "male",
-  "ramq": "TREB 1503 1412",
-  "vital_status_code": "alive",
-  "email": "jean@exemple.com",
-  "phone": "(514) 555-1234",
-  "street_address": "123 Rue Principale",
-  "city": "Montréal",
-  "province": "QC",
-  "code_postal": "H1A 1A1",
-  "contacts": [
-    {
-      "first_name": "Marie",
-      "last_name": "Tremblay",
-      "relationship_code": "mother",
-      "is_primary": true,
-      "same_coordinates": true,
-      "preferred_language": "fr"
-    }
-  ]
-}
-```
-
-Un contact « soi-même » est automatiquement créé avec les coordonnées du participant. Les contacts additionnels avec `same_coordinates: true` héritent des mêmes coordonnées.
-
-## Base de données
-
-### Modèle de données
-
-```
-┌─────────────┐       ┌─────────────┐
-│ participants │──1:n──│  contacts   │
-└─────────────┘       └─────────────┘
-       │                     │
-       FK                    FK
-       ▼                     ▼
-┌──────────────┐     ┌──────────────┐
-│ sex_at_birth │     │ relationship │
-├──────────────┤     ├──────────────┤
-│ vital_status │     └──────────────┘
-└──────────────┘
-```
-
-### Tables de référence
-
-| Table          | Codes                                      |
-|----------------|--------------------------------------------|
-| `sex_at_birth` | `male`, `female`, `unknown`                |
-| `vital_status` | `alive`, `deceased`, `unknown`             |
-| `relationship` | `self`, `mother`, `father`, `guardian`, `other` |
-
-Les migrations et le seed des tables de référence sont exécutés automatiquement via GORM AutoMigrate au démarrage.
-
-## Frontend
-
-### Fonctionnalités
-
-- **Tableau des participants** — Tri par colonnes, pagination, recherche avec debounce, colonnes redimensionnables
-- **Création de participant** — Formulaire en modale avec validation Zod + React Hook Form
-  - Sections : identité, coordonnées, contacts additionnels
-  - Auto-formatage RAMQ (`AAAA 0000 0000`)
-  - Indicateurs de champs obligatoires (astérisque rouge) détectés automatiquement depuis le schéma Zod
-- **Internationalisation** — Français (défaut) et anglais, avec bascule dans la navbar
-- **Thème** — Mode clair/sombre via `next-themes`
-
-### Conventions de style
-
-Les couleurs sont définies comme tokens sémantiques dans `src/styles/themes/rareqc/theme.css` et consommées via les classes Tailwind (`bg-primary`, `text-muted-foreground`, etc.). Aucune couleur hardcodée dans les composants.
+---
 
 ## Commandes utiles
 
 ```bash
-# Lint
+# Lint frontend
 cd frontend && npm run lint
 
-# Format
+# Formater le code frontend
 cd frontend && npm run format
 
-# Régénérer la doc Swagger
+# Régénérer la documentation Swagger
 cd backend && swag init -g cmd/api/main.go --parseDependency --parseInternal
 ```
 
 ## Variables d'environnement
 
-| Variable          | Défaut             | Description              |
-|-------------------|--------------------|--------------------------|
-| `POSTGRES_HOST`   | `localhost`        | Hôte PostgreSQL          |
-| `POSTGRES_PORT`   | `5432`             | Port PostgreSQL          |
-| `POSTGRES_USER`   | `rareqc`           | Utilisateur BD           |
-| `POSTGRES_PASSWORD`| `rareqc`          | Mot de passe BD          |
-| `POSTGRES_DB`     | `rareqc_registre`  | Nom de la base           |
+| Variable            | Défaut            | Description     |
+|---------------------|-------------------|-----------------|
+| `POSTGRES_HOST`     | `localhost`       | Hôte PostgreSQL |
+| `POSTGRES_PORT`     | `5432`            | Port PostgreSQL |
+| `POSTGRES_USER`     | `rareqc`          | Utilisateur BD  |
+| `POSTGRES_PASSWORD` | `rareqc`          | Mot de passe BD |
+| `POSTGRES_DB`       | `rareqc_registre` | Nom de la base  |
 
 ## Licence
 

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /home/vincent-ferretti/src/rareqc-registre-admin-poc/backend/internal/repository/*.go)"
+    ]
+  }
+}
