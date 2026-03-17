@@ -19,47 +19,54 @@ Application web d'administration pour un registre québécois de maladies rares.
 
 ## Démarrage rapide
 
-### Docker (stack complète)
+### 1. Lancer la stack (API + PostgreSQL)
 
 ```bash
-docker compose up --build
+docker compose up --build api
 ```
 
-| Service    | URL                          |
-|------------|------------------------------|
-| Frontend   | http://localhost:3001         |
-| API        | http://localhost:8082/api     |
-| Swagger    | http://localhost:8082/swagger |
-| PostgreSQL | localhost:5440               |
+L'API attend automatiquement que PostgreSQL soit prêt (healthcheck) avant de démarrer. Les migrations sont appliquées au démarrage.
 
-### Développement local (recommandé)
+### 2. Charger les données de test
 
 ```bash
-# Terminal 1 — Base de données + API
-docker compose up --build api
+docker compose --profile dev run --rm seed
+```
 
-# Terminal 2 — Frontend
+Le seed attend que l'API soit healthy (migrations terminées) avant de s'exécuter. Génère 100 participants réalistes (noms québécois, RAMQ, contacts). Le seed est dans un profil Docker `dev` séparé et n'est **jamais inclus dans l'image de production**.
+
+### 3. Lancer le frontend (dev)
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Le frontend sera disponible sur http://localhost:5173 avec proxy automatique vers l'API sur le port 8082.
+| Service    | URL                          |
+|------------|------------------------------|
+| Frontend   | http://localhost:5173 (dev)   |
+| API        | http://localhost:8082/api     |
+| Swagger    | http://localhost:8082/swagger |
+| PostgreSQL | localhost:5440               |
 
-### Données de test (seed)
+Le serveur Vite proxy automatiquement `/api` vers le port 8082.
 
-Génère 100 participants réalistes (noms québécois, RAMQ, contacts). Le seed est dans un profil Docker `dev` séparé et n'est **jamais inclus dans l'image de production**.
+### Stack Docker complète (prod)
 
 ```bash
-# Première fois ou après un reset de la BD
-docker compose --profile dev run --rm seed
+docker compose up --build
 ```
 
-Pour repartir de zéro (supprime le volume PostgreSQL et re-seed) :
+Le frontend sera sur http://localhost:3001.
+
+### Repartir de zéro
+
+Supprime le volume PostgreSQL et recrée tout :
 
 ```bash
 docker compose down -v
-docker compose up --build -d api
+docker compose up --build api -d
 docker compose --profile dev run --rm seed
 ```
 
