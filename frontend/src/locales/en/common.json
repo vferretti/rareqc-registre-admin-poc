@@ -175,7 +175,7 @@
       "participant": "Participant",
       "details": "Details"
     },
-    "search_placeholder": "Search by author, participant or details…",
+    "search_placeholder": "Search by author, participant or details",
     "filter_action_type": "Action type",
     "all_actions": "All actions",
     "empty": "No activity recorded",
