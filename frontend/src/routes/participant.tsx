@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Pencil, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Copy, Fingerprint, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useParticipant } from "@/hooks/useParticipant";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/base/ui/tooltip";
 import {
   Card,
   CardAction,
@@ -24,9 +30,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/base/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/base/ui/dialog";
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
 import { ContactFormDialog } from "@/components/feature/contact-form-dialog";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
+import { ParticipantConsents } from "@/components/feature/participant-consents";
+import { useConsents } from "@/hooks/useConsents";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import type { Contact } from "@/types/participant";
@@ -53,11 +67,13 @@ function ContactCard({
   t,
   onEdit,
   onDelete,
+  canDelete = true,
 }: {
   contact: Contact;
   t: (key: string, options?: Record<string, string>) => string;
   onEdit: () => void;
   onDelete: () => void;
+  canDelete?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
@@ -78,22 +94,31 @@ function ContactCard({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t("common.edit")}
-            onClick={onEdit}
-          >
-            <Pencil className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t("common.delete")}
-            onClick={onDelete}
-          >
-            <Trash2 className="size-3.5 text-destructive" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" onClick={onEdit}>
+                <Pencil className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("common.edit")}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={canDelete ? onDelete : undefined}
+                  disabled={!canDelete}
+                >
+                  <Trash2 className={`size-4 ${canDelete ? "text-destructive" : ""}`} />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {canDelete ? t("common.delete") : t("participant_detail.cannot_delete_signer")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
@@ -127,22 +152,38 @@ export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const { participant, isLoading, error, mutate } = useParticipant(id);
+  const { consents } = useConsents(participant?.id);
+  const signerContactIds = new Set(
+    consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id),
+  );
   const [editParticipantOpen, setEditParticipantOpen] = useState(false);
   const [editContactsOpen, setEditContactsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [guidDialogOpen, setGuidDialogOpen] = useState(false);
+  const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
   const confirmDeleteContact = async () => {
     if (!deletingContact) return;
+    setDeleteError(null);
     try {
       await api.delete(`/contacts/${deletingContact.id}`);
       mutate(undefined, { revalidate: true });
-    } catch {
-      // silently fail — API error
-    } finally {
       setDeletingContact(null);
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error ?? t("common.error");
+      setDeleteError(message);
     }
+  };
+
+  const copyGuid = (value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedGuid(value);
+    setTimeout(() => setCopiedGuid(null), 2000);
   };
 
   if (isLoading) {
@@ -184,6 +225,7 @@ export default function ParticipantDetail() {
   const handleSuccess = () => void mutate(undefined, { revalidate: true });
 
   return (
+    <TooltipProvider>
     <>
       <PageHeader
         title={`${participant.first_name} ${participant.last_name}`}
@@ -208,13 +250,34 @@ export default function ParticipantDetail() {
                   {t("participant_detail.section_identity")}
                 </CardTitle>
                 <CardAction>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setEditParticipantOpen(true)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
+                  {participant.guid && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setGuidDialogOpen(true)}
+                        >
+                          <Fingerprint className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t("participant_detail.view_guids")}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setEditParticipantOpen(true)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("common.edit")}</TooltipContent>
+                  </Tooltip>
                 </CardAction>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -244,6 +307,9 @@ export default function ParticipantDetail() {
                     <span className="font-mono">
                       {participant.ramq || "—"}
                     </span>
+                  </Field>
+                  <Field label={t("participant_detail.city_of_birth")}>
+                    {participant.city_of_birth || "—"}
                   </Field>
                   <Field label={t("participant_detail.vital_status")}>
                     <Badge
@@ -306,14 +372,18 @@ export default function ParticipantDetail() {
                   {t("participant_detail.section_contacts")}
                 </CardTitle>
                 <CardAction>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("participant_detail.add_contacts")}
-                    onClick={() => setEditContactsOpen(true)}
-                  >
-                    <UserPlus className="size-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setEditContactsOpen(true)}
+                      >
+                        <UserPlus className="size-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("participant_detail.add_contacts")}</TooltipContent>
+                  </Tooltip>
                 </CardAction>
               </CardHeader>
               <CardContent>
@@ -330,6 +400,7 @@ export default function ParticipantDetail() {
                         t={t}
                         onEdit={() => setEditingContact(contact)}
                         onDelete={() => setDeletingContact(contact)}
+                        canDelete={!signerContactIds.has(contact.id)}
                       />
                     ))}
                   </div>
@@ -338,8 +409,16 @@ export default function ParticipantDetail() {
             </Card>
           </div>
 
-          {/* Right column — Activity history */}
-          <ParticipantActivityLog participantId={participant.id} />
+          {/* Right column — Consents + Activity history */}
+          <div className="flex flex-col gap-6">
+            <ParticipantConsents
+              participantId={participant.id}
+              contacts={participant.contacts ?? []}
+              consents={consents}
+              onConsentAdded={handleSuccess}
+            />
+            <ParticipantActivityLog participantId={participant.id} />
+          </div>
         </div>
       </div>
 
@@ -371,7 +450,12 @@ export default function ParticipantDetail() {
       {/* Delete contact confirmation */}
       <AlertDialog
         open={!!deletingContact}
-        onOpenChange={(open) => { if (!open) setDeletingContact(null); }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingContact(null);
+            setDeleteError(null);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -379,21 +463,75 @@ export default function ParticipantDetail() {
               {t("participant_detail.delete_contact_title")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("participant_detail.confirm_delete_contact", {
-                name: deletingContact
-                  ? `${deletingContact.first_name} ${deletingContact.last_name}`
-                  : "",
-              })}
+              {deleteError ? (
+                <span className="text-destructive">{deleteError}</span>
+              ) : (
+                t("participant_detail.confirm_delete_contact", {
+                  name: deletingContact
+                    ? `${deletingContact.first_name} ${deletingContact.last_name}`
+                    : "",
+                })
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteContact}>
-              {t("common.delete")}
-            </AlertDialogAction>
+            {!deleteError && (
+              <AlertDialogAction onClick={confirmDeleteContact}>
+                {t("common.delete")}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* GUID dialog */}
+      <Dialog open={guidDialogOpen} onOpenChange={setGuidDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("participant_detail.guid_title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {[
+              { key: "guid_basic", value: participant.guid?.guid_basic },
+              { key: "guid_ramq", value: participant.guid?.guid_ramq },
+              { key: "guid_birthplace", value: participant.guid?.guid_birthplace },
+            ].map(({ key, value }) => (
+              <div key={key} className="space-y-1">
+                <div className="text-sm font-medium">
+                  {t(`participant_detail.${key}`)}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {t(`participant_detail.${key}_desc`)}
+                </div>
+                {value ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs font-mono bg-muted rounded px-2 py-1.5 break-all">
+                      {value}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => copyGuid(value)}
+                    >
+                      {copiedGuid === value ? (
+                        <Check className="size-4 text-green-600" />
+                      ) : (
+                        <Copy className="size-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground italic">
+                    {t("participant_detail.guid_not_available")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+    </TooltipProvider>
   );
 }

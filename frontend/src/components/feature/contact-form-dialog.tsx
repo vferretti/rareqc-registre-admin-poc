@@ -97,60 +97,6 @@ function getParticipantCoordinates(participant: Participant) {
   };
 }
 
-/** Builds the contacts array for the API, merging existing + new/edited contacts. */
-function buildContactsPayload(
-  participant: Participant,
-  newContacts: ContactFormValues[],
-) {
-  const hasPrimaryInNew = newContacts.some((c) => c.is_primary);
-  const existing =
-    participant.contacts
-      ?.filter((c) => c.relationship_code !== "self")
-      .map((c) => ({
-        id: c.id,
-        first_name: c.first_name,
-        last_name: c.last_name,
-        relationship_code: c.relationship_code,
-        preferred_language: c.preferred_language,
-        same_coordinates: false,
-        is_primary: hasPrimaryInNew ? false : c.is_primary,
-        email: c.email,
-        phone: c.phone,
-        apartment_number: c.apartment_number,
-        street_address: c.street_address,
-        city: c.city,
-        province: c.province,
-        code_postal: c.code_postal,
-      })) ?? [];
-  return [...existing, ...newContacts];
-}
-
-/** Builds the contacts array for edit mode: replaces the edited contact, keeps others. */
-function buildEditContactPayload(
-  participant: Participant,
-  editedContact: ContactFormValues,
-) {
-  const existing =
-    participant.contacts
-      ?.filter((c) => c.relationship_code !== "self" && c.id !== editedContact.id)
-      .map((c) => ({
-        id: c.id,
-        first_name: c.first_name,
-        last_name: c.last_name,
-        relationship_code: c.relationship_code,
-        preferred_language: c.preferred_language,
-        same_coordinates: false,
-        is_primary: editedContact.is_primary ? false : c.is_primary,
-        email: c.email,
-        phone: c.phone,
-        apartment_number: c.apartment_number,
-        street_address: c.street_address,
-        city: c.city,
-        province: c.province,
-        code_postal: c.code_postal,
-      })) ?? [];
-  return [...existing, editedContact];
-}
 
 // Schema for the multi-contact form wrapper
 const contactsFormSchema = (t: Parameters<typeof contactSchema>[0]) =>
@@ -214,36 +160,20 @@ export function ContactFormDialog({
   const onSubmit = async (data: ContactsFormValues) => {
     setSubmitError(null);
     try {
-      const selfContact = participant.contacts?.find(
-        (c) => c.relationship_code === "self",
-      );
-      const contacts = isEdit
-        ? buildEditContactPayload(participant, data.contacts[0])
-        : buildContactsPayload(participant, data.contacts);
-
-      await api.put(`/participants/${participant.id}`, {
-        first_name: participant.first_name,
-        last_name: participant.last_name,
-        date_of_birth: participant.date_of_birth?.slice(0, 10) ?? "",
-        sex_at_birth_code: participant.sex_at_birth_code,
-        ramq: participant.ramq ?? "",
-        vital_status_code: participant.vital_status_code,
-        date_of_death: participant.date_of_death?.slice(0, 10) ?? "",
-        email: selfContact?.email ?? "",
-        phone: selfContact?.phone ?? "",
-        apartment_number: selfContact?.apartment_number ?? "",
-        street_address: selfContact?.street_address ?? "",
-        city: selfContact?.city ?? "",
-        province: selfContact?.province ?? "QC",
-        code_postal: selfContact?.code_postal ?? "",
-        preferred_language: selfContact?.preferred_language ?? "fr",
-        contacts,
-      });
+      if (isEdit) {
+        // Update the single contact
+        await api.put(`/contacts/${data.contacts[0].id}`, data.contacts[0]);
+      } else {
+        // Create each new contact
+        for (const contactData of data.contacts) {
+          await api.post(`/participants/${participant.id}/contacts`, contactData);
+        }
+      }
       form.reset({ contacts: [{ ...EMPTY_CONTACT }] });
       onOpenChange(false);
       onSuccess?.();
     } catch {
-      setSubmitError(t("create_participant.error"));
+      setSubmitError(t("common.error"));
     }
   };
 

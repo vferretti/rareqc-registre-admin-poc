@@ -24,6 +24,7 @@ type UpdateParticipantRequest struct {
 	LastName        string `json:"last_name"`
 	DateOfBirth     string `json:"date_of_birth"`
 	SexAtBirthCode  string `json:"sex_at_birth_code"`
+	CityOfBirth     string `json:"city_of_birth"`
 	RAMQ            string `json:"ramq"`
 	VitalStatusCode string `json:"vital_status_code"`
 	DateOfDeath     string `json:"date_of_death"`
@@ -36,8 +37,6 @@ type UpdateParticipantRequest struct {
 	Province        string `json:"province"`
 	CodePostal        string `json:"code_postal"`
 	PreferredLanguage string `json:"preferred_language"`
-	// Additional contacts
-	Contacts []CreateContactRequest `json:"contacts"`
 }
 
 // CreateParticipantRequest represents the payload for registering a new participant.
@@ -46,6 +45,7 @@ type CreateParticipantRequest struct {
 	LastName        string `json:"last_name"`
 	DateOfBirth     string `json:"date_of_birth"`
 	SexAtBirthCode  string `json:"sex_at_birth_code"`
+	CityOfBirth     string `json:"city_of_birth"`
 	RAMQ            string `json:"ramq"`
 	VitalStatusCode string `json:"vital_status_code"`
 	DateOfDeath     string `json:"date_of_death"`

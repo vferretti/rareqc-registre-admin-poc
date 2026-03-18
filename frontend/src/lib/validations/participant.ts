@@ -30,6 +30,7 @@ export const participantSchema = (t: TFunction) =>
     last_name: z.string().min(1, t("validation.required")),
     date_of_birth: z.string().min(1, t("validation.required")),
     sex_at_birth_code: z.string().min(1, t("validation.required")),
+    city_of_birth: z.string(),
     ramq: z.string().refine((v) => v === "" || RAMQ_PATTERN.test(v), {
       message: t("validation.ramq_format"),
     }),
@@ -43,7 +44,6 @@ export const participantSchema = (t: TFunction) =>
     province: z.string(),
     code_postal: z.string(),
     preferred_language: z.string(),
-    contacts: z.array(contactSchema(t)),
   });
 
 export type ParticipantFormValues = z.infer<

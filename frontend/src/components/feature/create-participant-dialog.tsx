@@ -48,6 +48,7 @@ const DEFAULT_VALUES: ParticipantFormValues = {
   last_name: "",
   date_of_birth: "",
   sex_at_birth_code: "",
+  city_of_birth: "",
   ramq: "",
   vital_status_code: "alive",
   date_of_death: "",
@@ -59,7 +60,6 @@ const DEFAULT_VALUES: ParticipantFormValues = {
   province: "QC",
   code_postal: "",
   preferred_language: "fr",
-  contacts: [],
 };
 
 function participantToFormValues(p: Participant): ParticipantFormValues {
@@ -69,6 +69,7 @@ function participantToFormValues(p: Participant): ParticipantFormValues {
     last_name: p.last_name,
     date_of_birth: p.date_of_birth ? p.date_of_birth.slice(0, 10) : "",
     sex_at_birth_code: p.sex_at_birth_code,
+    city_of_birth: p.city_of_birth ?? "",
     ramq: p.ramq ?? "",
     vital_status_code: p.vital_status_code,
     date_of_death: p.date_of_death ? p.date_of_death.slice(0, 10) : "",
@@ -80,25 +81,6 @@ function participantToFormValues(p: Participant): ParticipantFormValues {
     province: selfContact?.province ?? "QC",
     code_postal: selfContact?.code_postal ?? "",
     preferred_language: selfContact?.preferred_language ?? "fr",
-    contacts:
-      p.contacts
-        ?.filter((c) => c.relationship_code !== "self")
-        .map((c) => ({
-          id: c.id,
-          first_name: c.first_name,
-          last_name: c.last_name,
-          relationship_code: c.relationship_code,
-          preferred_language: c.preferred_language,
-          same_coordinates: false,
-          is_primary: c.is_primary,
-          email: c.email,
-          phone: c.phone,
-          apartment_number: c.apartment_number,
-          street_address: c.street_address,
-          city: c.city,
-          province: c.province,
-          code_postal: c.code_postal,
-        })) ?? [],
   };
 }
 
@@ -287,6 +269,21 @@ export function ParticipantFormDialog({
                 <FormField
                   schema={schema}
                   control={form.control}
+                  name="city_of_birth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("create_participant.city_of_birth")}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  schema={schema}
+                  control={form.control}
                   name="vital_status_code"
                   render={({ field }) => (
                     <FormItem>
@@ -313,9 +310,7 @@ export function ParticipantFormDialog({
                     </FormItem>
                   )}
                 />
-              </div>
-              {vitalStatus === "deceased" && (
-                <div className="grid grid-cols-2 gap-4">
+                {vitalStatus === "deceased" && (
                   <FormField
                     schema={schema}
                     control={form.control}
@@ -331,9 +326,8 @@ export function ParticipantFormDialog({
                       </FormItem>
                     )}
                   />
-                  <div />
-                </div>
-              )}
+                )}
+              </div>
             </fieldset>
 
             <hr className="border-border" />
@@ -510,6 +504,3 @@ export function ParticipantFormDialog({
     </Dialog>
   );
 }
-
-/** @deprecated Use ParticipantFormDialog instead */
-export const CreateParticipantDialog = ParticipantFormDialog;

@@ -30,6 +30,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	contactRepo := repository.NewContactRepository(db)
 	activityRepo := repository.NewActivityRepository(db)
 	searchRepo := repository.NewSearchRepository(db)
+	consentRepo := repository.NewConsentRepository(db)
+	docRepo := repository.NewDocumentRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -41,7 +43,16 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
 
+		api.POST("/participants/:id/contacts", AddContactHandler(participantRepo, contactRepo, activityRepo))
+		api.PUT("/contacts/:contactId", UpdateContactHandler(contactRepo, activityRepo))
 		api.DELETE("/contacts/:contactId", DeleteContactHandler(contactRepo, activityRepo))
+
+		api.GET("/participants/:id/consents", ListParticipantConsentsHandler(consentRepo))
+		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, activityRepo))
+		api.GET("/consent-clauses", ListConsentClausesHandler(consentRepo))
+
+		api.POST("/documents", UploadDocumentHandler(docRepo))
+		api.GET("/documents/:id/file", DownloadDocumentHandler(docRepo))
 
 		api.GET("/search", SearchHandler(searchRepo))
 

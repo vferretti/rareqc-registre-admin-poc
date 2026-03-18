@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"registre-admin/internal/database"
+	"registre-admin/internal/guid"
 	"registre-admin/internal/types"
 
 	"gorm.io/gorm"
@@ -76,7 +78,10 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM consent")
+	db.Exec("DELETE FROM document_file")
 	db.Exec("DELETE FROM activity_log")
+	db.Exec("DELETE FROM guid")
 	db.Exec("DELETE FROM contact")
 	db.Exec("DELETE FROM participant")
 
@@ -98,7 +103,13 @@ func main() {
 		seedAdult(db, childCount+i, ts)
 	}
 
-	log.Println("Seed complete: 100 participants created with activity logs")
+	// Load consent PDF into document table
+	seedConsentDocument(db)
+
+	// Seed consents
+	seedConsents(db)
+
+	log.Println("Seed complete: 100 participants created with activity logs and consents")
 }
 
 func createActivityLog(db *gorm.DB, actionTypeCode string, participantID int, author string, details string, createdAt time.Time) {
@@ -144,6 +155,7 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 		VitalStatusCode: "alive",
 	}
 	db.Create(&participant)
+	db.Create(guid.Compute(&participant))
 
 	// Activity: participant created
 	createActivityLog(db, "participant_created", participant.ID, author,
@@ -245,6 +257,7 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 		VitalStatusCode: "alive",
 	}
 	db.Create(&participant)
+	db.Create(guid.Compute(&participant))
 
 	// Activity: participant created
 	createActivityLog(db, "participant_created", participant.ID, author,
@@ -275,6 +288,93 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 		createActivityLog(db, "participant_edited", participant.ID, editAuthor,
 			fmt.Sprintf("%s %s", firstName, lastName), editTs)
 	}
+}
+
+// seedConsentDocument loads the PDF file into the document_file table.
+func seedConsentDocument(db *gorm.DB) {
+	pdfData, err := os.ReadFile("/data/Consentement_RareQc.pdf")
+	if err != nil {
+		log.Printf("Warning: could not read consent PDF: %v", err)
+		return
+	}
+
+	var doc types.Document
+	if err := db.Where("name = ?", "Consentement – Registre RareQc").First(&doc).Error; err != nil {
+		log.Printf("Warning: consent document not found in DB: %v", err)
+		return
+	}
+
+	// Update file size on document
+	doc.FileSize = int64(len(pdfData))
+	db.Save(&doc)
+
+	// Store file content in document_file table
+	file := types.DocumentFile{DocumentID: doc.ID, Data: pdfData}
+	db.Where("document_id = ?", doc.ID).FirstOrCreate(&file)
+	log.Printf("Consent PDF loaded (%d bytes)", len(pdfData))
+}
+
+// seedConsents creates consent records for all participants.
+// Adults sign for themselves (signed_by_id = nil), minors are signed by their primary contact.
+func seedConsents(db *gorm.DB) {
+	// Fetch the two consent clauses created by the migration
+	var clauses []types.ConsentClause
+	db.Find(&clauses)
+	if len(clauses) == 0 {
+		log.Println("No consent clauses found, skipping consent seeding")
+		return
+	}
+
+	// Fetch all participants with their contacts
+	var participants []types.Participant
+	db.Preload("Contacts").Find(&participants)
+
+	now := time.Now()
+	for _, p := range participants {
+		// Determine if minor (< 18 years old)
+		age := now.Year() - p.DateOfBirth.Year()
+		if now.YearDay() < p.DateOfBirth.YearDay() {
+			age--
+		}
+		isMinor := age < 18
+
+		// Find primary contact (signer for minors)
+		var signerID *int
+		if isMinor {
+			for _, c := range p.Contacts {
+				if c.IsPrimary && c.RelationshipCode != "self" {
+					id := c.ID
+					signerID = &id
+					break
+				}
+			}
+		}
+
+		// Consent date: random within 7 days of participant creation
+		consentDate := p.CreatedAt.Add(-time.Duration(rand.Intn(7)) * 24 * time.Hour)
+		consentDate = time.Date(consentDate.Year(), consentDate.Month(), consentDate.Day(), 0, 0, 0, 0, time.UTC)
+
+		// 95% consent to clause 1 (registry), 80% consent to clause 2 (recontact)
+		author := pick(authors)
+		for i, clause := range clauses {
+			if i == 1 && rand.Intn(100) >= 80 {
+				continue
+			}
+			consent := types.Consent{
+				ClauseID:      clause.ID,
+				ParticipantID: p.ID,
+				Date:          consentDate,
+				StatusCode:    "valid",
+				SignedByID:    signerID,
+			}
+			db.Create(&consent)
+
+			details := fmt.Sprintf("%s — %s", clause.ClauseTypeCode, consent.StatusCode)
+			createActivityLog(db, "consent_added", p.ID, author, details, consentDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+		}
+	}
+
+	log.Printf("Consents seeded for %d participants", len(participants))
 }
 
 // --- Helpers ---

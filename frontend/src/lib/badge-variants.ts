@@ -22,4 +22,5 @@ export const ACTION_BADGE: Record<
   contact_created: "blue",
   contact_edited: "amber",
   contact_deleted: "destructive",
+  consent_added: "green",
 };

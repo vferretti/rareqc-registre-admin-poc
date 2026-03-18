@@ -68,6 +68,7 @@
     "vital_status": "Vital status",
     "date_of_death": "Date of death",
     "ramq": "RAMQ",
+    "city_of_birth": "City of birth",
     "email": "Email",
     "phone": "Phone",
     "apartment_number": "Apt. number",
@@ -97,6 +98,7 @@
     "first_name": "First name",
     "last_name": "Last name",
     "date_of_birth": "Date of birth",
+    "city_of_birth": "City of birth",
     "sex_at_birth": "Sex at birth",
     "vital_status": "Vital status",
     "date_of_death": "Date of death",
@@ -118,7 +120,30 @@
     "delete_contact_title": "Delete contact",
     "confirm_delete_contact": "Are you sure you want to delete the contact {{name}}? This action cannot be undone.",
     "no_contacts": "No contacts registered for this participant",
-    "na": "—"
+    "section_consents": "Consents",
+    "view_consent_pdf": "View PDF document",
+    "download_consent": "Download",
+    "no_consents": "No consents recorded",
+    "signed_by": "Signed by {{name}} ({{relationship}})",
+    "cannot_delete_signer": "This contact cannot be deleted because they signed a consent",
+    "add_consent": "+ Add consent",
+    "add_consent_title": "Add consent",
+    "consent_clause": "Clause",
+    "consent_date": "Date",
+    "signed_by_label": "Signed by",
+    "signed_by_placeholder": "Select signer",
+    "signed_by_self": "Participant themselves",
+    "na": "—",
+    "view_guids": "View GUIDs",
+    "guid_title": "Participant GUIDs",
+    "guid_basic": "Basic GUID",
+    "guid_basic_desc": "First name + Last name + Date of birth",
+    "guid_ramq": "RAMQ GUID",
+    "guid_ramq_desc": "Basic + RAMQ number",
+    "guid_birthplace": "Birthplace GUID",
+    "guid_birthplace_desc": "Basic + City of birth",
+    "guid_not_available": "Not available",
+    "guid_copied": "Copied!"
   },
   "enums": {
     "sex_at_birth": {
@@ -162,7 +187,19 @@
       "contact_created": "Contact created",
       "contact_edited": "Contact edited",
       "participant_edited": "Participant edited",
-      "contact_deleted": "Contact deleted"
+      "contact_deleted": "Contact deleted",
+      "consent_added": "Consent added"
+    },
+    "clause_type": {
+      "registry": "Registry participation",
+      "recontact": "Recontact for research",
+      "external_linkage": "External linkage"
+    },
+    "consent_status": {
+      "valid": "Valid",
+      "expired": "Expired",
+      "withdrawn": "Withdrawn",
+      "replaced_by_new_version": "Replaced"
     }
   },
   "activity_log": {

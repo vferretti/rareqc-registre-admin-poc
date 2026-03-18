@@ -21,7 +21,7 @@ func NewParticipantRepository(db *gorm.DB) *ParticipantRepository {
 // FindByID returns a participant with its contacts, or an error if not found.
 func (r *ParticipantRepository) FindByID(id string) (types.Participant, error) {
 	var p types.Participant
-	err := r.db.Preload("Contacts").First(&p, id).Error
+	err := r.db.Preload("Contacts").Preload("Guid").First(&p, id).Error
 	return p, err
 }
 
@@ -97,5 +97,5 @@ func (r *ParticipantRepository) Transaction(fn func(tx *gorm.DB) error) error {
 
 // Reload fetches the participant with contacts by ID (used after create/update).
 func (r *ParticipantRepository) Reload(p *types.Participant) error {
-	return r.db.Preload("Contacts").First(p, p.ID).Error
+	return r.db.Preload("Contacts").Preload("Guid").First(p, p.ID).Error
 }

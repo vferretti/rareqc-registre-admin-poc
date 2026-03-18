@@ -18,6 +18,15 @@ export interface Contact {
   updated_at: string;
 }
 
+/** Computed identifiers for participant deduplication. */
+export interface Guid {
+  id: number;
+  participant_id: number;
+  guid_basic: string;
+  guid_ramq?: string | null;
+  guid_birthplace?: string | null;
+}
+
 /** A patient in the rare disease registry. */
 export interface Participant {
   id: number;
@@ -30,6 +39,7 @@ export interface Participant {
   vital_status_code: string;
   date_of_death?: string | null;
   contacts?: Contact[];
+  guid?: Guid | null;
   created_at: string;
   updated_at: string;
 }

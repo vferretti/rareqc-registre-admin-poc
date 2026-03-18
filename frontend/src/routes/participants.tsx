@@ -28,7 +28,7 @@ import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
 import { InputSearch } from "@/components/base/input-search";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
-import { CreateParticipantDialog } from "@/components/feature/create-participant-dialog";
+import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
 import { useParticipants } from "@/hooks/useParticipants";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
@@ -47,7 +47,7 @@ export default function Participants() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "last_name", desc: false },
+    { id: "created_at", desc: true },
   ]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -249,7 +249,7 @@ export default function Participants() {
           </Button>
         }
       />
-      <CreateParticipantDialog
+      <ParticipantFormDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={() => mutate()}

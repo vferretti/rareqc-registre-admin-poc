@@ -68,6 +68,7 @@
     "vital_status": "Statut vital",
     "date_of_death": "Date de décès",
     "ramq": "RAMQ",
+    "city_of_birth": "Ville de naissance",
     "email": "Courriel",
     "phone": "Téléphone",
     "apartment_number": "N° d'appartement",
@@ -97,6 +98,7 @@
     "first_name": "Prénom",
     "last_name": "Nom",
     "date_of_birth": "Date de naissance",
+    "city_of_birth": "Ville de naissance",
     "sex_at_birth": "Sexe à la naissance",
     "vital_status": "Statut vital",
     "date_of_death": "Date de décès",
@@ -118,7 +120,30 @@
     "delete_contact_title": "Supprimer un contact",
     "confirm_delete_contact": "Êtes-vous certain de vouloir supprimer le contact {{name}} ? Cette action est irréversible.",
     "no_contacts": "Aucun contact inscrit pour ce participant",
-    "na": "—"
+    "section_consents": "Consentements",
+    "view_consent_pdf": "Voir le document PDF",
+    "download_consent": "Télécharger",
+    "no_consents": "Aucun consentement enregistré",
+    "signed_by": "Signé par {{name}} ({{relationship}})",
+    "cannot_delete_signer": "Ce contact ne peut pas être supprimé car il est signataire d'un consentement",
+    "add_consent": "+ Ajouter un consentement",
+    "add_consent_title": "Ajouter un consentement",
+    "consent_clause": "Clause",
+    "consent_date": "Date",
+    "signed_by_label": "Signé par",
+    "signed_by_placeholder": "Sélectionner le signataire",
+    "signed_by_self": "Participant lui-même",
+    "na": "—",
+    "view_guids": "Voir les GUIDs",
+    "guid_title": "GUIDs du participant",
+    "guid_basic": "GUID de base",
+    "guid_basic_desc": "Prénom + Nom + Date de naissance",
+    "guid_ramq": "GUID RAMQ",
+    "guid_ramq_desc": "Base + Numéro RAMQ",
+    "guid_birthplace": "GUID lieu de naissance",
+    "guid_birthplace_desc": "Base + Ville de naissance",
+    "guid_not_available": "Non disponible",
+    "guid_copied": "Copié!"
   },
   "enums": {
     "sex_at_birth": {
@@ -162,7 +187,19 @@
       "contact_created": "Contact créé",
       "contact_edited": "Contact modifié",
       "participant_edited": "Participant modifié",
-      "contact_deleted": "Contact supprimé"
+      "contact_deleted": "Contact supprimé",
+      "consent_added": "Consentement ajouté"
+    },
+    "clause_type": {
+      "registry": "Participation au registre",
+      "recontact": "Recontact pour recherche",
+      "external_linkage": "Liaison externe"
+    },
+    "consent_status": {
+      "valid": "Valide",
+      "expired": "Expiré",
+      "withdrawn": "Retiré",
+      "replaced_by_new_version": "Remplacé"
     }
   },
   "activity_log": {

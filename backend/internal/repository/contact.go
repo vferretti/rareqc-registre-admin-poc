@@ -42,17 +42,25 @@ func (r *ContactRepository) Delete(tx *gorm.DB, c *types.Contact) error {
 	return tx.Delete(c).Error
 }
 
-// DeleteNonSelf removes all non-self contacts for a participant within the given transaction.
-func (r *ContactRepository) DeleteNonSelf(tx *gorm.DB, participantID int) error {
-	return tx.Where("participant_id = ? AND relationship_code != ?", participantID, "self").
-		Delete(&types.Contact{}).Error
-}
-
 // SetSelfPrimary sets the self contact's is_primary flag for a participant.
 func (r *ContactRepository) SetSelfPrimary(tx *gorm.DB, participantID int, primary bool) error {
 	return tx.Model(&types.Contact{}).
 		Where("participant_id = ? AND relationship_code = ?", participantID, "self").
 		Update("is_primary", primary).Error
+}
+
+// ClearAllPrimary sets is_primary=false on all contacts for a participant.
+func (r *ContactRepository) ClearAllPrimary(tx *gorm.DB, participantID int) error {
+	return tx.Model(&types.Contact{}).
+		Where("participant_id = ?", participantID).
+		Update("is_primary", false).Error
+}
+
+// IsReferencedByConsent returns true if the contact is referenced as a signer in any consent.
+func (r *ContactRepository) IsReferencedByConsent(contactID int) (bool, error) {
+	var count int64
+	err := r.db.Table("consent").Where("signed_by_id = ?", contactID).Count(&count).Error
+	return count > 0, err
 }
 
 // CountNonSelfPrimary returns the count of non-self primary contacts for a participant.
