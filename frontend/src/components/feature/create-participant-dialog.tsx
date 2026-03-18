@@ -38,7 +38,7 @@ import { LANGUAGE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/constants";
 interface ParticipantFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (participantId?: number) => void;
   /** When provided, the dialog opens in edit mode */
   participant?: Participant | null;
 }
@@ -128,14 +128,16 @@ export function ParticipantFormDialog({
   const onSubmit = async (data: ParticipantFormValues) => {
     setSubmitError(null);
     try {
+      let createdId: number | undefined;
       if (isEdit) {
         await api.put(`/participants/${participant.id}`, data);
       } else {
-        await api.post("/participants", data);
+        const res = await api.post("/participants", data);
+        createdId = res.data?.id;
       }
       form.reset(DEFAULT_VALUES);
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(createdId);
     } catch {
       setSubmitError(
         t(isEdit ? "edit_participant.error" : "create_participant.error"),

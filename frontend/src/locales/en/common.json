@@ -24,7 +24,8 @@
   "nav": {
     "home": "Home",
     "patients": "Participants",
-    "activity": "Activities"
+    "activity": "Activities",
+    "admin": "Administration"
   },
   "common": {
     "loading": "Loading…",
@@ -128,11 +129,26 @@
     "cannot_delete_signer": "This contact cannot be deleted because they signed a consent",
     "add_consent": "+ Add consent",
     "add_consent_title": "Add consent",
+    "edit_consent_title": "Edit consent",
+    "document_attached": "Document attached",
+    "view_clause": "View clause",
+    "consent_template": "Consent form",
+    "consent_template_placeholder": "Select a form",
     "consent_clause": "Clause",
+    "consent_clause_placeholder": "Select a consent",
+    "consent_ordinal": "Consent {{number}}",
+    "add_another_consent": "Add another consent",
     "consent_date": "Date",
+    "consent_status": "Status",
+    "consent_document": "Document",
+    "upload_file": "Upload",
+    "replace_file": "Replace file",
+    "no_file_selected": "No file selected",
     "signed_by_label": "Signed by",
     "signed_by_placeholder": "Select signer",
     "signed_by_self": "Participant themselves",
+    "signed_by_self_short": "The participant",
+    "signed_by_participant": "Signed by the participant",
     "na": "—",
     "view_guids": "View GUIDs",
     "guid_title": "Participant GUIDs",
@@ -143,7 +159,8 @@
     "guid_birthplace": "Birthplace GUID",
     "guid_birthplace_desc": "Basic + City of birth",
     "guid_not_available": "Not available",
-    "guid_copied": "Copied!"
+    "guid_copied": "Copied!",
+    "document_signed": "Signed <strong>document</strong>"
   },
   "enums": {
     "sex_at_birth": {
@@ -188,7 +205,8 @@
       "contact_edited": "Contact edited",
       "participant_edited": "Participant edited",
       "contact_deleted": "Contact deleted",
-      "consent_added": "Consent added"
+      "consent_added": "Consent added",
+      "consent_edited": "Consent edited"
     },
     "clause_type": {
       "registry": "Registry participation",
@@ -201,6 +219,15 @@
       "withdrawn": "Withdrawn",
       "replaced_by_new_version": "Replaced"
     }
+  },
+  "admin": {
+    "title": "Administration",
+    "description": "Registry management and configuration",
+    "users": "Administrators",
+    "users_description": "Manage administrator accounts and permissions",
+    "consents": "Consent forms",
+    "consents_description": "Manage consent documents and clauses",
+    "coming_soon": "Coming soon"
   },
   "activity_log": {
     "title": "Activity Log",

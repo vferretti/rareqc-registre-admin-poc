@@ -6,7 +6,7 @@ import (
 	"registre-admin/internal/database"
 	"registre-admin/internal/server"
 
-	// _ "registre-admin/docs" // Uncomment after running: swag init -g cmd/api/main.go
+	_ "registre-admin/docs"
 )
 
 // @title           RareQC Registre Admin API

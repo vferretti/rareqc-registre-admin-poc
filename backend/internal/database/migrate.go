@@ -64,6 +64,12 @@ func AutoMigrate(db *gorm.DB) error {
 		db.Exec("ALTER TABLE document DROP COLUMN IF EXISTS file")
 	}
 
+	// Drop legacy document_id from consent_clause (document is now linked via consent)
+	if db.Migrator().HasTable("consent_clause") {
+		db.Exec("ALTER TABLE consent_clause DROP CONSTRAINT IF EXISTS fk_document_consent_clauses")
+		db.Exec("ALTER TABLE consent_clause DROP COLUMN IF EXISTS document_id")
+	}
+
 	// Migrate domain tables
 	if err := db.AutoMigrate(
 		&types.Participant{},
@@ -82,40 +88,54 @@ func AutoMigrate(db *gorm.DB) error {
 	return seedConsentData(db)
 }
 
-// seedConsentData creates the default consent document and its clauses.
+// seedConsentData creates the consent template documents and their clauses.
 func seedConsentData(db *gorm.DB) error {
-	consentDoc := types.Document{
-		Name:       "Consentement – Registre RareQc",
-		TypeCode:   "consent",
+	// Template 1: RareQc — 2 clauses (registry + recontact)
+	rareqcDoc := types.Document{
+		Name:     "Formulaire de consentement – RareQc",
+		FileName: "Consentement_RareQc.pdf",
+		TypeCode: "consent_template",
 		MimeType: "application/pdf",
 	}
-	db.Where("name = ?", consentDoc.Name).FirstOrCreate(&consentDoc)
+	db.Where("file_name = ?", rareqcDoc.FileName).FirstOrCreate(&rareqcDoc)
 
-	clause1 := types.ConsentClause{
-		ClauseFr:       "Je consens à faire partie du registre RareQc.",
-		ClauseEn:       "I consent to be part of the RareQc registry.",
-		DocumentID:     consentDoc.ID,
-		ClauseTypeCode: "registry",
+	rareqcClauses := []types.ConsentClause{
+		{TemplateDocumentID: rareqcDoc.ID, ClauseTypeCode: "registry",
+			ClauseFr: "Je consens à faire partie du registre RareQc.",
+			ClauseEn: "I consent to be part of the RareQc registry."},
+		{TemplateDocumentID: rareqcDoc.ID, ClauseTypeCode: "recontact",
+			ClauseFr: "Je consens à être recontacté(e) pour des recherches futures ou des informations liées au registre RareQc.",
+			ClauseEn: "I consent to be recontacted for future research or information related to the RareQc registry."},
 	}
-	db.Where("document_id = ? AND clause_type_code = ?", consentDoc.ID, "registry").FirstOrCreate(&clause1)
-
-	clause2 := types.ConsentClause{
-		ClauseFr:       "Je consens à être recontacté(e) pour des recherches futures ou des informations liées au registre RareQc.",
-		ClauseEn:       "I consent to be recontacted for future research or information related to the RareQc registry.",
-		DocumentID:     consentDoc.ID,
-		ClauseTypeCode: "recontact",
+	for _, clause := range rareqcClauses {
+		db.Where("clause_type_code = ? AND template_document_id = ?", clause.ClauseTypeCode, rareqcDoc.ID).FirstOrCreate(&clause)
 	}
-	db.Where("document_id = ? AND clause_type_code = ?", consentDoc.ID, "recontact").FirstOrCreate(&clause2)
 
-	clause3 := types.ConsentClause{
-		ClauseFr:       "Je consens à ce que mes données soient liées à des bases de données externes à des fins de recherche.",
-		ClauseEn:       "I consent to having my data linked to external databases for research purposes.",
-		DocumentID:     consentDoc.ID,
-		ClauseTypeCode: "external_linkage",
+	// Template 2: RQDM — 3 clauses (registry + recontact + external linkage)
+	rqdmDoc := types.Document{
+		Name:     "Formulaire de consentement – RQDM",
+		FileName: "Consentement_RQDM.pdf",
+		TypeCode: "consent_template",
+		MimeType: "application/pdf",
 	}
-	db.Where("document_id = ? AND clause_type_code = ?", consentDoc.ID, "external_linkage").FirstOrCreate(&clause3)
+	db.Where("name = ?", rqdmDoc.Name).FirstOrCreate(&rqdmDoc)
 
-	log.Println("Consent document and clauses seeded")
+	rqdmClauses := []types.ConsentClause{
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "registry",
+			ClauseFr: "Je consens à faire partie du registre RareQc et à ce que mes échantillons biologiques, mes données cliniques et génomiques soient conservés et utilisés à des fins de diagnostic moléculaire et de recherche en génomique.",
+			ClauseEn: "I consent to be part of the RareQc registry and to having my biological samples, clinical and genomic data stored and used for molecular diagnostic and genomic research purposes."},
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "recontact",
+			ClauseFr: "Je consens à être recontacté(e) si de nouvelles découvertes pertinentes à ma condition de santé sont identifiées, ou pour être invité(e) à participer à de nouvelles études de recherche.",
+			ClauseEn: "I consent to being recontacted if new findings relevant to my health condition are identified, or to be invited to participate in new research studies."},
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "external_linkage",
+			ClauseFr: "Je consens à ce que mes données soient liées à des bases de données provinciales, nationales ou internationales (ex. ClinVar, OMIM, bases hospitalières) à des fins de recherche et d'amélioration du diagnostic.",
+			ClauseEn: "I consent to having my data linked to provincial, national, or international databases (e.g., ClinVar, OMIM, hospital databases) for research and diagnostic improvement purposes."},
+	}
+	for _, clause := range rqdmClauses {
+		db.Where("clause_type_code = ? AND template_document_id = ?", clause.ClauseTypeCode, rqdmDoc.ID).FirstOrCreate(&clause)
+	}
+
+	log.Println("Consent templates and clauses seeded")
 	return nil
 }
 
@@ -159,6 +179,7 @@ func seedReferenceData(db *gorm.DB) error {
 		{Code: "participant_edited", NameEn: "Participant edited", NameFr: "Participant modifié"},
 		{Code: "contact_deleted", NameEn: "Contact deleted", NameFr: "Contact supprimé"},
 		{Code: "consent_added", NameEn: "Consent added", NameFr: "Consentement ajouté"},
+		{Code: "consent_edited", NameEn: "Consent edited", NameFr: "Consentement modifié"},
 	}
 	if err := db.Clauses(upsert).Create(&actionTypeValues).Error; err != nil {
 		return err
@@ -184,7 +205,8 @@ func seedReferenceData(db *gorm.DB) error {
 	}
 
 	documentTypeValues := []types.DocumentType{
-		{Code: "consent", NameEn: "Consent", NameFr: "Consentement"},
+		{Code: "consent_template", NameEn: "Consent form template", NameFr: "Formulaire de consentement (gabarit)"},
+		{Code: "consent_signed", NameEn: "Signed consent form", NameFr: "Formulaire de consentement (signé)"},
 	}
 	if err := db.Clauses(upsert).Create(&documentTypeValues).Error; err != nil {
 		return err

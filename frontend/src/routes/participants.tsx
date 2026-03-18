@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import {
@@ -44,6 +44,7 @@ import type { Participant } from "@/types/participant";
 /** Participants list page with server-side pagination, sorting, and search. */
 export default function Participants() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([
@@ -252,7 +253,10 @@ export default function Participants() {
       <ParticipantFormDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
-        onSuccess={() => mutate()}
+        onSuccess={(id) => {
+          if (id) navigate(`/participants/${id}`);
+          else mutate();
+        }}
       />
       <div className="p-8">
         <div className="rounded-lg border bg-background p-6">

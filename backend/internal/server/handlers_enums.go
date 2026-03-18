@@ -17,6 +17,13 @@ type EnumsResponse struct {
 }
 
 // EnumsHandler returns all reference table data.
+//
+// @Summary     Get all enums
+// @Description Returns all reference data (sex at birth, vital status, relationship, action type)
+// @Tags        system
+// @Produce     json
+// @Success     200 {object} EnumsResponse
+// @Router      /enums [get]
 func EnumsHandler(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var resp EnumsResponse

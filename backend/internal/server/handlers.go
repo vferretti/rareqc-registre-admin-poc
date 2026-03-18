@@ -17,7 +17,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"*"}, // TODO: restrict to specific origins in production
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Author"},
 		AllowCredentials: false,
@@ -49,7 +49,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		api.GET("/participants/:id/consents", ListParticipantConsentsHandler(consentRepo))
 		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, activityRepo))
+		api.PUT("/consents/:consentId", UpdateConsentHandler(consentRepo, activityRepo))
 		api.GET("/consent-clauses", ListConsentClausesHandler(consentRepo))
+		api.GET("/consent-templates", ListConsentTemplatesHandler(consentRepo))
 
 		api.POST("/documents", UploadDocumentHandler(docRepo))
 		api.GET("/documents/:id/file", DownloadDocumentHandler(docRepo))

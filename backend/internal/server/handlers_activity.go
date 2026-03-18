@@ -10,6 +10,21 @@ import (
 )
 
 // ListActivityLogsHandler returns a paginated list of all activity logs with participant names.
+//
+// @Summary     List activity logs
+// @Description Returns a paginated list of all activity logs, with optional filters
+// @Tags        activity
+// @Produce     json
+// @Param       page_index     query int    false "Page index (0-based)"  default(0)
+// @Param       page_size      query int    false "Page size (1-200)"     default(25)
+// @Param       sort_field     query string false "Sort field"             default(created_at)
+// @Param       sort_order     query string false "Sort order (asc/desc)" default(desc)
+// @Param       participant_id query int    false "Filter by participant ID"
+// @Param       action_type    query string false "Filter by action type code"
+// @Param       search         query string false "Search term"
+// @Success     200 {object} types.PaginatedResponse[repository.ActivityLogResponse]
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /activity-logs [get]
 func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := defaultDescParams(c)
@@ -42,6 +57,21 @@ func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFun
 }
 
 // ListParticipantActivityLogsHandler returns a paginated list of activity logs for a specific participant.
+//
+// @Summary     List activity logs for a participant
+// @Description Returns a paginated list of activity logs for the given participant
+// @Tags        activity
+// @Produce     json
+// @Param       id         path  int    true  "Participant ID"
+// @Param       page_index query int    false "Page index (0-based)"  default(0)
+// @Param       page_size  query int    false "Page size (1-200)"     default(25)
+// @Param       sort_field query string false "Sort field"             default(created_at)
+// @Param       sort_order query string false "Sort order (asc/desc)" default(desc)
+// @Success     200 {object} types.PaginatedResponse[repository.ActivityLogResponse]
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id}/activity-logs [get]
 func ListParticipantActivityLogsHandler(participantRepo *repository.ParticipantRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participantID, err := strconv.Atoi(c.Param("id"))

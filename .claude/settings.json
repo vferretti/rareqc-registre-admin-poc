@@ -4,7 +4,18 @@
       "Bash(wc -l /home/vincent-ferretti/src/rareqc-registre-admin-poc/backend/internal/repository/*.go)",
       "Bash(npx tsc:*)",
       "Bash(go build:*)",
-      "Bash(curl -s http://localhost:8082/api/enums)"
+      "Bash(curl -s http://localhost:8082/api/enums)",
+      "Bash(curl -s -X POST http://localhost:8082/api/documents -F \"name=test\" -F \"type_code=consent\" -F \"file=@/home/vferretti/Downloads/Consentement_RareQc.pdf\")",
+      "Bash(curl -s 'http://localhost:8082/api/participants/100/consents')",
+      "Bash(python3 -c \":*)",
+      "Bash(grep -rn \"^\\\\s*[A-Z][a-zA-Z]*\\\\s*func\" backend/internal/repository/*.go --include=\"*.go\")",
+      "Bash(grep -v \"^--$\")",
+      "Read(//^type / {print NR\"\"\"\": \"\"\"\"$0; getline; if \\($0 !~ /^\\\\/\\\\/**)",
+      "Bash(grep -n \"nav.admin\" /home/vferretti/src/rareqc-registre-admin-poc/frontend/src/**/*.tsx)",
+      "Bash(curl -sI http://localhost:8082/swagger/index.html)",
+      "Bash(curl -s http://localhost:8082/swagger/)",
+      "Bash(curl -s http://localhost:8082/swagger/doc.json)",
+      "Bash(curl -s http://localhost:8082/swagger/index.html)"
     ]
   }
 }

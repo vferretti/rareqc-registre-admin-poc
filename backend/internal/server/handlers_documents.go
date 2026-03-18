@@ -14,8 +14,20 @@ import (
 )
 
 // UploadDocumentHandler uploads a document file with metadata.
-// POST /documents (multipart: name, type_code, file)
 // The MIME type is detected from the uploaded file. Storage backend is determined by STORAGE_TYPE env var.
+//
+// @Summary     Upload a document
+// @Description Uploads a document file with metadata (multipart form). Detects MIME type automatically.
+// @Tags        documents
+// @Accept      multipart/form-data
+// @Produce     json
+// @Param       name      formData string true  "Document display name"
+// @Param       type_code formData string true  "Document type code"
+// @Param       file      formData file   true  "File to upload"
+// @Success     201 {object} types.Document
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /documents [post]
 func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.PostForm("name")
@@ -54,8 +66,14 @@ func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFu
 			}
 		}
 
+		fileName := fileHeader.Filename
+		if name == "" {
+			name = fileName
+		}
+
 		doc := types.Document{
 			Name:     name,
+			FileName: fileName,
 			TypeCode: typeCode,
 			MimeType: mimeType,
 		}
@@ -70,8 +88,18 @@ func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFu
 }
 
 // DownloadDocumentHandler serves a document file by ID.
-// GET /documents/:id/file
 // For database storage, serves the file directly. For S3, redirects to the storage URL.
+//
+// @Summary     Download a document file
+// @Description Serves the document file as an attachment. Redirects to S3 URL if stored externally.
+// @Tags        documents
+// @Produce     octet-stream
+// @Param       id path int true "Document ID"
+// @Success     200 {file}   binary
+// @Success     307 {string} string "Redirect to S3 URL"
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Router      /documents/{id}/file [get]
 func DownloadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -97,14 +125,7 @@ func DownloadDocumentHandler(docRepo *repository.DocumentRepository) gin.Handler
 			return
 		}
 
-		// Derive extension from MIME type
-		exts, _ := mime.ExtensionsByType(doc.MimeType)
-		ext := ""
-		if len(exts) > 0 {
-			ext = exts[0]
-		}
-
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s%s\"", doc.Name, ext))
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", doc.FileName))
 		c.Data(http.StatusOK, doc.MimeType, fileBytes)
 	}
 }

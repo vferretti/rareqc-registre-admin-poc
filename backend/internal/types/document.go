@@ -7,6 +7,7 @@ import "time"
 type Document struct {
 	ID          int            `json:"id" gorm:"primaryKey;autoIncrement"`
 	Name        string         `json:"name" gorm:"not null"`
+	FileName    string         `json:"file_name" gorm:"not null;type:text"`
 	TypeCode    string         `json:"type_code" gorm:"not null;type:text"`
 	Type        DocumentType   `json:"-" gorm:"foreignKey:TypeCode;references:Code"`
 	MimeType    string         `json:"mime_type" gorm:"not null;type:text"`
@@ -15,8 +16,6 @@ type Document struct {
 	StorageURL  *string        `json:"storage_url,omitempty" gorm:"type:text"`
 	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
-
-	ConsentClauses []ConsentClause `json:"consent_clauses,omitempty" gorm:"foreignKey:DocumentID"`
 }
 
 func (Document) TableName() string { return "document" }
@@ -24,7 +23,7 @@ func (Document) TableName() string { return "document" }
 // DocumentFile stores the binary content of a document in the database.
 // Used when StorageType is "database". For "s3", the file is at Document.StorageURL.
 type DocumentFile struct {
-	DocumentID int    `json:"document_id" gorm:"primaryKey"`
+	DocumentID int    `json:"document_id" gorm:"primaryKey;autoIncrement:false"`
 	Data       []byte `json:"-" gorm:"type:bytea;not null"`
 }
 

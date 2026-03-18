@@ -96,6 +96,19 @@ func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequ
 // --- Handlers ---
 
 // ListParticipantsHandler returns a paginated, sortable, searchable list of participants.
+//
+// @Summary     List participants
+// @Description Returns a paginated, sortable, and searchable list of participants
+// @Tags        participants
+// @Produce     json
+// @Param       page_index query int    false "Page index (0-based)"  default(0)
+// @Param       page_size  query int    false "Page size (1-200)"     default(25)
+// @Param       sort_field query string false "Sort field"             default(last_name)
+// @Param       sort_order query string false "Sort order (asc/desc)" default(asc)
+// @Param       search     query string false "Search term (name, RAMQ, etc.)"
+// @Success     200 {object} types.PaginatedResponse[types.Participant]
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants [get]
 func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := parsePaginationParams(c, "last_name")
@@ -117,6 +130,16 @@ func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.Handler
 }
 
 // GetParticipantHandler returns a single participant with its contacts.
+//
+// @Summary     Get a participant
+// @Description Returns a single participant by ID, including contacts and GUID
+// @Tags        participants
+// @Produce     json
+// @Param       id path int true "Participant ID"
+// @Success     200 {object} types.Participant
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id} [get]
 func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := repo.FindByID(c.Param("id"))
@@ -133,6 +156,17 @@ func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFu
 }
 
 // DeleteContactHandler removes a contact by ID and records the activity.
+//
+// @Summary     Delete a contact
+// @Description Deletes a contact by ID. Cannot delete a "self" contact or one referenced by a consent.
+// @Tags        contacts
+// @Produce     json
+// @Param       contactId path int true "Contact ID"
+// @Success     200 {object} object{message=string}
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /contacts/{contactId} [delete]
 func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contact, err := contactRepo.FindByID(c.Param("contactId"))
@@ -186,6 +220,19 @@ func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRep
 }
 
 // UpdateParticipantHandler updates a participant's identity and self-contact coordinates.
+//
+// @Summary     Update a participant
+// @Description Updates a participant's identity fields and self-contact coordinates
+// @Tags        participants
+// @Accept      json
+// @Produce     json
+// @Param       id   path int                              true "Participant ID"
+// @Param       body body types.UpdateParticipantRequest    true "Updated participant data"
+// @Success     200 {object} types.Participant
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id} [put]
 func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
@@ -286,6 +333,17 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 }
 
 // CreateParticipantHandler creates a new participant with a "self" contact and optional additional contacts.
+//
+// @Summary     Create a participant
+// @Description Creates a new participant with a self contact and optional additional contacts
+// @Tags        participants
+// @Accept      json
+// @Produce     json
+// @Param       body body types.CreateParticipantRequest true "New participant data"
+// @Success     201 {object} types.Participant
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants [post]
 func CreateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.CreateParticipantRequest

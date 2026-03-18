@@ -10,6 +10,7 @@ import Participants from "./routes/participants";
 import ParticipantDetail from "./routes/participant";
 import ActivityLogs from "./routes/activity-logs";
 import Home from "./routes/home";
+import Admin from "./routes/admin";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
       {
         path: "activity",
         element: <ActivityLogs />,
+      },
+      {
+        path: "admin",
+        element: <Admin />,
       },
     ],
   },

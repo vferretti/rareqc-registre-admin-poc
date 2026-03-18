@@ -53,6 +53,7 @@ const ACTION_TYPES = [
   "contact_edited",
   "contact_deleted",
   "consent_added",
+  "consent_edited",
 ] as const;
 
 /** Global activity logs page with server-side pagination and sorting. */

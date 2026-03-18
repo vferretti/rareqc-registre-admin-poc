@@ -104,7 +104,7 @@ func main() {
 	}
 
 	// Load consent PDF into document table
-	seedConsentDocument(db)
+	seedConsentDocuments(db)
 
 	// Seed consents
 	seedConsents(db)
@@ -290,82 +290,130 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 	}
 }
 
-// seedConsentDocument loads the PDF file into the document_file table.
-func seedConsentDocument(db *gorm.DB) {
-	pdfData, err := os.ReadFile("/data/Consentement_RareQc.pdf")
+// loadTemplatePDF loads a PDF file into a template document's document_file row.
+func loadTemplatePDF(db *gorm.DB, fileName, pdfPath string) {
+	pdfData, err := os.ReadFile(pdfPath)
 	if err != nil {
-		log.Printf("Warning: could not read consent PDF: %v", err)
+		log.Printf("Warning: could not read %s: %v", pdfPath, err)
 		return
 	}
-
 	var doc types.Document
-	if err := db.Where("name = ?", "Consentement – Registre RareQc").First(&doc).Error; err != nil {
-		log.Printf("Warning: consent document not found in DB: %v", err)
+	if err := db.Where("file_name = ?", fileName).First(&doc).Error; err != nil {
+		log.Printf("Warning: document %q not found in DB: %v", fileName, err)
 		return
 	}
-
-	// Update file size on document
 	doc.FileSize = int64(len(pdfData))
 	db.Save(&doc)
-
-	// Store file content in document_file table
 	file := types.DocumentFile{DocumentID: doc.ID, Data: pdfData}
 	db.Where("document_id = ?", doc.ID).FirstOrCreate(&file)
-	log.Printf("Consent PDF loaded (%d bytes)", len(pdfData))
+	log.Printf("Template PDF loaded: %s (%d bytes)", doc.Name, len(pdfData))
+}
+
+// seedConsentDocuments loads both template PDFs into the database.
+func seedConsentDocuments(db *gorm.DB) {
+	loadTemplatePDF(db, "Consentement_RareQc.pdf", "/data/Consentement_RareQc.pdf")
+	loadTemplatePDF(db, "Consentement_RQDM.pdf", "/data/Consentement_RQDM.pdf")
 }
 
 // seedConsents creates consent records for all participants.
-// Adults sign for themselves (signed_by_id = nil), minors are signed by their primary contact.
+// Each participant gets one template (70% RareQc, 30% RQDM).
+// Adults sign for themselves, minors are signed by their primary contact.
+// A signed document is created per participant.
 func seedConsents(db *gorm.DB) {
-	// Fetch the two consent clauses created by the migration
-	var clauses []types.ConsentClause
-	db.Find(&clauses)
-	if len(clauses) == 0 {
+	// Fetch templates with their clauses
+	var rareqcDoc, rqdmDoc types.Document
+	db.Where("name LIKE ?", "%RareQc%").First(&rareqcDoc)
+	db.Where("name LIKE ?", "%RQDM%").First(&rqdmDoc)
+
+	var rareqcClauses, rqdmClauses []types.ConsentClause
+	db.Where("template_document_id = ?", rareqcDoc.ID).Find(&rareqcClauses)
+	db.Where("template_document_id = ?", rqdmDoc.ID).Find(&rqdmClauses)
+
+	if len(rareqcClauses) == 0 && len(rqdmClauses) == 0 {
 		log.Println("No consent clauses found, skipping consent seeding")
 		return
 	}
 
-	// Fetch all participants with their contacts
+	// Load template PDFs for copying into signed documents
+	rareqcPDF, _ := os.ReadFile("/data/Consentement_RareQc.pdf")
+	rqdmPDF, _ := os.ReadFile("/data/Consentement_RQDM.pdf")
+
 	var participants []types.Participant
 	db.Preload("Contacts").Find(&participants)
 
 	now := time.Now()
 	for _, p := range participants {
-		// Determine if minor (< 18 years old)
+		// Determine signer
 		age := now.Year() - p.DateOfBirth.Year()
 		if now.YearDay() < p.DateOfBirth.YearDay() {
 			age--
 		}
 		isMinor := age < 18
 
-		// Find primary contact (signer for minors)
 		var signerID *int
 		if isMinor {
-			for _, c := range p.Contacts {
-				if c.IsPrimary && c.RelationshipCode != "self" {
-					id := c.ID
+			for _, ct := range p.Contacts {
+				if ct.IsPrimary && ct.RelationshipCode != "self" {
+					id := ct.ID
+					signerID = &id
+					break
+				}
+			}
+		} else {
+			// Adult signs for themselves (self contact)
+			for _, ct := range p.Contacts {
+				if ct.RelationshipCode == "self" {
+					id := ct.ID
 					signerID = &id
 					break
 				}
 			}
 		}
 
+		// Pick a template: 70% RareQc, 30% RQDM
+		clauses := rareqcClauses
+		templateName := "RareQc"
+		pdfData := rareqcPDF
+		if rand.Intn(100) < 30 {
+			clauses = rqdmClauses
+			templateName = "RQDM"
+			pdfData = rqdmPDF
+		}
+
+		// Create a signed document for this participant with the template PDF as content
+		fileName := fmt.Sprintf("Consentement_%s_%s_%s.pdf", p.FirstName, p.LastName, templateName)
+		signedDoc := types.Document{
+			Name:     fmt.Sprintf("Consentement signé — %s %s (%s)", p.FirstName, p.LastName, templateName),
+			FileName: fileName,
+			TypeCode: "consent_signed",
+			MimeType: "application/pdf",
+			FileSize: int64(len(pdfData)),
+		}
+		db.Create(&signedDoc)
+		if len(pdfData) > 0 {
+			db.Create(&types.DocumentFile{DocumentID: signedDoc.ID, Data: pdfData})
+		}
+
 		// Consent date: random within 7 days of participant creation
 		consentDate := p.CreatedAt.Add(-time.Duration(rand.Intn(7)) * 24 * time.Hour)
 		consentDate = time.Date(consentDate.Year(), consentDate.Month(), consentDate.Day(), 0, 0, 0, 0, time.UTC)
-
-		// 95% consent to clause 1 (registry), 80% consent to clause 2 (recontact)
 		author := pick(authors)
+		docID := signedDoc.ID
+
 		for i, clause := range clauses {
-			if i == 1 && rand.Intn(100) >= 80 {
+			// Skip some clauses randomly: 95% clause 1, 85% clause 2, 70% clause 3
+			skipRate := []int{5, 15, 30}
+			if i < len(skipRate) && rand.Intn(100) < skipRate[i] {
 				continue
 			}
+
 			consent := types.Consent{
 				ClauseID:      clause.ID,
 				ParticipantID: p.ID,
 				Date:          consentDate,
 				StatusCode:    "valid",
 				SignedByID:    signerID,
+				DocumentID:    &docID,
 			}
 			db.Create(&consent)
 

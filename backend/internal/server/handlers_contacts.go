@@ -11,7 +11,19 @@ import (
 )
 
 // AddContactHandler creates a new contact for a participant.
-// POST /participants/:id/contacts
+//
+// @Summary     Add a contact to a participant
+// @Description Creates a new contact for the given participant. Cannot create a "self" contact.
+// @Tags        contacts
+// @Accept      json
+// @Produce     json
+// @Param       id   path int                         true "Participant ID"
+// @Param       body body types.CreateContactRequest   true "Contact data"
+// @Success     201 {object} types.Participant
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id}/contacts [post]
 func AddContactHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
@@ -100,7 +112,19 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 }
 
 // UpdateContactHandler updates an existing contact.
-// PUT /contacts/:contactId
+//
+// @Summary     Update a contact
+// @Description Updates an existing contact. Cannot edit a "self" contact directly.
+// @Tags        contacts
+// @Accept      json
+// @Produce     json
+// @Param       contactId path int                         true "Contact ID"
+// @Param       body      body types.CreateContactRequest   true "Updated contact data"
+// @Success     200 {object} types.Contact
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /contacts/{contactId} [put]
 func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contact, err := contactRepo.FindByID(c.Param("contactId"))

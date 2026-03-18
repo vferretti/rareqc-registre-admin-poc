@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, History, ChevronDown, UserRound, LogOut } from "lucide-react";
+import { Users, History, Settings, ChevronDown, UserRound, LogOut } from "lucide-react";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
 import {
@@ -58,6 +58,16 @@ export function Navbar() {
         ))}
       </div>
       <div className="flex items-center gap-4">
+        <Link
+          to="/admin"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-navbar-muted transition-colors hover:bg-navbar-accent hover:text-navbar-active",
+            location.pathname.startsWith("/admin") && "text-navbar-active",
+          )}
+        >
+          <Settings className="size-4" />
+          {t("nav.admin")}
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-navbar-accent transition-colors outline-none cursor-pointer">
             <UserAvatar userId={FAKE_USER.id} name={FAKE_USER.name} />

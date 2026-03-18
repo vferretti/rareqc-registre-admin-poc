@@ -24,7 +24,8 @@
   "nav": {
     "home": "Accueil",
     "patients": "Participants",
-    "activity": "Activités"
+    "activity": "Activités",
+    "admin": "Administration"
   },
   "common": {
     "loading": "Chargement…",
@@ -128,11 +129,26 @@
     "cannot_delete_signer": "Ce contact ne peut pas être supprimé car il est signataire d'un consentement",
     "add_consent": "+ Ajouter un consentement",
     "add_consent_title": "Ajouter un consentement",
+    "edit_consent_title": "Modifier le consentement",
+    "document_attached": "Document joint",
+    "view_clause": "Voir la clause",
+    "consent_template": "Formulaire de consentement",
+    "consent_template_placeholder": "Choisir un formulaire",
     "consent_clause": "Clause",
+    "consent_clause_placeholder": "Choisir un consentement",
+    "consent_ordinal": "Consentement {{number}}",
+    "add_another_consent": "Ajouter un autre consentement",
     "consent_date": "Date",
+    "consent_status": "Statut",
+    "consent_document": "Document",
+    "upload_file": "Téléverser",
+    "replace_file": "Remplacer le fichier",
+    "no_file_selected": "Aucun fichier sélectionné",
     "signed_by_label": "Signé par",
     "signed_by_placeholder": "Sélectionner le signataire",
     "signed_by_self": "Participant lui-même",
+    "signed_by_self_short": "Le participant",
+    "signed_by_participant": "Signé par le participant",
     "na": "—",
     "view_guids": "Voir les GUIDs",
     "guid_title": "GUIDs du participant",
@@ -143,7 +159,8 @@
     "guid_birthplace": "GUID lieu de naissance",
     "guid_birthplace_desc": "Base + Ville de naissance",
     "guid_not_available": "Non disponible",
-    "guid_copied": "Copié!"
+    "guid_copied": "Copié!",
+    "document_signed": "Document <strong>signé</strong>"
   },
   "enums": {
     "sex_at_birth": {
@@ -188,7 +205,8 @@
       "contact_edited": "Contact modifié",
       "participant_edited": "Participant modifié",
       "contact_deleted": "Contact supprimé",
-      "consent_added": "Consentement ajouté"
+      "consent_added": "Consentement ajouté",
+      "consent_edited": "Consentement modifié"
     },
     "clause_type": {
       "registry": "Participation au registre",
@@ -201,6 +219,15 @@
       "withdrawn": "Retiré",
       "replaced_by_new_version": "Remplacé"
     }
+  },
+  "admin": {
+    "title": "Administration",
+    "description": "Gestion et configuration du registre",
+    "users": "Administrateurs",
+    "users_description": "Gérer les comptes et les permissions des administrateurs",
+    "consents": "Formulaires de consentement",
+    "consents_description": "Gérer les documents et clauses de consentement",
+    "coming_soon": "À venir"
   },
   "activity_log": {
     "title": "Journal d'activités",

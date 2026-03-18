@@ -9,4 +9,8 @@ export interface ConsentResponse {
   signed_by_id?: number | null;
   signed_by_name?: string;
   signed_by_relationship?: string;
+  document_id?: number | null;
+  document_name?: string;
+  document_mime?: string;
+  template_name?: string;
 }

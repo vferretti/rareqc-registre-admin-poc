@@ -9,7 +9,7 @@ import (
 // HealthHandler godoc
 // @Summary      Health check
 // @Description  Returns API health status
-// @Tags         health
+// @Tags         system
 // @Produce      json
 // @Success      200  {object}  map[string]string
 // @Router       /health [get]

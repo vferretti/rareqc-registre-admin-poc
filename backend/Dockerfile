@@ -17,4 +17,5 @@ FROM alpine:latest AS seed
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/bin/seed /seed
 COPY --from=builder /app/scripts/seed/Consentement_RareQc.pdf /data/Consentement_RareQc.pdf
+COPY --from=builder /app/scripts/seed/Consentement_RQDM.pdf /data/Consentement_RQDM.pdf
 ENTRYPOINT ["/seed"]

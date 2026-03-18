@@ -23,4 +23,5 @@ export const ACTION_BADGE: Record<
   contact_edited: "amber",
   contact_deleted: "destructive",
   consent_added: "green",
+  consent_edited: "amber",
 };
