@@ -24,6 +24,25 @@ function formatDateTime(date: string, lang: string): string {
   }
 }
 
+/** Translates activity details that contain enum codes (e.g. "registry — valid"). */
+export function translateDetails(details: string, t: (key: string, opts?: Record<string, string>) => string): string {
+  // Consent added: "clause_type — status"
+  const consentMatch = details.match(/^(\w+)\s*[—–-]\s*(\w+)$/);
+  if (consentMatch) {
+    const clause = t(`enums.clause_type.${consentMatch[1]}`, { defaultValue: consentMatch[1] });
+    const status = t(`enums.consent_status.${consentMatch[2]}`, { defaultValue: consentMatch[2] });
+    return `${clause} — ${status}`;
+  }
+  // Consent edited: "old_status → new_status"
+  const editMatch = details.match(/^(\w+)\s*→\s*(\w+)$/);
+  if (editMatch) {
+    const from = t(`enums.consent_status.${editMatch[1]}`, { defaultValue: editMatch[1] });
+    const to = t(`enums.consent_status.${editMatch[2]}`, { defaultValue: editMatch[2] });
+    return `${from} → ${to}`;
+  }
+  return details;
+}
+
 /** A single entry in the activity timeline with avatar, action, details, and timestamp. */
 export function ActivityTimelineItem({
   log,
@@ -49,7 +68,7 @@ export function ActivityTimelineItem({
         </p>
         {log.details && (
           <p className="text-sm text-muted-foreground">
-            {log.details}
+            {translateDetails(log.details, t)}
             {showParticipantLink &&
               log.participant_name &&
               log.participant_id && (

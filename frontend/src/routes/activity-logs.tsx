@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { translateDetails } from "@/components/feature/activity-timeline-item";
 import {
   type ColumnDef,
   type SortingState,
@@ -172,9 +173,10 @@ export default function ActivityLogs() {
         cell: ({ getValue }) => {
           const val = getValue<string | null>();
           if (!val) return <TextCell>—</TextCell>;
+          const translated = translateDetails(val, t);
           return (
             <TextCell>
-              <HighlightText text={val} highlight={debouncedSearch} />
+              <HighlightText text={translated} highlight={debouncedSearch} />
             </TextCell>
           );
         },
