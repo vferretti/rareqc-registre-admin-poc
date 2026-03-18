@@ -234,6 +234,12 @@ docker compose --profile dev run --rm seed
 
 Le seed est dans un profil Docker `dev` séparé et n'est jamais inclus dans l'image de production.
 
+### Accès direct à la base de données
+
+```bash
+PGPASSWORD=rareqc psql -h localhost -p 5440 -U rareqc -d rareqc_registre
+```
+
 ---
 
 ## Commandes utiles
