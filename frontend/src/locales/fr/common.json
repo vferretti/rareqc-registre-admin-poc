@@ -312,7 +312,8 @@
     "download_template": "Télécharger le PDF",
     "edit_template": "Modifier le formulaire",
     "file_optional_edit": "laisser vide pour conserver le fichier actuel",
-    "template_has_consents": "Ce formulaire a été signé par des participants",
+    "template_cannot_edit": "Ce formulaire a été signé par au moins un participant et ne peut être modifié",
+    "template_cannot_delete": "Ce formulaire a été signé par au moins un participant et ne peut être supprimé",
     "delete_template_title": "Supprimer le formulaire",
     "delete_template_confirm": "Êtes-vous sûr de vouloir supprimer « {{name}} » et toutes ses clauses ?"
   },

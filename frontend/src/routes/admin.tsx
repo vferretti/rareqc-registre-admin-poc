@@ -212,35 +212,46 @@ export default function Admin() {
                             </Button>
                           </td>
                           <td className="py-2 pl-4 text-center">
-                            {!tpl.has_consents ? (
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEdit(tpl)}
-                                >
-                                  <Pencil className="size-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setDeleteTemplate(tpl)}
-                                >
-                                  <Trash2 className="size-4 text-destructive" />
-                                </Button>
-                              </div>
-                            ) : (
+                            <div className="flex items-center justify-center gap-1">
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="text-xs text-muted-foreground cursor-default">
-                                    —
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={tpl.has_consents}
+                                      onClick={() => openEdit(tpl)}
+                                    >
+                                      <Pencil className="size-4" />
+                                    </Button>
                                   </span>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                  {t("admin.template_has_consents")}
-                                </TooltipContent>
+                                {tpl.has_consents && (
+                                  <TooltipContent>
+                                    {t("admin.template_cannot_edit")}
+                                  </TooltipContent>
+                                )}
                               </Tooltip>
-                            )}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={tpl.has_consents}
+                                      onClick={() => setDeleteTemplate(tpl)}
+                                    >
+                                      <Trash2 className={`size-4 ${tpl.has_consents ? "" : "text-destructive"}`} />
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                {tpl.has_consents && (
+                                  <TooltipContent>
+                                    {t("admin.template_cannot_delete")}
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            </div>
                           </td>
                         </tr>
                       ))}

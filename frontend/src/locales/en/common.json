@@ -312,7 +312,8 @@
     "download_template": "Download PDF",
     "edit_template": "Edit form",
     "file_optional_edit": "leave empty to keep the current file",
-    "template_has_consents": "This form has been signed by participants",
+    "template_cannot_edit": "This form has been signed by at least one participant and cannot be edited",
+    "template_cannot_delete": "This form has been signed by at least one participant and cannot be deleted",
     "delete_template_title": "Delete form",
     "delete_template_confirm": "Are you sure you want to delete \"{{name}}\" and all its clauses?"
   },
