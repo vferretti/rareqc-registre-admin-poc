@@ -29,7 +29,8 @@
       "Bash(grep -r \"hardcoded\\\\|''''[A-Z][a-z].*''''|\\\\`[A-Z]\" /home/vferretti/src/rareqc-registre-admin-poc/frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(ls -la /home/vferretti/src/rareqc-registre-admin-poc/frontend/src/locales/*/)",
       "Bash(wc -l /home/vferretti/src/rareqc-registre-admin-poc/backend/internal/server/*.go)",
-      "Bash(grep -c \"func \" /home/vferretti/src/rareqc-registre-admin-poc/backend/internal/server/*.go)"
+      "Bash(grep -c \"func \" /home/vferretti/src/rareqc-registre-admin-poc/backend/internal/server/*.go)",
+      "Bash(PGPASSWORD=rareqc psql -h localhost -p 5440 -U rareqc -d rareqc_registre -c \"SELECT participant_id, COUNT\\(*\\) as cnt FROM contact GROUP BY participant_id HAVING COUNT\\(*\\) >= 3 LIMIT 5;\")"
     ]
   }
 }
