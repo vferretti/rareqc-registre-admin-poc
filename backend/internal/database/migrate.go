@@ -70,6 +70,11 @@ func AutoMigrate(db *gorm.DB) error {
 		db.Exec("ALTER TABLE consent_clause DROP COLUMN IF EXISTS document_id")
 	}
 
+	// Enable pg_trgm extension for trigram-based search indexes
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm").Error; err != nil {
+		return err
+	}
+
 	// Migrate domain tables
 	if err := db.AutoMigrate(
 		&types.Participant{},
@@ -82,6 +87,22 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.Guid{},
 	); err != nil {
 		return err
+	}
+
+	// GIN trigram indexes for search (LIKE '%...%' with unaccent)
+	searchIndexes := []string{
+		"CREATE INDEX IF NOT EXISTS idx_participant_first_name_trgm ON participant USING gin (lower(unaccent(first_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_participant_last_name_trgm ON participant USING gin (lower(unaccent(last_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_participant_ramq_trgm ON participant USING gin (lower(coalesce(ramq, '')) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_first_name_trgm ON contact USING gin (lower(unaccent(first_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_last_name_trgm ON contact USING gin (lower(unaccent(last_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_email_trgm ON contact USING gin (lower(email) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_phone_trgm ON contact USING gin (phone gin_trgm_ops)",
+	}
+	for _, idx := range searchIndexes {
+		if err := db.Exec(idx).Error; err != nil {
+			log.Printf("Warning: failed to create index: %v", err)
+		}
 	}
 
 	// Seed consent document and clauses (requires domain tables to exist)
