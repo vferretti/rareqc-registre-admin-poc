@@ -39,8 +39,15 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]types.Par
 	if params.Search != "" {
 		term := "%" + strings.ToLower(params.Search) + "%"
 		query = query.Where(
-			"LOWER(unaccent(first_name)) LIKE unaccent(?) OR LOWER(unaccent(last_name)) LIKE unaccent(?) OR ramq LIKE ?",
+			`id IN (
+				SELECT p.id FROM participant p
+				WHERE LOWER(unaccent(p.first_name)) LIKE unaccent(?) OR LOWER(unaccent(p.last_name)) LIKE unaccent(?) OR p.ramq LIKE ?
+				UNION
+				SELECT c.participant_id FROM contact c
+				WHERE LOWER(unaccent(c.first_name)) LIKE unaccent(?) OR LOWER(unaccent(c.last_name)) LIKE unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
+			)`,
 			term, term, term,
+			term, term, term, term,
 		)
 	}
 

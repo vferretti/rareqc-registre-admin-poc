@@ -6,7 +6,7 @@
   "home": {
     "title": "Dashboard",
     "description": "Welcome to the registry administration portal",
-    "search_placeholder": "Search by last name, first name, RAMQ or phone number.",
+    "search_placeholder": "Search a participant by name, first name, RAMQ, email, phone or contact",
     "explore_title": "Navigation",
     "explore_participants": "Participants",
     "explore_participants_description": "View and manage participant records",
@@ -111,7 +111,7 @@
     "title": "Participants",
     "description": "List of registry participants",
     "add": "Add participant",
-    "search_placeholder": "Search by last name, first name, RAMQ or phone number.",
+    "search_placeholder": "Search by name, first name, RAMQ, email, phone or contact",
     "columns": {
       "id": "ID",
       "last_name": "Last name",

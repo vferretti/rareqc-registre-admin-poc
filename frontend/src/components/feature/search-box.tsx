@@ -60,7 +60,7 @@ export function SearchBox() {
   };
 
   return (
-    <div ref={containerRef} className="relative max-w-xl w-full">
+    <div ref={containerRef} className="relative max-w-2xl w-full mx-auto">
       <InputSearch
         value={query}
         onChange={(val) => {
