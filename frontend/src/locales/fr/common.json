@@ -86,6 +86,14 @@
     "activity_title": "Historique des activités",
     "activity_content": "Toutes les actions effectuées sur ce participant sont enregistrées ici : création, modifications, ajout de contacts et de consentements."
   },
+  "create_tour": {
+    "identity_title": "Identité du participant",
+    "identity_content": "Saisissez les informations d'identité du participant : nom, prénom, date de naissance, sexe, numéro RAMQ et ville de naissance.",
+    "coordinates_title": "Coordonnées",
+    "coordinates_content": "Saisissez les coordonnées du participant. Pour les mineurs ou personnes sous tutelle, indiquez les coordonnées de la personne responsable.",
+    "contacts_title": "Personnes contact",
+    "contacts_content": "Ajoutez les personnes contact du participant (parent, tuteur, etc.). Un seul contact peut être le contact principal. Cochez « Mêmes coordonnées » pour copier l'adresse du participant."
+  },
   "common": {
     "loading": "Chargement…",
     "error": "Erreur",
@@ -119,7 +127,9 @@
     "title": "Ajouter un participant",
     "section_participant": "Participant",
     "section_coordinates": "Coordonnées",
+    "coordinates_help": "Pour les participants mineurs ou sous tutelle, indiquez ici les coordonnées de la personne responsable (parent, tuteur).",
     "section_contacts": "Personnes contact",
+    "contacts_help": "Ajoutez les personnes contact du participant. Un seul contact peut être désigné comme contact principal (responsable des communications). Cochez « Mêmes coordonnées que le participant » pour copier automatiquement l'adresse saisie ci-dessus.",
     "contact_ordinal": "Contact {{number}}",
     "first_name": "Prénom",
     "last_name": "Nom",

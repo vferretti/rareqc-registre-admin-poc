@@ -44,6 +44,7 @@ export const participantSchema = (t: TFunction) =>
     province: z.string(),
     code_postal: z.string(),
     preferred_language: z.string(),
+    contacts: z.array(contactSchema(t)),
   });
 
 export type ParticipantFormValues = z.infer<

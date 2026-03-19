@@ -15,7 +15,15 @@
       "Bash(curl -sI http://localhost:8082/swagger/index.html)",
       "Bash(curl -s http://localhost:8082/swagger/)",
       "Bash(curl -s http://localhost:8082/swagger/doc.json)",
-      "Bash(curl -s http://localhost:8082/swagger/index.html)"
+      "Bash(curl -s http://localhost:8082/swagger/index.html)",
+      "WebSearch",
+      "Bash(npx -y @smithery/cli install BrockReece/whimsical-mcp-server --client claude)",
+      "Bash(npx -y @smithery/cli@latest smithery mcp add BrockReece/whimsical-mcp-server --client claude --no-analytics)",
+      "Bash(claude mcp:*)",
+      "Bash(npm search:*)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Notion__notion-update-page",
+      "mcp__whimsical__create_whimsical_diagram"
     ]
   }
 }

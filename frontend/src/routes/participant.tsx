@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import Joyride, { type CallBackProps, STATUS } from "react-joyride";
-import { ArrowLeft, Check, Copy, Fingerprint, HelpCircle, Pencil, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Copy, Fingerprint, Pencil, Trash2, UserPlus } from "lucide-react";
+import { useTour } from "@/hooks/useTour";
+import { participantDetailTour } from "@/tours/participant-detail";
 import { useParticipant } from "@/hooks/useParticipant";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/base/page/page-header";
@@ -163,37 +164,7 @@ export default function ParticipantDetail() {
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [guidDialogOpen, setGuidDialogOpen] = useState(false);
-  const [runTour, setRunTour] = useState(false);
-
-  const tourSteps = [
-    {
-      target: '[data-tour="identity"]',
-      title: t("tour.identity_title"),
-      content: t("tour.identity_content"),
-      disableBeacon: true,
-    },
-    {
-      target: '[data-tour="contacts"]',
-      title: t("tour.contacts_title"),
-      content: t("tour.contacts_content"),
-    },
-    {
-      target: '[data-tour="consents"]',
-      title: t("tour.consents_title"),
-      content: t("tour.consents_content"),
-    },
-    {
-      target: '[data-tour="activity"]',
-      title: t("tour.activity_title"),
-      content: t("tour.activity_content"),
-    },
-  ];
-
-  const handleTourCallback = useCallback((data: CallBackProps) => {
-    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
-      setRunTour(false);
-    }
-  }, []);
+  const { TourButton, TourOverlay } = useTour(participantDetailTour);
   const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
@@ -263,9 +234,7 @@ export default function ParticipantDetail() {
         title={`${participant.first_name} ${participant.last_name}`}
         actions={
           <div className="flex gap-2">
-          <Button variant="outline" size="icon-sm" onClick={() => setRunTour(true)} title={t("tour.start")}>
-            <HelpCircle className="size-4" />
-          </Button>
+          <TourButton />
           <Button variant="outline" asChild>
             <Link to="/participants">
               <ArrowLeft className="mr-1 size-4" />
@@ -276,28 +245,7 @@ export default function ParticipantDetail() {
         }
       />
 
-      <Joyride
-        steps={tourSteps}
-        run={runTour}
-        continuous
-        showSkipButton
-        showProgress
-        scrollToFirstStep
-        callback={handleTourCallback}
-        locale={{
-          back: t("tour.back"),
-          close: t("tour.close"),
-          last: t("tour.last"),
-          next: t("tour.next"),
-          skip: t("tour.skip"),
-        }}
-        styles={{
-          options: {
-            primaryColor: "oklch(0.55 0.11 230)",
-            zIndex: 10000,
-          },
-        }}
-      />
+      <TourOverlay />
 
       <div className="p-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
