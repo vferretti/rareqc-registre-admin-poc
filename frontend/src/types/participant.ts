@@ -40,6 +40,9 @@ export interface Participant {
   date_of_death?: string | null;
   contacts?: Contact[];
   guid?: Guid | null;
+  consent_registry?: string | null;
+  consent_recontact?: string | null;
+  consent_external_linkage?: string | null;
   created_at: string;
   updated_at: string;
 }

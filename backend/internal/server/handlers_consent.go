@@ -139,14 +139,19 @@ func CreateParticipantConsentHandler(consentRepo *repository.ConsentRepository, 
 			return
 		}
 
-		// Check for duplicate: same participant + same clause
-		exists, err := consentRepo.ExistsByClause(participantID, req.ClauseID)
+		// Check for duplicate: same participant + same clause type (across templates)
+		clauseType, err := consentRepo.ClauseTypeForClause(req.ClauseID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clause ID"})
+			return
+		}
+		typeExists, err := consentRepo.ExistsByClauseType(participantID, clauseType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check existing consents"})
 			return
 		}
-		if exists {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "A consent for this clause already exists for this participant"})
+		if typeExists {
+			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "A consent of this type already exists for this participant"})
 			return
 		}
 

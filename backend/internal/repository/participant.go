@@ -25,8 +25,16 @@ func (r *ParticipantRepository) FindByID(id string) (types.Participant, error) {
 	return p, err
 }
 
-// List returns a paginated, sortable, searchable list of participants.
-func (r *ParticipantRepository) List(params types.PaginationParams) ([]types.Participant, int, int, error) {
+// ParticipantListItem extends Participant with consent status summaries.
+type ParticipantListItem struct {
+	types.Participant
+	ConsentRegistry        *string `json:"consent_registry" gorm:"column:consent_registry"`
+	ConsentRecontact       *string `json:"consent_recontact" gorm:"column:consent_recontact"`
+	ConsentExternalLinkage *string `json:"consent_external_linkage" gorm:"column:consent_external_linkage"`
+}
+
+// List returns a paginated, sortable, searchable list of participants with consent statuses.
+func (r *ParticipantRepository) List(params types.PaginationParams) ([]ParticipantListItem, int, int, error) {
 	allowedSortFields := map[string]string{
 		"id": "id", "first_name": "first_name", "last_name": "last_name",
 		"date_of_birth": "date_of_birth", "sex_at_birth_code": "sex_at_birth_code",
@@ -51,6 +59,13 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]types.Par
 		)
 	}
 
+	if len(params.ConsentStatus) > 0 {
+		query = query.Where(
+			`id IN (SELECT c.participant_id FROM consent c WHERE c.status_code IN ?)`,
+			params.ConsentStatus,
+		)
+	}
+
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, 0, err
@@ -67,8 +82,21 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]types.Par
 		order += " ASC"
 	}
 
-	var participants []types.Participant
-	err := query.Order(order).
+	var participants []ParticipantListItem
+	err := query.
+		Select(`participant.*,
+			cs.consent_registry,
+			cs.consent_recontact,
+			cs.consent_external_linkage`).
+		Joins(`LEFT JOIN (
+			SELECT c.participant_id,
+				MAX(CASE WHEN cc.clause_type_code = 'registry' THEN c.status_code END) AS consent_registry,
+				MAX(CASE WHEN cc.clause_type_code = 'recontact' THEN c.status_code END) AS consent_recontact,
+				MAX(CASE WHEN cc.clause_type_code = 'external_linkage' THEN c.status_code END) AS consent_external_linkage
+			FROM consent c JOIN consent_clause cc ON c.clause_id = cc.id
+			GROUP BY c.participant_id
+		) cs ON cs.participant_id = participant.id`).
+		Order(order).
 		Offset(params.PageIndex * params.PageSize).
 		Limit(params.PageSize).
 		Find(&participants).Error

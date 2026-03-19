@@ -130,7 +130,7 @@ func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.Handler
 			return
 		}
 
-		c.JSON(http.StatusOK, types.PaginatedResponse[types.Participant]{
+		c.JSON(http.StatusOK, types.PaginatedResponse[repository.ParticipantListItem]{
 			Data:       participants,
 			Total:      total,
 			PageIndex:  params.PageIndex,

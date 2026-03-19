@@ -1,11 +1,12 @@
 package types
 
 type PaginationParams struct {
-	PageIndex int    `json:"page_index"`
-	PageSize  int    `json:"page_size"`
-	SortField string `json:"sort_field"`
-	SortOrder string `json:"sort_order"`
-	Search    string `json:"search"`
+	PageIndex     int      `json:"page_index"`
+	PageSize      int      `json:"page_size"`
+	SortField     string   `json:"sort_field"`
+	SortOrder     string   `json:"sort_order"`
+	Search        string   `json:"search"`
+	ConsentStatus []string `json:"consent_status"`
 }
 
 type PaginatedResponse[T any] struct {

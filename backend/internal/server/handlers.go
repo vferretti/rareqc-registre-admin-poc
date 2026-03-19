@@ -2,6 +2,7 @@ package server
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	searchRepo := repository.NewSearchRepository(db)
 	consentRepo := repository.NewConsentRepository(db)
 	docRepo := repository.NewDocumentRepository(db)
+	extIDRepo := repository.NewExternalIDRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -59,6 +61,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/documents", UploadDocumentHandler(docRepo))
 		api.GET("/documents/:id/file", DownloadDocumentHandler(docRepo))
 
+		api.GET("/participants/:id/external-ids", ListParticipantExternalIDsHandler(extIDRepo))
+
 		api.GET("/search", SearchHandler(searchRepo))
 
 		api.GET("/activity-logs", ListActivityLogsHandler(activityRepo))
@@ -75,6 +79,11 @@ func parsePaginationParams(c *gin.Context, defaultSortField string) types.Pagina
 	sortField := c.DefaultQuery("sort_field", defaultSortField)
 	sortOrder := c.DefaultQuery("sort_order", "asc")
 	search := c.Query("search")
+	consentStatusRaw := c.Query("consent_status")
+	var consentStatus []string
+	if consentStatusRaw != "" {
+		consentStatus = strings.Split(consentStatusRaw, ",")
+	}
 
 	if pageSize < 1 {
 		pageSize = 25
@@ -90,7 +99,8 @@ func parsePaginationParams(c *gin.Context, defaultSortField string) types.Pagina
 		PageIndex: pageIndex,
 		PageSize:  pageSize,
 		SortField: sortField,
-		SortOrder: sortOrder,
-		Search:    search,
+		SortOrder:     sortOrder,
+		Search:        search,
+		ConsentStatus: consentStatus,
 	}
 }

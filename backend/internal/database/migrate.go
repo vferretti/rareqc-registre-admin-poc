@@ -85,9 +85,36 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.ConsentClause{},
 		&types.Consent{},
 		&types.Guid{},
+		&types.ExternalSystem{},
+		&types.ExternalID{},
 	); err != nil {
 		return err
 	}
+
+	// Constraint: one consent per clause type per participant (across templates)
+	db.Exec(`
+		CREATE OR REPLACE FUNCTION check_unique_consent_clause_type()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			IF EXISTS (
+				SELECT 1 FROM consent c
+				JOIN consent_clause cc ON c.clause_id = cc.id
+				JOIN consent_clause new_cc ON new_cc.id = NEW.clause_id
+				WHERE c.participant_id = NEW.participant_id
+				AND cc.clause_type_code = new_cc.clause_type_code
+				AND c.id != COALESCE(NEW.id, 0)
+			) THEN
+				RAISE EXCEPTION 'A consent of this clause type already exists for this participant';
+			END IF;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql`)
+	db.Exec(`
+		DROP TRIGGER IF EXISTS trg_unique_consent_clause_type ON consent`)
+	db.Exec(`
+		CREATE TRIGGER trg_unique_consent_clause_type
+		BEFORE INSERT OR UPDATE ON consent
+		FOR EACH ROW EXECUTE FUNCTION check_unique_consent_clause_type()`)
 
 	// GIN trigram indexes for search (LIKE '%...%' with unaccent)
 	searchIndexes := []string{

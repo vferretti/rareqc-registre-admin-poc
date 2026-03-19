@@ -107,7 +107,13 @@
     "search_placeholder": "Search…",
     "clear": "Clear",
     "actions": "Actions",
-    "replace": "Replace"
+    "replace": "Replace",
+    "table": {
+      "columns": "Columns",
+      "reset": "Reset",
+      "maximize": "Fullscreen",
+      "minimize": "Exit fullscreen"
+    }
   },
   "participants": {
     "title": "Participants",
@@ -122,6 +128,10 @@
       "sex_at_birth": "Sex at birth",
       "vital_status": "Vital status",
       "ramq": "RAMQ",
+      "consent": "Consent",
+      "consent_registry": "Registry",
+      "consent_recontact": "Recontact",
+      "consent_external_linkage": "Linkage",
       "created_at": "Registration date"
     }
   },

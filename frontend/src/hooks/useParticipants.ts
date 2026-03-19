@@ -8,6 +8,7 @@ interface UseParticipantsParams {
   sortField: string;
   sortOrder: string;
   search?: string;
+  consentStatus?: string[];
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
@@ -19,6 +20,7 @@ export function useParticipants({
   sortField,
   sortOrder,
   search,
+  consentStatus,
 }: UseParticipantsParams) {
   const params = new URLSearchParams({
     page_index: String(pageIndex),
@@ -27,6 +29,7 @@ export function useParticipants({
     sort_order: sortOrder,
   });
   if (search) params.set("search", search);
+  if (consentStatus?.length) params.set("consent_status", consentStatus.join(","));
 
   const { data, error, isLoading, mutate } = useSWR<
     PaginatedResponse<Participant>

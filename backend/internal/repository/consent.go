@@ -58,6 +58,23 @@ func (r *ConsentRepository) ExistsByClause(participantID, clauseID int) (bool, e
 	return count > 0, err
 }
 
+// ExistsByClauseType returns true if a consent already exists for this participant and clause type.
+func (r *ConsentRepository) ExistsByClauseType(participantID int, clauseTypeCode string) (bool, error) {
+	var count int64
+	err := r.db.Model(&types.Consent{}).
+		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Where("consent.participant_id = ? AND consent_clause.clause_type_code = ?", participantID, clauseTypeCode).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// ClauseTypeForClause returns the clause_type_code for a given clause ID.
+func (r *ConsentRepository) ClauseTypeForClause(clauseID int) (string, error) {
+	var clause types.ConsentClause
+	err := r.db.Select("clause_type_code").First(&clause, clauseID).Error
+	return clause.ClauseTypeCode, err
+}
+
 // Create inserts a new consent record.
 func (r *ConsentRepository) Create(consent *types.Consent) error {
 	return r.db.Create(consent).Error

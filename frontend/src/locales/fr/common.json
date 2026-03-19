@@ -107,7 +107,13 @@
     "search_placeholder": "Rechercher…",
     "clear": "Effacer",
     "actions": "Actions",
-    "replace": "Remplacer"
+    "replace": "Remplacer",
+    "table": {
+      "columns": "Colonnes",
+      "reset": "Réinitialiser",
+      "maximize": "Plein écran",
+      "minimize": "Quitter le plein écran"
+    }
   },
   "participants": {
     "title": "Participants",
@@ -122,6 +128,10 @@
       "sex_at_birth": "Sexe à la naissance",
       "vital_status": "Statut vital",
       "ramq": "RAMQ",
+      "consent": "Consentement",
+      "consent_registry": "Registre",
+      "consent_recontact": "Recontact",
+      "consent_external_linkage": "Liaison",
       "created_at": "Date d'inscription"
     }
   },

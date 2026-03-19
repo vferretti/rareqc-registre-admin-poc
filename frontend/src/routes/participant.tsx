@@ -45,7 +45,11 @@ import { ParticipantConsents } from "@/components/feature/participant-consents";
 import { useConsents } from "@/hooks/useConsents";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
+import { useExternalIds } from "@/hooks/useExternalIds";
 import type { Contact } from "@/types/participant";
+
+/** Rotating badge colors for external systems. */
+const EXT_BADGE_COLORS = ["cyan", "violet", "orange", "green", "fuchsia", "amber", "blue", "lime"] as const;
 
 /** Displays a label/value pair inside a definition list. */
 function Field({
@@ -155,6 +159,7 @@ export default function ParticipantDetail() {
   const { t } = useTranslation();
   const { participant, isLoading, error, mutate } = useParticipant(id);
   const { consents } = useConsents(participant?.id);
+  const { externalIds } = useExternalIds(participant?.id);
   const signerContactIds = new Set(
     consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id),
   );
@@ -231,7 +236,27 @@ export default function ParticipantDetail() {
     <TooltipProvider>
     <>
       <PageHeader
-        title={`${participant.first_name} ${participant.last_name}`}
+        title={
+          <span className="flex items-center gap-3">
+            {participant.first_name} {participant.last_name}
+            <Badge variant="blue" className="text-xs font-normal">
+              <span className="font-bold">ID</span>: {participant.id}
+            </Badge>
+            {externalIds.map((ext, i) => (
+              <Tooltip key={ext.id}>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant={EXT_BADGE_COLORS[i % EXT_BADGE_COLORS.length]}
+                    className="text-xs font-normal cursor-default"
+                  >
+                    <span className="font-bold">{ext.system_name}</span>: {ext.external_id}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>{ext.system_title}</TooltipContent>
+              </Tooltip>
+            ))}
+          </span>
+        }
         actions={
           <div className="flex gap-2">
           <TourButton />

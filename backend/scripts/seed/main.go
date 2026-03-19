@@ -78,6 +78,7 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM external_id")
 	db.Exec("DELETE FROM consent")
 	db.Exec("DELETE FROM document_file")
 	db.Exec("DELETE FROM activity_log")
@@ -109,7 +110,10 @@ func main() {
 	// Seed consents
 	seedConsents(db)
 
-	log.Println("Seed complete: 100 participants created with activity logs and consents")
+	// Seed external systems and IDs
+	seedExternalSystems(db)
+
+	log.Println("Seed complete: 100 participants created with activity logs, consents, and external IDs")
 }
 
 func createActivityLog(db *gorm.DB, actionTypeCode string, participantID int, author string, details string, createdAt time.Time) {
@@ -548,6 +552,46 @@ func generateRAMQ(firstName, lastName string, dob time.Time, isFemale bool) stri
 		year, month,
 		dob.Day(), seq,
 	)
+}
+
+// seedExternalSystems creates external systems and assigns external IDs to some participants.
+func seedExternalSystems(db *gorm.DB) {
+	cqdg := types.ExternalSystem{
+		Name:  "CQDG",
+		Title: "Centre québécois de données génomiques",
+	}
+	db.Where("name = ?", cqdg.Name).FirstOrCreate(&cqdg)
+
+	cqgc := types.ExternalSystem{
+		Name:  "CQGC",
+		Title: "Centre québécois de génomique clinique",
+	}
+	db.Where("name = ?", cqgc.Name).FirstOrCreate(&cqgc)
+
+	var participants []types.Participant
+	db.Find(&participants)
+
+	cqdgCount, cqgcCount := 0, 0
+	for _, p := range participants {
+		if rand.Float64() < 0.6 {
+			db.Create(&types.ExternalID{
+				ExternalSystemID: cqdg.ID,
+				ParticipantID:    p.ID,
+				ExternalID:       fmt.Sprintf("CQDG-%06d", rand.Intn(999999)+1),
+			})
+			cqdgCount++
+		}
+		if rand.Float64() < 0.4 {
+			db.Create(&types.ExternalID{
+				ExternalSystemID: cqgc.ID,
+				ParticipantID:    p.ID,
+				ExternalID:       fmt.Sprintf("CQGC-%06d", rand.Intn(999999)+1),
+			})
+			cqgcCount++
+		}
+	}
+
+	log.Printf("External systems seeded: CQDG (%d IDs), CQGC (%d IDs)", cqdgCount, cqgcCount)
 }
 
 func upper(s string) string {

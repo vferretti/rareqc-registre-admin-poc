@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
-import { Download, CheckCircle2, XCircle, Clock, Plus, Pencil, Info } from "lucide-react";
+import { Download, CheckCircle2, Plus, Pencil, Info } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -25,24 +25,9 @@ import { useConsents } from "@/hooks/useConsents";
 import { ConsentFormDialog } from "@/components/feature/consent-form-dialog";
 import { ConsentEditDialog } from "@/components/feature/consent-edit-dialog";
 import { formatDate } from "@/lib/format";
+import { CONSENT_STATUS_BADGE, CONSENT_STATUS_ICON, CONSENT_STATUS_COLOR } from "@/lib/badge-variants";
 import type { ConsentResponse } from "@/types/consent";
 import type { Contact } from "@/types/participant";
-
-const STATUS_ICON: Record<string, typeof CheckCircle2> = {
-  valid: CheckCircle2,
-  expired: Clock,
-  withdrawn: XCircle,
-};
-
-const STATUS_BADGE: Record<
-  string,
-  "green" | "secondary" | "destructive" | "amber"
-> = {
-  valid: "green",
-  expired: "secondary",
-  withdrawn: "destructive",
-  replaced_by_new_version: "amber",
-};
 
 interface ParticipantConsentsProps {
   participantId: number;
@@ -58,14 +43,13 @@ export function ParticipantConsents({
   consents: externalConsents,
   onConsentAdded,
 }: ParticipantConsentsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     consents: fetchedConsents,
     isLoading,
     mutate,
   } = useConsents(externalConsents ? undefined : participantId);
   const consents = externalConsents ?? fetchedConsents;
-  const { i18n } = useTranslation();
   const lang = i18n.language === "fr" ? "clause_fr" : "clause_en";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingConsent, setEditingConsent] = useState<ConsentResponse | null>(null);
@@ -110,17 +94,11 @@ export function ParticipantConsents({
           ) : (
             <div className="space-y-3">
               {consents.map((c) => {
-                const Icon = STATUS_ICON[c.status_code] ?? CheckCircle2;
+                const Icon = CONSENT_STATUS_ICON[c.status_code] ?? CheckCircle2;
                 return (
                   <div key={c.id} className="flex items-start gap-3">
                     <Icon
-                      className={`size-5 shrink-0 mt-0.5 ${
-                        c.status_code === "valid"
-                          ? "text-green-600"
-                          : c.status_code === "withdrawn"
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                      }`}
+                      className={`size-5 shrink-0 mt-0.5 ${CONSENT_STATUS_COLOR[c.status_code] ?? "text-muted-foreground"}`}
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -131,7 +109,7 @@ export function ParticipantConsents({
                         </span>
                         <Badge
                           variant={
-                            STATUS_BADGE[c.status_code] ?? "secondary"
+                            CONSENT_STATUS_BADGE[c.status_code] ?? "secondary"
                           }
                         >
                           {t(`enums.consent_status.${c.status_code}`, {
@@ -269,7 +247,7 @@ export function ParticipantConsents({
                   <p className="text-xs font-medium text-muted-foreground">
                     {t("participant_detail.consent_status")}
                   </p>
-                  <Badge variant={STATUS_BADGE[viewingClause.status_code] ?? "secondary"}>
+                  <Badge variant={CONSENT_STATUS_BADGE[viewingClause.status_code] ?? "secondary"}>
                     {t(`enums.consent_status.${viewingClause.status_code}`, {
                       defaultValue: viewingClause.status_code,
                     })}
