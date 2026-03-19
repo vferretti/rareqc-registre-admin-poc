@@ -31,6 +31,11 @@ docker compose up --build
 docker compose --profile dev run --rm seed
 ```
 
+> **Note** : Si les changements récents ne sont pas visibles, Docker peut réutiliser un cache d'image. Forcer un rebuild complet avec :
+> ```bash
+> docker compose build --no-cache && docker compose up -d
+> ```
+
 | Service    | URL                          |
 |------------|------------------------------|
 | Frontend   | http://localhost:3001         |
