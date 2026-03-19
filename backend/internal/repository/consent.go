@@ -115,7 +115,9 @@ func (r *ConsentRepository) ListByParticipant(participantID int) ([]ConsentRespo
 			resp.DocumentName = c.Document.Name
 			resp.DocumentMime = c.Document.MimeType
 		}
-		resp.TemplateName = c.Clause.TemplateDocument.Name
+		if c.Clause.TemplateDocument.ID != 0 {
+			resp.TemplateName = c.Clause.TemplateDocument.Name
+		}
 		responses[i] = resp
 	}
 	return responses, nil

@@ -27,6 +27,17 @@ func parseDate(dateStr string) (*time.Time, error) {
 	return &d, nil
 }
 
+// validateDates checks that date of birth is not in the future and date of death is after date of birth.
+func validateDates(dob time.Time, dateOfDeath *time.Time) error {
+	if dob.After(time.Now()) {
+		return fmt.Errorf("date of birth cannot be in the future")
+	}
+	if dateOfDeath != nil && dateOfDeath.Before(dob) {
+		return fmt.Errorf("date of death cannot be before date of birth")
+	}
+	return nil
+}
+
 // toStringPtr returns a pointer to s, or nil if s is empty.
 func toStringPtr(s string) *string {
 	if s == "" {
@@ -263,6 +274,11 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 			return
 		}
 
+		if err := validateDates(dob, dateOfDeath); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			return
+		}
+
 		ramq := toStringPtr(req.RAMQ)
 		author := getAuthor(c)
 
@@ -360,6 +376,11 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		dateOfDeath, err := parseDate(req.DateOfDeath)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			return
+		}
+
+		if err := validateDates(dob, dateOfDeath); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
 			return
 		}
 
