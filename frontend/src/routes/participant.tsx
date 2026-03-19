@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, Copy, Fingerprint, Pencil, Trash2, UserPlus } from "lucide-react";
+import Joyride, { type CallBackProps, STATUS } from "react-joyride";
+import { ArrowLeft, Check, Copy, Fingerprint, HelpCircle, Pencil, Trash2, UserPlus } from "lucide-react";
 import { useParticipant } from "@/hooks/useParticipant";
 import api from "@/lib/api";
 import { PageHeader } from "@/components/base/page/page-header";
@@ -162,6 +163,37 @@ export default function ParticipantDetail() {
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [guidDialogOpen, setGuidDialogOpen] = useState(false);
+  const [runTour, setRunTour] = useState(false);
+
+  const tourSteps = [
+    {
+      target: '[data-tour="identity"]',
+      title: t("tour.identity_title"),
+      content: t("tour.identity_content"),
+      disableBeacon: true,
+    },
+    {
+      target: '[data-tour="contacts"]',
+      title: t("tour.contacts_title"),
+      content: t("tour.contacts_content"),
+    },
+    {
+      target: '[data-tour="consents"]',
+      title: t("tour.consents_title"),
+      content: t("tour.consents_content"),
+    },
+    {
+      target: '[data-tour="activity"]',
+      title: t("tour.activity_title"),
+      content: t("tour.activity_content"),
+    },
+  ];
+
+  const handleTourCallback = useCallback((data: CallBackProps) => {
+    if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED) {
+      setRunTour(false);
+    }
+  }, []);
   const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
@@ -230,13 +262,41 @@ export default function ParticipantDetail() {
       <PageHeader
         title={`${participant.first_name} ${participant.last_name}`}
         actions={
+          <div className="flex gap-2">
+          <Button variant="outline" size="icon-sm" onClick={() => setRunTour(true)} title={t("tour.start")}>
+            <HelpCircle className="size-4" />
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/participants">
               <ArrowLeft className="mr-1 size-4" />
               {t("participant_detail.back")}
             </Link>
           </Button>
+          </div>
         }
+      />
+
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showSkipButton
+        showProgress
+        scrollToFirstStep
+        callback={handleTourCallback}
+        locale={{
+          back: t("tour.back"),
+          close: t("tour.close"),
+          last: t("tour.last"),
+          next: t("tour.next"),
+          skip: t("tour.skip"),
+        }}
+        styles={{
+          options: {
+            primaryColor: "oklch(0.55 0.11 230)",
+            zIndex: 10000,
+          },
+        }}
       />
 
       <div className="p-8">
@@ -244,7 +304,7 @@ export default function ParticipantDetail() {
           {/* Left column — Identity + Contacts */}
           <div className="space-y-6">
             {/* Identity & coordinates card */}
-            <Card>
+            <Card data-tour="identity">
               <CardHeader>
                 <CardTitle>
                   {t("participant_detail.section_identity")}
@@ -366,7 +426,7 @@ export default function ParticipantDetail() {
             </Card>
 
             {/* Contacts card */}
-            <Card>
+            <Card data-tour="contacts">
               <CardHeader>
                 <CardTitle>
                   {t("participant_detail.section_contacts")}
@@ -411,13 +471,17 @@ export default function ParticipantDetail() {
 
           {/* Right column — Consents + Activity history */}
           <div className="flex flex-col gap-6">
+            <div data-tour="consents">
             <ParticipantConsents
               participantId={participant.id}
               contacts={participant.contacts ?? []}
               consents={consents}
               onConsentAdded={handleSuccess}
             />
+            </div>
+            <div data-tour="activity">
             <ParticipantActivityLog participantId={participant.id} />
+            </div>
           </div>
         </div>
       </div>
