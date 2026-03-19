@@ -81,6 +81,99 @@ func (r *ConsentRepository) ListConsentTemplates() ([]types.Document, error) {
 	return docs, err
 }
 
+// CreateTemplate creates a consent template document with its clauses in a single transaction.
+func (r *ConsentRepository) CreateTemplate(doc *types.Document, fileData []byte, clauses []types.ConsentClause) error {
+	doc.StorageType = "database"
+	doc.FileSize = int64(len(fileData))
+	doc.TypeCode = "consent_template"
+
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(doc).Error; err != nil {
+			return err
+		}
+
+		file := types.DocumentFile{
+			DocumentID: doc.ID,
+			Data:       fileData,
+		}
+		if err := tx.Create(&file).Error; err != nil {
+			return err
+		}
+
+		for i := range clauses {
+			clauses[i].TemplateDocumentID = doc.ID
+			if err := tx.Create(&clauses[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+// HasConsentsForTemplate returns true if any participant has consented to any clause of the given template.
+func (r *ConsentRepository) HasConsentsForTemplate(templateDocID int) (bool, error) {
+	var count int64
+	err := r.db.Model(&types.Consent{}).
+		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Where("consent_clause.template_document_id = ?", templateDocID).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// DeleteTemplate deletes a consent template, its clauses, and the document file.
+func (r *ConsentRepository) DeleteTemplate(templateDocID int) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("template_document_id = ?", templateDocID).Delete(&types.ConsentClause{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("document_id = ?", templateDocID).Delete(&types.DocumentFile{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&types.Document{}, templateDocID).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+// UpdateTemplate updates a consent template's name, clauses, and optionally replaces the PDF file.
+func (r *ConsentRepository) UpdateTemplate(templateDocID int, name string, fileData []byte, clauses []types.ConsentClause) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// Update document name
+		if err := tx.Model(&types.Document{}).Where("id = ?", templateDocID).Update("name", name).Error; err != nil {
+			return err
+		}
+
+		// Replace file if provided
+		if fileData != nil {
+			if err := tx.Where("document_id = ?", templateDocID).Delete(&types.DocumentFile{}).Error; err != nil {
+				return err
+			}
+			file := types.DocumentFile{DocumentID: templateDocID, Data: fileData}
+			if err := tx.Create(&file).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&types.Document{}).Where("id = ?", templateDocID).Update("file_size", int64(len(fileData))).Error; err != nil {
+				return err
+			}
+		}
+
+		// Delete old clauses and recreate
+		if err := tx.Where("template_document_id = ?", templateDocID).Delete(&types.ConsentClause{}).Error; err != nil {
+			return err
+		}
+		for i := range clauses {
+			clauses[i].TemplateDocumentID = templateDocID
+			if err := tx.Create(&clauses[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
 // ListByParticipant returns all consents for a participant with clause and signer details.
 func (r *ConsentRepository) ListByParticipant(participantID int) ([]ConsentResponse, error) {
 	var consents []types.Consent

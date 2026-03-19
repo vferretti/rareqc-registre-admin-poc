@@ -5,17 +5,19 @@ import api from "@/lib/api";
 export interface ConsentTemplate {
   id: number;
   name: string;
+  file_name: string;
   type_code: string;
   mime_type: string;
+  has_consents: boolean;
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches all consent template documents. */
 export function useConsentTemplates() {
-  const { data, isLoading } = useSWR<ConsentTemplate[]>(
+  const { data, isLoading, mutate } = useSWR<ConsentTemplate[]>(
     "/consent-templates",
     fetcher,
   );
-  return { templates: data ?? [], isLoading };
+  return { templates: data ?? [], isLoading, mutate };
 }

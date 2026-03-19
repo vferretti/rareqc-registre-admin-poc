@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
-import { Upload, X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
+import { FileUpload } from "@/components/base/file-upload";
 import { useConsentClauses } from "@/hooks/useConsentClauses";
 import { useConsentTemplates } from "@/hooks/useConsentTemplates";
 import {
@@ -67,7 +68,6 @@ export function ConsentFormDialog({
   const { templates } = useConsentTemplates();
   const [templateId, setTemplateId] = useState("");
   const { clauses } = useConsentClauses(templateId ? Number(templateId) : undefined);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [entries, setEntries] = useState<ConsentEntry[]>([emptyEntry()]);
   const [file, setFile] = useState<File | null>(null);
@@ -94,7 +94,6 @@ export function ConsentFormDialog({
     setEntries([emptyEntry()]);
     setFile(null);
     setSubmitError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleTemplateChange = (value: string) => {
@@ -177,43 +176,7 @@ export function ConsentFormDialog({
           {/* Shared document upload */}
           <div className="space-y-2">
             <Label><Trans i18nKey="participant_detail.document_signed">Document <strong>signed</strong></Trans></Label>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="size-4 mr-1" />
-                {t("participant_detail.upload_file")}
-              </Button>
-              <span className="text-sm text-muted-foreground truncate flex-1">
-                {file
-                  ? file.name
-                  : t("participant_detail.no_file_selected")}
-              </span>
-              {file && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => {
-                    setFile(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="size-4" />
-                </Button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              />
-            </div>
+            <FileUpload file={file} onChange={setFile} accept=".pdf,.doc,.docx" />
           </div>
 
           <hr className="border-border" />

@@ -1,8 +1,12 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -77,13 +81,22 @@ func ListConsentClausesHandler(consentRepo *repository.ConsentRepository) gin.Ha
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates [get]
 func ListConsentTemplatesHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+	type templateResponse struct {
+		types.Document
+		HasConsents bool `json:"has_consents"`
+	}
 	return func(c *gin.Context) {
 		templates, err := consentRepo.ListConsentTemplates()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch templates"})
 			return
 		}
-		c.JSON(http.StatusOK, templates)
+		results := make([]templateResponse, len(templates))
+		for i, tpl := range templates {
+			has, _ := consentRepo.HasConsentsForTemplate(tpl.ID)
+			results[i] = templateResponse{Document: tpl, HasConsents: has}
+		}
+		c.JSON(http.StatusOK, results)
 	}
 }
 
@@ -241,5 +254,222 @@ func UpdateConsentHandler(consentRepo *repository.ConsentRepository, activityRep
 		}
 
 		c.JSON(http.StatusOK, consent)
+	}
+}
+
+// CreateConsentTemplateClause represents a clause in the create-template request.
+type CreateConsentTemplateClause struct {
+	ClauseFr       string `json:"clause_fr"`
+	ClauseEn       string `json:"clause_en"`
+	ClauseTypeCode string `json:"clause_type_code"`
+}
+
+// CreateConsentTemplateHandler creates a consent template document with its clauses.
+//
+// @Summary     Create a consent template
+// @Description Creates a consent template document (PDF) with associated clauses
+// @Tags        consents
+// @Accept      multipart/form-data
+// @Produce     json
+// @Param       name    formData string true  "Template display name"
+// @Param       clauses formData string true  "JSON array of clauses"
+// @Param       file    formData file   true  "PDF file"
+// @Success     201 {object} types.Document
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /consent-templates [post]
+func CreateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		name := c.PostForm("name")
+		clausesJSON := c.PostForm("clauses")
+
+		if name == "" || clausesJSON == "" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name and clauses are required"})
+			return
+		}
+
+		var clauseReqs []CreateConsentTemplateClause
+		if err := json.Unmarshal([]byte(clausesJSON), &clauseReqs); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clauses JSON"})
+			return
+		}
+
+		if len(clauseReqs) == 0 {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "At least one clause is required"})
+			return
+		}
+
+		fileHeader, err := c.FormFile("file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "file is required"})
+			return
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			return
+		}
+		defer file.Close()
+
+		fileBytes, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			return
+		}
+
+		mimeType := fileHeader.Header.Get("Content-Type")
+		if mimeType == "" || mimeType == "application/octet-stream" {
+			mimeType = mime.TypeByExtension(filepath.Ext(fileHeader.Filename))
+			if mimeType == "" {
+				mimeType = "application/octet-stream"
+			}
+		}
+
+		doc := types.Document{
+			Name:     name,
+			FileName: fileHeader.Filename,
+			MimeType: mimeType,
+		}
+
+		clauses := make([]types.ConsentClause, len(clauseReqs))
+		for i, cr := range clauseReqs {
+			clauses[i] = types.ConsentClause{
+				ClauseFr:       cr.ClauseFr,
+				ClauseEn:       cr.ClauseEn,
+				ClauseTypeCode: cr.ClauseTypeCode,
+			}
+		}
+
+		if err := consentRepo.CreateTemplate(&doc, fileBytes, clauses); err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create template"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, doc)
+	}
+}
+
+// DeleteConsentTemplateHandler deletes a consent template if no consents exist for it.
+//
+// @Summary     Delete a consent template
+// @Description Deletes a consent template and its clauses. Fails with 409 if any consents exist.
+// @Tags        consents
+// @Param       id path int true "Template document ID"
+// @Success     204
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     409 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /consent-templates/{id} [delete]
+func DeleteConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var id int
+		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid template ID"})
+			return
+		}
+
+		hasConsents, err := consentRepo.HasConsentsForTemplate(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consents"})
+			return
+		}
+		if hasConsents {
+			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "Cannot delete: participants have signed this template"})
+			return
+		}
+
+		if err := consentRepo.DeleteTemplate(id); err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete template"})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	}
+}
+
+// UpdateConsentTemplateHandler updates a consent template if no consents exist for it.
+//
+// @Summary     Update a consent template
+// @Description Updates a consent template's name, clauses, and optionally the PDF. Fails with 409 if any consents exist.
+// @Tags        consents
+// @Accept      multipart/form-data
+// @Produce     json
+// @Param       id      path     int    true  "Template document ID"
+// @Param       name    formData string true  "Template display name"
+// @Param       clauses formData string true  "JSON array of clauses"
+// @Param       file    formData file   false "PDF file (optional)"
+// @Success     200 {object} types.Document
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     409 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /consent-templates/{id} [put]
+func UpdateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var id int
+		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid template ID"})
+			return
+		}
+
+		hasConsents, err := consentRepo.HasConsentsForTemplate(id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consents"})
+			return
+		}
+		if hasConsents {
+			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "Cannot edit: participants have signed this template"})
+			return
+		}
+
+		name := c.PostForm("name")
+		clausesJSON := c.PostForm("clauses")
+		if name == "" || clausesJSON == "" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name and clauses are required"})
+			return
+		}
+
+		var clauseReqs []CreateConsentTemplateClause
+		if err := json.Unmarshal([]byte(clausesJSON), &clauseReqs); err != nil {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clauses JSON"})
+			return
+		}
+
+		if len(clauseReqs) == 0 {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "At least one clause is required"})
+			return
+		}
+
+		// Optional file replacement
+		var fileBytes []byte
+		if fileHeader, err := c.FormFile("file"); err == nil {
+			file, err := fileHeader.Open()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+				return
+			}
+			defer file.Close()
+			fileBytes, err = io.ReadAll(file)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+				return
+			}
+		}
+
+		clauses := make([]types.ConsentClause, len(clauseReqs))
+		for i, cr := range clauseReqs {
+			clauses[i] = types.ConsentClause{
+				ClauseFr:       cr.ClauseFr,
+				ClauseEn:       cr.ClauseEn,
+				ClauseTypeCode: cr.ClauseTypeCode,
+			}
+		}
+
+		if err := consentRepo.UpdateTemplate(id, name, fileBytes, clauses); err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update template"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"id": id, "name": name})
 	}
 }

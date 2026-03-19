@@ -105,7 +105,9 @@
     "search": "Rechercher",
     "noResults": "Aucun résultat",
     "search_placeholder": "Rechercher…",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "actions": "Actions",
+    "replace": "Remplacer"
   },
   "participants": {
     "title": "Participants",
@@ -296,7 +298,23 @@
     "users_description": "Gérer les comptes et les permissions des administrateurs",
     "consents": "Formulaires de consentement",
     "consents_description": "Gérer les documents et clauses de consentement",
-    "coming_soon": "À venir"
+    "coming_soon": "À venir",
+    "no_templates": "Aucun formulaire de consentement",
+    "add_template": "Ajouter un formulaire",
+    "template_name": "Nom du formulaire",
+    "template_file": "Fichier PDF",
+    "clauses": "Clauses",
+    "add_clause": "Ajouter une clause",
+    "clause_type": "Type de clause",
+    "clause_fr": "Texte (français)",
+    "clause_en": "Texte (anglais)",
+    "remove_clause": "Retirer",
+    "download_template": "Télécharger le PDF",
+    "edit_template": "Modifier le formulaire",
+    "file_optional_edit": "laisser vide pour conserver le fichier actuel",
+    "template_has_consents": "Ce formulaire a été signé par des participants",
+    "delete_template_title": "Supprimer le formulaire",
+    "delete_template_confirm": "Êtes-vous sûr de vouloir supprimer « {{name}} » et toutes ses clauses ?"
   },
   "activity_log": {
     "title": "Journal d'activités",
