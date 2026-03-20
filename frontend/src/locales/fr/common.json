@@ -120,6 +120,7 @@
     "title": "Participants",
     "description": "Liste des participants du registre",
     "add": "Ajouter un participant",
+    "export": "Exporter en Excel",
     "search_placeholder": "Rechercher par nom, prénom, RAMQ, ID, courriel, téléphone ou contact",
     "consent_filter": "Consentements",
     "external_system_filter": "Système externe",

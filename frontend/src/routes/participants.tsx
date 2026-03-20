@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Link as LinkIcon, ListFilter, Plus, X } from "lucide-react";
+import { CheckCircle2, Download, Link as LinkIcon, ListFilter, Plus, X } from "lucide-react";
+import ExcelJS from "exceljs";
 import {
   type ColumnDef,
   type SortingState,
@@ -41,6 +42,7 @@ import {
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
 import { BulkIdFilterDialog } from "@/components/feature/bulk-id-filter-dialog";
 import { Badge } from "@/components/base/badges/badge";
+import api from "@/lib/api";
 import { useParticipants } from "@/hooks/useParticipants";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -111,6 +113,78 @@ export default function Participants() {
     });
 
   const { systems: externalSystems } = useExternalSystems();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch all participants with same filters but no pagination
+      const params = new URLSearchParams({
+        page_index: "0",
+        page_size: String(total || 200),
+        sort_field: sorting[0]?.id ?? "last_name",
+        sort_order: sorting[0]?.desc ? "desc" : "asc",
+      });
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (consentFilter.registry.length > 0) params.set("consent_registry", consentFilter.registry.join(","));
+      if (consentFilter.recontact.length > 0) params.set("consent_recontact", consentFilter.recontact.join(","));
+      if (consentFilter.external_linkage.length > 0) params.set("consent_external_linkage", consentFilter.external_linkage.join(","));
+      if (extSystemFilter.length > 0) params.set("external_system", extSystemFilter.join(","));
+      if (bulkIds !== null) params.set("participant_ids", bulkIds.join(","));
+
+      const { data } = await api.get(`/participants?${params.toString()}`);
+      const rows: Participant[] = data.data;
+
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet(t("participants.title"));
+
+      ws.addRow([
+        t("participants.columns.id"),
+        t("participants.columns.last_name"),
+        t("participants.columns.first_name"),
+        t("participants.columns.date_of_birth"),
+        t("participants.columns.sex_at_birth"),
+        t("participants.columns.vital_status"),
+        t("participants.columns.ramq"),
+        t("participants.columns.consent_registry"),
+        t("participants.columns.consent_recontact"),
+        t("participants.columns.consent_external_linkage"),
+        t("participants.columns.created_at"),
+      ]);
+
+      for (const p of rows) {
+        ws.addRow([
+          p.id,
+          p.last_name,
+          p.first_name,
+          p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(i18n.language) : "",
+          t(`enums.sex_at_birth.${p.sex_at_birth_code}`, { defaultValue: p.sex_at_birth_code }),
+          t(`enums.vital_status.${p.vital_status_code}`, { defaultValue: p.vital_status_code }),
+          p.ramq ?? "",
+          p.consent_registry ? t(`enums.consent_status.${p.consent_registry}`, { defaultValue: p.consent_registry }) : "",
+          p.consent_recontact ? t(`enums.consent_status.${p.consent_recontact}`, { defaultValue: p.consent_recontact }) : "",
+          p.consent_external_linkage ? t(`enums.consent_status.${p.consent_external_linkage}`, { defaultValue: p.consent_external_linkage }) : "",
+          p.created_at ? new Date(p.created_at).toLocaleDateString(i18n.language) : "",
+        ]);
+      }
+
+      // Bold header row
+      ws.getRow(1).font = { bold: true };
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `participants_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const columns = useMemo<ColumnDef<Participant>[]>(
     () => [
@@ -471,6 +545,15 @@ export default function Participants() {
                 onReset={() => setColumnVisibility(DEFAULT_COLUMN_VISIBILITY)}
                 pristine={JSON.stringify(columnVisibility) === JSON.stringify(DEFAULT_COLUMN_VISIBILITY)}
               />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleExport}
+                disabled={isExporting || total === 0}
+                title={t("participants.export")}
+              >
+                <Download className="size-4" />
+              </Button>
               <TableFullscreenButton active={isFullscreen} onClick={setIsFullscreen} />
             </div>
             </div>

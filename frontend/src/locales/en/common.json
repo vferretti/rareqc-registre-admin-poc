@@ -120,6 +120,7 @@
     "title": "Participants",
     "description": "List of registry participants",
     "add": "Add participant",
+    "export": "Export to Excel",
     "search_placeholder": "Search by name, first name, RAMQ, ID, email, phone or contact",
     "consent_filter": "Consents",
     "external_system_filter": "External system",
