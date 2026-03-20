@@ -20,8 +20,33 @@ type ExternalIDResponse struct {
 	ID               int    `json:"id"`
 	ExternalSystemID int    `json:"external_system_id"`
 	SystemName       string `json:"system_name"`
-	SystemTitle      string `json:"system_title"`
+	SystemTitleFr    string `json:"system_title_fr"`
+	SystemTitleEn    string `json:"system_title_en"`
 	ExternalID       string `json:"external_id"`
+}
+
+// ResolveBySystem returns participant IDs for a list of external IDs in a given system.
+// Also returns the list of external IDs that were not found.
+func (r *ExternalIDRepository) ResolveBySystem(systemName string, ids []string) ([]int, []string) {
+	var extIDs []types.ExternalID
+	r.db.Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+		Where("external_system.name = ? AND external_id.external_id IN ?", systemName, ids).
+		Find(&extIDs)
+
+	foundSet := make(map[string]bool)
+	var participantIDs []int
+	for _, e := range extIDs {
+		participantIDs = append(participantIDs, e.ParticipantID)
+		foundSet[e.ExternalID] = true
+	}
+
+	var notFound []string
+	for _, id := range ids {
+		if !foundSet[id] {
+			notFound = append(notFound, id)
+		}
+	}
+	return participantIDs, notFound
 }
 
 // ListByParticipant returns all external IDs for a participant with system details.
@@ -42,7 +67,8 @@ func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalI
 			ID:               e.ID,
 			ExternalSystemID: e.ExternalSystemID,
 			SystemName:       e.ExternalSystem.Name,
-			SystemTitle:      e.ExternalSystem.Title,
+			SystemTitleFr:    e.ExternalSystem.TitleFr,
+			SystemTitleEn:    e.ExternalSystem.TitleEn,
 			ExternalID:       e.ExternalID,
 		}
 	}

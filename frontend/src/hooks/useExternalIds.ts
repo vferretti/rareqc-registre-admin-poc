@@ -5,7 +5,8 @@ export interface ExternalIdResponse {
   id: number;
   external_system_id: number;
   system_name: string;
-  system_title: string;
+  system_title_fr: string;
+  system_title_en: string;
   external_id: string;
 }
 

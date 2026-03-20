@@ -6,7 +6,7 @@
   "home": {
     "title": "Dashboard",
     "description": "Welcome to the registry administration portal",
-    "search_placeholder": "Search a participant by name, first name, RAMQ, email, phone or contact",
+    "search_placeholder": "Search a participant by name, first name, RAMQ, ID, email, phone or contact",
     "explore_title": "Navigation",
     "explore_participants": "Participants",
     "explore_participants_description": "View and manage participant records",
@@ -119,7 +119,19 @@
     "title": "Participants",
     "description": "List of registry participants",
     "add": "Add participant",
-    "search_placeholder": "Search by name, first name, RAMQ, email, phone or contact",
+    "search_placeholder": "Search by name, first name, RAMQ, ID, email, phone or contact",
+    "consent_filter": "Consents",
+    "external_system_filter": "External system",
+    "bulk_id_filter": {
+      "button": "Filter by IDs",
+      "title": "Filter by ID list",
+      "source": "ID source",
+      "source_internal": "Internal ID",
+      "ids_label": "IDs (one per line)",
+      "apply": "Apply",
+      "not_found_one": "{{count}} ID not found",
+      "not_found_other": "{{count}} IDs not found"
+    },
     "columns": {
       "id": "ID",
       "last_name": "Last name",
@@ -343,6 +355,16 @@
       "consent_status_code": "Consent status",
       "clause_type_code": "Clause type",
       "document_type_code": "Document type"
+    },
+    "external_systems": {
+      "title": "External systems",
+      "description": "Manage external systems associated with participants",
+      "name": "Name",
+      "title_fr": "Title (FR)",
+      "title_en": "Title (EN)",
+      "cannot_delete": "This system is in use and cannot be deleted",
+      "delete_title": "Delete system",
+      "delete_confirm": "Are you sure you want to delete the system \"{{name}}\"?"
     }
   },
   "activity_log": {

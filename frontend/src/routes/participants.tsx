@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, FileText, Plus } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, ListFilter, Plus, X } from "lucide-react";
 import {
   type ColumnDef,
   type SortingState,
@@ -26,6 +26,7 @@ import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
 import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
 import { InputSearch } from "@/components/base/input-search";
+import { ConsentClauseFilter, type ClauseFilterState } from "@/components/base/consent-clause-filter";
 import { MultiSelectFilter } from "@/components/base/multi-select-filter";
 import { TableFullscreenButton } from "@/components/base/table/table-fullscreen-button";
 import { TableColumnVisibility, type ColumnVisibilityItem } from "@/components/base/table/table-column-visibility";
@@ -38,7 +39,10 @@ import {
   TooltipTrigger,
 } from "@/components/base/ui/tooltip";
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
+import { BulkIdFilterDialog } from "@/components/feature/bulk-id-filter-dialog";
+import { Badge } from "@/components/base/badges/badge";
 import { useParticipants } from "@/hooks/useParticipants";
+import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   getColumnPinningHeaderCN,
@@ -72,7 +76,15 @@ export default function Participants() {
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(DEFAULT_COLUMN_VISIBILITY);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [consentStatusFilter, setConsentStatusFilter] = useState<string[]>([]);
+  const [consentFilter, setConsentFilter] = useState<ClauseFilterState>({
+    registry: [],
+    recontact: [],
+    external_linkage: [],
+  });
+  const [extSystemFilter, setExtSystemFilter] = useState<string[]>([]);
+  const [bulkIds, setBulkIds] = useState<number[] | null>(null);
+  const [bulkNotFound, setBulkNotFound] = useState<string[]>([]);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   // Escape key exits fullscreen
   useEffect(() => {
@@ -91,8 +103,14 @@ export default function Participants() {
       sortField: sorting[0]?.id ?? "last_name",
       sortOrder: sorting[0]?.desc ? "desc" : "asc",
       search: debouncedSearch || undefined,
-      consentStatus: consentStatusFilter.length > 0 ? consentStatusFilter : undefined,
+      consentRegistry: consentFilter.registry.length > 0 ? consentFilter.registry : undefined,
+      consentRecontact: consentFilter.recontact.length > 0 ? consentFilter.recontact : undefined,
+      consentExternalLinkage: consentFilter.external_linkage.length > 0 ? consentFilter.external_linkage : undefined,
+      externalSystems: extSystemFilter.length > 0 ? extSystemFilter : undefined,
+      participantIds: bulkIds !== null ? bulkIds : undefined,
     });
+
+  const { systems: externalSystems } = useExternalSystems();
 
   const columns = useMemo<ColumnDef<Participant>[]>(
     () => [
@@ -339,6 +357,16 @@ export default function Participants() {
           else mutate();
         }}
       />
+      <BulkIdFilterDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        hasActiveFilter={bulkIds !== null}
+        onApply={(ids, notFound) => {
+          setBulkIds(ids);
+          setBulkNotFound(notFound);
+          setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        }}
+      />
       <div className={cn("p-8", isFullscreen && "fixed inset-0 z-50 bg-background overflow-auto")}>
         <TooltipProvider delayDuration={200}>
         <div className="rounded-lg border bg-background p-6">
@@ -352,21 +380,68 @@ export default function Participants() {
               placeholder={t("participants.search_placeholder")}
               className="max-w-2xl flex-1"
             />
-            <MultiSelectFilter
-              icon={FileText}
-              label={t("participants.columns.consent")}
-              options={[
-                { value: "valid", label: t("enums.consent_status.valid") },
-                { value: "expired", label: t("enums.consent_status.expired") },
-                { value: "withdrawn", label: t("enums.consent_status.withdrawn") },
-                { value: "replaced_by_new_version", label: t("enums.consent_status.replaced_by_new_version") },
-              ]}
-              selected={consentStatusFilter}
+            <ConsentClauseFilter
+              value={consentFilter}
               onChange={(v) => {
-                setConsentStatusFilter(v);
+                setConsentFilter(v);
                 setPagination((prev) => ({ ...prev, pageIndex: 0 }));
               }}
             />
+            {externalSystems.length > 0 && (
+              <MultiSelectFilter
+                icon={LinkIcon}
+                label={t("participants.external_system_filter")}
+                options={externalSystems.map((s) => ({
+                  value: s.name,
+                  label: s.name,
+                }))}
+                selected={extSystemFilter}
+                onChange={(v) => {
+                  setExtSystemFilter(v);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setBulkDialogOpen(true)}
+            >
+              <ListFilter className="size-4" />
+              {t("participants.bulk_id_filter.button")}
+              {bulkIds !== null && (
+                <Badge variant="default" className="ml-1">
+                  {bulkIds.length}
+                </Badge>
+              )}
+            </Button>
+            {bulkNotFound.length > 0 && (
+              <span className="text-sm text-destructive">
+                {t("participants.bulk_id_filter.not_found", { count: bulkNotFound.length })}
+              </span>
+            )}
+            {(consentFilter.registry.length > 0 ||
+              consentFilter.recontact.length > 0 ||
+              consentFilter.external_linkage.length > 0 ||
+              extSystemFilter.length > 0 ||
+              bulkIds !== null) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setConsentFilter({ registry: [], recontact: [], external_linkage: [] });
+                  setExtSystemFilter([]);
+                  setBulkIds(null);
+                  setBulkNotFound([]);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+              >
+                <X className="size-3.5" />
+                {t("common.clear")}
+              </Button>
+            )}
           </div>
           {error && (
             <p className="text-destructive mb-4">{t("common.error")}</p>

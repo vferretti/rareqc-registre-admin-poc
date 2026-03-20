@@ -36,8 +36,8 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
 		Where(
-			"unaccent(lower(participant.first_name)) LIKE unaccent(?) OR unaccent(lower(participant.last_name)) LIKE unaccent(?) OR unaccent(lower(participant.first_name || ' ' || participant.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
-			like, like, like, like, like, like,
+			"CAST(participant.id AS TEXT) LIKE ? OR unaccent(lower(participant.first_name)) LIKE unaccent(?) OR unaccent(lower(participant.last_name)) LIKE unaccent(?) OR unaccent(lower(participant.first_name || ' ' || participant.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
+			like, like, like, like, like, like, like,
 		).Limit(10).Find(&participants)
 
 	// Deduplicate across all search sources
@@ -104,9 +104,13 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	return suggestions
 }
 
-// detectParticipantMatch determines which field matched (name > ramq > email > phone).
+// detectParticipantMatch determines which field matched (id > name > ramq > email > phone).
 func detectParticipantMatch(p types.Participant, name, q string) (string, string) {
 	lq := strings.ToLower(q)
+	idStr := fmt.Sprintf("%d", p.ID)
+	if strings.Contains(idStr, q) {
+		return "id", idStr
+	}
 	if strings.Contains(strings.ToLower(name), lq) ||
 		strings.Contains(strings.ToLower(p.FirstName), lq) ||
 		strings.Contains(strings.ToLower(p.LastName), lq) {

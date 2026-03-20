@@ -4,6 +4,7 @@ import {
   ShieldCheck,
   FileText,
   Database,
+  Link,
   Download,
   Plus,
   Check,
@@ -51,6 +52,8 @@ import { useConsentClauses, type ConsentClause } from "@/hooks/useConsentClauses
 import { ConsentTemplateDialog } from "@/components/feature/consent-template-dialog";
 import { CodeTableCard } from "@/components/feature/code-table-card";
 import { useCodeTables } from "@/hooks/useCodeTables";
+import { ExternalSystemCard } from "@/components/feature/external-system-card";
+import { useExternalSystems } from "@/hooks/useExternalSystems";
 
 const CLAUSE_TYPES = ["registry", "recontact", "external_linkage"] as const;
 
@@ -59,6 +62,7 @@ export default function Admin() {
   const { templates, mutate: mutateTemplates } = useConsentTemplates();
   const { clauses, mutate: mutateClauses } = useConsentClauses();
   const { codeTables, mutate: mutateCodeTables } = useCodeTables();
+  const { systems, mutate: mutateExternalSystems } = useExternalSystems();
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editTemplate, setEditTemplate] = useState<ConsentTemplate | null>(null);
@@ -304,6 +308,27 @@ export default function Admin() {
                   />
                 ))}
               </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* External systems section */}
+          <AccordionItem value="external-systems">
+            <AccordionTrigger>
+              <div className="flex items-center gap-3">
+                <Link className="size-5 text-primary" />
+                <div className="text-left">
+                  <div className="font-medium">{t("admin.external_systems.title")}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t("admin.external_systems.description")}
+                  </div>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <ExternalSystemCard
+                systems={systems}
+                onMutate={mutateExternalSystems}
+              />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

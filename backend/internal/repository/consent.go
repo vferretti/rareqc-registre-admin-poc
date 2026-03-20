@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 	"registre-admin/internal/types"
 )
@@ -189,6 +191,34 @@ func (r *ConsentRepository) UpdateTemplate(templateDocID int, name string, fileD
 
 		return nil
 	})
+}
+
+// WithdrawNonRegistryConsents sets all non-registry consents for a participant to "withdrawn".
+// Returns the list of clause_type_codes that were updated.
+func (r *ConsentRepository) WithdrawNonRegistryConsents(participantID int, date time.Time) ([]string, error) {
+	var consents []types.Consent
+	err := r.db.
+		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
+			participantID, "registry", "withdrawn").
+		Find(&consents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var updated []string
+	for _, c := range consents {
+		c.StatusCode = "withdrawn"
+		c.Date = date
+		if err := r.db.Save(&c).Error; err != nil {
+			return nil, err
+		}
+		// Fetch clause type for logging
+		var clause types.ConsentClause
+		r.db.Select("clause_type_code").First(&clause, c.ClauseID)
+		updated = append(updated, clause.ClauseTypeCode)
+	}
+	return updated, nil
 }
 
 // ListByParticipant returns all consents for a participant with clause and signer details.

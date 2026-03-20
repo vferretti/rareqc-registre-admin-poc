@@ -106,6 +106,73 @@ func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequ
 
 // --- Handlers ---
 
+// ResolveIDsHandler resolves a list of external or internal IDs to participant IDs.
+//
+// @Summary     Resolve IDs to participant IDs
+// @Description Resolves a list of IDs (internal or from an external system) to internal participant IDs
+// @Tags        participants
+// @Accept      json
+// @Produce     json
+// @Param       body body resolveIDsRequest true "IDs to resolve"
+// @Success     200 {object} resolveIDsResponse
+// @Failure     400 {object} types.ErrorResponse
+// @Router      /participants/resolve-ids [post]
+func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDRepo *repository.ExternalIDRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req resolveIDsRequest
+		if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 || req.Source == "" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "source and ids are required"})
+			return
+		}
+
+		var resolvedIDs []int
+		var notFound []string
+
+		if req.Source == "internal" {
+			// Parse string IDs to ints, check existence
+			seen := make(map[int]bool)
+			for _, raw := range req.IDs {
+				var id int
+				if _, err := fmt.Sscanf(raw, "%d", &id); err != nil {
+					notFound = append(notFound, raw)
+					continue
+				}
+				exists, _ := participantRepo.Exists(id)
+				if exists && !seen[id] {
+					resolvedIDs = append(resolvedIDs, id)
+					seen[id] = true
+				} else if !exists {
+					notFound = append(notFound, raw)
+				}
+			}
+		} else {
+			resolvedIDs, notFound = extIDRepo.ResolveBySystem(req.Source, req.IDs)
+		}
+
+		if resolvedIDs == nil {
+			resolvedIDs = []int{}
+		}
+		if notFound == nil {
+			notFound = []string{}
+		}
+
+		c.JSON(http.StatusOK, resolveIDsResponse{
+			ResolvedIDs: resolvedIDs,
+			NotFound:    notFound,
+		})
+	}
+}
+
+type resolveIDsRequest struct {
+	Source string   `json:"source"`
+	IDs    []string `json:"ids"`
+}
+
+type resolveIDsResponse struct {
+	ResolvedIDs []int    `json:"resolved_ids"`
+	NotFound    []string `json:"not_found"`
+}
+
 // ListParticipantsHandler returns a paginated, sortable, searchable list of participants.
 //
 // @Summary     List participants

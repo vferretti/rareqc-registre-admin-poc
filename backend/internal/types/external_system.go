@@ -5,8 +5,9 @@ import "time"
 // ExternalSystem represents an external system that tracks participants.
 type ExternalSystem struct {
 	ID        int       `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name      string    `json:"name" gorm:"not null;type:text"`
-	Title     string    `json:"title" gorm:"not null;type:text"`
+	Name    string `json:"name" gorm:"not null;type:text"`
+	TitleFr string `json:"title_fr" gorm:"not null;type:text"`
+	TitleEn string `json:"title_en" gorm:"not null;type:text"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }

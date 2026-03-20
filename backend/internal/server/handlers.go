@@ -35,6 +35,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	docRepo := repository.NewDocumentRepository(db)
 	extIDRepo := repository.NewExternalIDRepository(db)
 	codeTableRepo := repository.NewCodeTableRepository(db)
+	extSysRepo := repository.NewExternalSystemRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -43,6 +44,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		api.GET("/participants", ListParticipantsHandler(participantRepo))
 		api.GET("/participants/:id", GetParticipantHandler(participantRepo))
+		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo))
 		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
 
@@ -73,6 +75,11 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/code-tables/:table/entries", CreateCodeEntryHandler(codeTableRepo))
 		api.PUT("/code-tables/:table/entries/:code", UpdateCodeEntryHandler(codeTableRepo))
 		api.DELETE("/code-tables/:table/entries/:code", DeleteCodeEntryHandler(codeTableRepo))
+
+		api.GET("/external-systems", ListExternalSystemsHandler(extSysRepo))
+		api.POST("/external-systems", CreateExternalSystemHandler(extSysRepo))
+		api.PUT("/external-systems/:id", UpdateExternalSystemHandler(extSysRepo))
+		api.DELETE("/external-systems/:id", DeleteExternalSystemHandler(extSysRepo))
 	}
 
 	return r
@@ -85,10 +92,33 @@ func parsePaginationParams(c *gin.Context, defaultSortField string) types.Pagina
 	sortField := c.DefaultQuery("sort_field", defaultSortField)
 	sortOrder := c.DefaultQuery("sort_order", "asc")
 	search := c.Query("search")
-	consentStatusRaw := c.Query("consent_status")
-	var consentStatus []string
-	if consentStatusRaw != "" {
-		consentStatus = strings.Split(consentStatusRaw, ",")
+	parseCSV := func(key string) []string {
+		raw := c.Query(key)
+		if raw == "" {
+			return nil
+		}
+		return strings.Split(raw, ",")
+	}
+	parseIntCSV := func(key string) []int {
+		raw, exists := c.GetQuery(key)
+		if !exists {
+			return nil
+		}
+		if raw == "" {
+			// Param present but empty → match nothing
+			return []int{-1}
+		}
+		parts := strings.Split(raw, ",")
+		ids := []int{}
+		for _, p := range parts {
+			if id, err := strconv.Atoi(strings.TrimSpace(p)); err == nil {
+				ids = append(ids, id)
+			}
+		}
+		if len(ids) == 0 {
+			return []int{-1}
+		}
+		return ids
 	}
 
 	if pageSize < 1 {
@@ -102,11 +132,15 @@ func parsePaginationParams(c *gin.Context, defaultSortField string) types.Pagina
 	}
 
 	return types.PaginationParams{
-		PageIndex: pageIndex,
-		PageSize:  pageSize,
-		SortField: sortField,
-		SortOrder:     sortOrder,
-		Search:        search,
-		ConsentStatus: consentStatus,
+		PageIndex:              pageIndex,
+		PageSize:               pageSize,
+		SortField:              sortField,
+		SortOrder:              sortOrder,
+		Search:                 search,
+		ConsentRegistry:        parseCSV("consent_registry"),
+		ConsentRecontact:       parseCSV("consent_recontact"),
+		ConsentExternalLinkage: parseCSV("consent_external_linkage"),
+		ExternalSystems:        parseCSV("external_system"),
+		ParticipantIDs:         parseIntCSV("participant_ids"),
 	}
 }

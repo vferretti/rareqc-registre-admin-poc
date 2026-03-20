@@ -8,7 +8,11 @@ interface UseParticipantsParams {
   sortField: string;
   sortOrder: string;
   search?: string;
-  consentStatus?: string[];
+  consentRegistry?: string[];
+  consentRecontact?: string[];
+  consentExternalLinkage?: string[];
+  externalSystems?: string[];
+  participantIds?: number[];
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
@@ -20,7 +24,11 @@ export function useParticipants({
   sortField,
   sortOrder,
   search,
-  consentStatus,
+  consentRegistry,
+  consentRecontact,
+  consentExternalLinkage,
+  externalSystems,
+  participantIds,
 }: UseParticipantsParams) {
   const params = new URLSearchParams({
     page_index: String(pageIndex),
@@ -29,7 +37,11 @@ export function useParticipants({
     sort_order: sortOrder,
   });
   if (search) params.set("search", search);
-  if (consentStatus?.length) params.set("consent_status", consentStatus.join(","));
+  if (consentRegistry?.length) params.set("consent_registry", consentRegistry.join(","));
+  if (consentRecontact?.length) params.set("consent_recontact", consentRecontact.join(","));
+  if (consentExternalLinkage?.length) params.set("consent_external_linkage", consentExternalLinkage.join(","));
+  if (externalSystems?.length) params.set("external_system", externalSystems.join(","));
+  if (participantIds !== undefined) params.set("participant_ids", participantIds.join(","));
 
   const { data, error, isLoading, mutate } = useSWR<
     PaginatedResponse<Participant>

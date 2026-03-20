@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, Copy, Fingerprint, Pencil, Trash2, UserPlus } from "lucide-react";
@@ -50,6 +50,20 @@ import type { Contact } from "@/types/participant";
 
 /** Rotating badge colors for external systems. */
 const EXT_BADGE_COLORS = ["cyan", "violet", "orange", "green", "fuchsia", "amber", "blue", "lime"] as const;
+
+/** Hook that copies text to clipboard and returns a "just copied" state for feedback. */
+function useCopyFeedback(timeout = 1500) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const copy = useCallback(
+    (key: string, text: string) => {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), timeout);
+    },
+    [timeout],
+  );
+  return { copiedKey, copy };
+}
 
 /** Displays a label/value pair inside a definition list. */
 function Field({
@@ -156,10 +170,11 @@ function ContactCard({
 /** Participant detail page — identity, coordinates, contacts, and activity history. */
 export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { participant, isLoading, error, mutate } = useParticipant(id);
   const { consents } = useConsents(participant?.id);
   const { externalIds } = useExternalIds(participant?.id);
+  const { copiedKey, copy } = useCopyFeedback();
   const signerContactIds = new Set(
     consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id),
   );
@@ -239,20 +254,35 @@ export default function ParticipantDetail() {
         title={
           <span className="flex items-center gap-3">
             {participant.first_name} {participant.last_name}
-            <Badge variant="blue" className="text-xs font-normal">
+            <Badge
+              variant="blue"
+              className="text-xs font-normal cursor-pointer select-none"
+              onClick={() => copy("id", String(participant.id))}
+            >
               <span className="font-bold">ID</span>: {participant.id}
+              {copiedKey === "id" ? (
+                <Check className="ml-1 size-3" />
+              ) : (
+                <Copy className="ml-1 size-3 opacity-50" />
+              )}
             </Badge>
             {externalIds.map((ext, i) => (
               <Tooltip key={ext.id}>
                 <TooltipTrigger asChild>
                   <Badge
                     variant={EXT_BADGE_COLORS[i % EXT_BADGE_COLORS.length]}
-                    className="text-xs font-normal cursor-default"
+                    className="text-xs font-normal cursor-pointer select-none"
+                    onClick={() => copy(`ext-${ext.id}`, ext.external_id)}
                   >
                     <span className="font-bold">{ext.system_name}</span>: {ext.external_id}
+                    {copiedKey === `ext-${ext.id}` ? (
+                      <Check className="ml-1 size-3" />
+                    ) : (
+                      <Copy className="ml-1 size-3 opacity-50" />
+                    )}
                   </Badge>
                 </TooltipTrigger>
-                <TooltipContent>{ext.system_title}</TooltipContent>
+                <TooltipContent>{i18n.language === "en" ? ext.system_title_en : ext.system_title_fr}</TooltipContent>
               </Tooltip>
             ))}
           </span>

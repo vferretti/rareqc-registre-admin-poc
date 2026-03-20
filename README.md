@@ -228,6 +228,7 @@ document ──1:1── document_file (contenu binaire)
 - Un contact signataire d'un consentement ne peut pas être supprimé
 - Un seul consentement par clause par participant (contrainte unique)
 - Les téléphones sont stockés sans formatage (10 chiffres), formatés à l'affichage
+- **Cascade de retrait** : si le consentement « registre » est retiré, les consentements « recontact » et « liaison externe » sont automatiquement retirés
 
 ---
 

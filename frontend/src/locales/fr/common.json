@@ -6,7 +6,7 @@
   "home": {
     "title": "Tableau de bord",
     "description": "Bienvenue sur le portail d'administration du registre",
-    "search_placeholder": "Rechercher un participant par nom, prénom, RAMQ, courriel, téléphone ou contact",
+    "search_placeholder": "Rechercher un participant par nom, prénom, RAMQ, ID, courriel, téléphone ou contact",
     "explore_title": "Navigation",
     "explore_participants": "Participants",
     "explore_participants_description": "Consulter et gérer les dossiers des participants",
@@ -119,7 +119,19 @@
     "title": "Participants",
     "description": "Liste des participants du registre",
     "add": "Ajouter un participant",
-    "search_placeholder": "Rechercher par nom, prénom, RAMQ, courriel, téléphone ou contact",
+    "search_placeholder": "Rechercher par nom, prénom, RAMQ, ID, courriel, téléphone ou contact",
+    "consent_filter": "Consentements",
+    "external_system_filter": "Système externe",
+    "bulk_id_filter": {
+      "button": "Filtrer par IDs",
+      "title": "Filtrer par liste d'IDs",
+      "source": "Source des IDs",
+      "source_internal": "ID interne",
+      "ids_label": "IDs (un par ligne)",
+      "apply": "Appliquer",
+      "not_found_one": "{{count}} ID non trouvé",
+      "not_found_other": "{{count}} IDs non trouvés"
+    },
     "columns": {
       "id": "ID",
       "last_name": "Nom",
@@ -343,6 +355,16 @@
       "consent_status_code": "Statut de consentement",
       "clause_type_code": "Type de clause",
       "document_type_code": "Type de document"
+    },
+    "external_systems": {
+      "title": "Systèmes externes",
+      "description": "Gérer les systèmes externes associés aux participants",
+      "name": "Nom",
+      "title_fr": "Titre (FR)",
+      "title_en": "Titre (EN)",
+      "cannot_delete": "Ce système est utilisé et ne peut pas être supprimé",
+      "delete_title": "Supprimer le système",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer le système « {{name}} » ?"
     }
   },
   "activity_log": {

@@ -404,8 +404,13 @@ func seedConsents(db *gorm.DB) {
 		author := pick(authors)
 		docID := signedDoc.ID
 
+		// Phase 1: create all consents as valid
+		type consentRecord struct {
+			consent    types.Consent
+			clauseType string
+		}
+		var created []consentRecord
 		for i, clause := range clauses {
-			// Skip some clauses randomly: 95% clause 1, 85% clause 2, 70% clause 3
 			skipRate := []int{5, 15, 30}
 			if i < len(skipRate) && rand.Intn(100) < skipRate[i] {
 				continue
@@ -420,9 +425,77 @@ func seedConsents(db *gorm.DB) {
 				DocumentID:    &docID,
 			}
 			db.Create(&consent)
+			created = append(created, consentRecord{consent: consent, clauseType: clause.ClauseTypeCode})
 
-			details := fmt.Sprintf("%s — %s", clause.ClauseTypeCode, consent.StatusCode)
-			createActivityLog(db, "consent_added", p.ID, author, details, consentDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+			addedAt := consentDate.Add(time.Duration(rand.Intn(8)) * time.Hour)
+			details := fmt.Sprintf("%s — valid", clause.ClauseTypeCode)
+			createActivityLog(db, "consent_added", p.ID, author, details, addedAt)
+		}
+
+		// Phase 2: randomly expire/withdraw some consents
+		// Business rule: if registry is withdrawn, recontact and external_linkage must also be withdrawn
+		registryWithdrawn := false
+		var withdrawDate time.Time
+		var withdrawAuthor string
+
+		for i := range created {
+			if created[i].clauseType != "registry" {
+				continue
+			}
+			roll := rand.Intn(100)
+			if roll < 25 {
+				newStatus := "expired"
+				if roll >= 15 {
+					newStatus = "withdrawn"
+				}
+				withdrawDate = consentDate.Add(time.Duration(rand.Intn(18)+3) * 24 * time.Hour)
+				withdrawDate = time.Date(withdrawDate.Year(), withdrawDate.Month(), withdrawDate.Day(), 0, 0, 0, 0, time.UTC)
+				withdrawAuthor = pick(authors)
+
+				created[i].consent.StatusCode = newStatus
+				created[i].consent.Date = withdrawDate
+				db.Save(&created[i].consent)
+
+				editDetails := fmt.Sprintf("%s — valid → %s", created[i].clauseType, newStatus)
+				createActivityLog(db, "consent_edited", p.ID, withdrawAuthor, editDetails, withdrawDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+
+				if newStatus == "withdrawn" {
+					registryWithdrawn = true
+				}
+			}
+		}
+
+		for i := range created {
+			if created[i].clauseType == "registry" {
+				continue
+			}
+			if registryWithdrawn {
+				// Cascade: registry withdrawn → all other clauses withdrawn
+				created[i].consent.StatusCode = "withdrawn"
+				created[i].consent.Date = withdrawDate
+				db.Save(&created[i].consent)
+
+				editDetails := fmt.Sprintf("%s — valid → withdrawn (registre retiré)", created[i].clauseType)
+				createActivityLog(db, "consent_edited", p.ID, withdrawAuthor, editDetails, withdrawDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+			} else {
+				// Independent expire/withdraw for non-registry clauses
+				roll := rand.Intn(100)
+				if roll < 20 {
+					newStatus := "expired"
+					if roll >= 12 {
+						newStatus = "withdrawn"
+					}
+					editDate := consentDate.Add(time.Duration(rand.Intn(18)+3) * 24 * time.Hour)
+					editDate = time.Date(editDate.Year(), editDate.Month(), editDate.Day(), 0, 0, 0, 0, time.UTC)
+
+					created[i].consent.StatusCode = newStatus
+					created[i].consent.Date = editDate
+					db.Save(&created[i].consent)
+
+					editDetails := fmt.Sprintf("%s — valid → %s", created[i].clauseType, newStatus)
+					createActivityLog(db, "consent_edited", p.ID, pick(authors), editDetails, editDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+				}
+			}
 		}
 	}
 
@@ -557,14 +630,16 @@ func generateRAMQ(firstName, lastName string, dob time.Time, isFemale bool) stri
 // seedExternalSystems creates external systems and assigns external IDs to some participants.
 func seedExternalSystems(db *gorm.DB) {
 	cqdg := types.ExternalSystem{
-		Name:  "CQDG",
-		Title: "Centre québécois de données génomiques",
+		Name:    "CQDG",
+		TitleFr: "Centre québécois de données génomiques",
+		TitleEn: "Quebec Centre for Genomic Data",
 	}
 	db.Where("name = ?", cqdg.Name).FirstOrCreate(&cqdg)
 
 	cqgc := types.ExternalSystem{
-		Name:  "CQGC",
-		Title: "Centre québécois de génomique clinique",
+		Name:    "CQGC",
+		TitleFr: "Centre québécois de génomique clinique",
+		TitleEn: "Quebec Centre for Clinical Genomics",
 	}
 	db.Where("name = ?", cqgc.Name).FirstOrCreate(&cqgc)
 

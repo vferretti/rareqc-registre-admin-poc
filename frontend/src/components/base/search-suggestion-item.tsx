@@ -1,7 +1,8 @@
 import type { LucideIcon } from "lucide-react";
-import { CreditCard, UserRound, Mail, Phone, Link } from "lucide-react";
+import { CreditCard, Hash, UserRound, Mail, Phone, Link } from "lucide-react";
 
 const MATCH_ICONS: Record<string, LucideIcon> = {
+  id: Hash,
   ramq: CreditCard,
   contact: UserRound,
   email: Mail,
