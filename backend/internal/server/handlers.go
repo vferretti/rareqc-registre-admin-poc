@@ -34,6 +34,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	consentRepo := repository.NewConsentRepository(db)
 	docRepo := repository.NewDocumentRepository(db)
 	extIDRepo := repository.NewExternalIDRepository(db)
+	codeTableRepo := repository.NewCodeTableRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -67,6 +68,11 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		api.GET("/activity-logs", ListActivityLogsHandler(activityRepo))
 		api.GET("/participants/:id/activity-logs", ListParticipantActivityLogsHandler(participantRepo, activityRepo))
+
+		api.GET("/code-tables", ListCodeTablesHandler(codeTableRepo))
+		api.POST("/code-tables/:table/entries", CreateCodeEntryHandler(codeTableRepo))
+		api.PUT("/code-tables/:table/entries/:code", UpdateCodeEntryHandler(codeTableRepo))
+		api.DELETE("/code-tables/:table/entries/:code", DeleteCodeEntryHandler(codeTableRepo))
 	}
 
 	return r

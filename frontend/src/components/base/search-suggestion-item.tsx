@@ -1,11 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { CreditCard, UserRound, Mail, Phone } from "lucide-react";
+import { CreditCard, UserRound, Mail, Phone, Link } from "lucide-react";
 
 const MATCH_ICONS: Record<string, LucideIcon> = {
   ramq: CreditCard,
   contact: UserRound,
   email: Mail,
   phone: Phone,
+  external_id: Link,
 };
 
 /** Bolds portions of text that match a query string. */

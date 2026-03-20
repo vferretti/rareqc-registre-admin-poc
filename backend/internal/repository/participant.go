@@ -53,9 +53,13 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]Participa
 				UNION
 				SELECT c.participant_id FROM contact c
 				WHERE LOWER(unaccent(c.first_name)) LIKE unaccent(?) OR LOWER(unaccent(c.last_name)) LIKE unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
+				UNION
+				SELECT e.participant_id FROM external_id e
+				WHERE LOWER(e.external_id) LIKE ?
 			)`,
 			term, term, term,
 			term, term, term, term,
+			term,
 		)
 	}
 

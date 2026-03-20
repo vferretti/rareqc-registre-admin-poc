@@ -325,7 +325,25 @@
     "template_cannot_edit": "This form has been signed by at least one participant and cannot be edited",
     "template_cannot_delete": "This form has been signed by at least one participant and cannot be deleted",
     "delete_template_title": "Delete form",
-    "delete_template_confirm": "Are you sure you want to delete \"{{name}}\" and all its clauses?"
+    "delete_template_confirm": "Are you sure you want to delete \"{{name}}\" and all its clauses?",
+    "code_tables": {
+      "title": "Code tables",
+      "description": "Manage reference values used in the registry",
+      "code": "Code",
+      "label_fr": "Label (FR)",
+      "label_en": "Label (EN)",
+      "code_referenced": "This code is in use and cannot be renamed",
+      "cannot_delete": "This code is in use and cannot be deleted",
+      "delete_title": "Delete code",
+      "delete_confirm": "Are you sure you want to delete the code \"{{code}}\"?",
+      "sex_at_birth_code": "Sex at birth",
+      "vital_status_code": "Vital status",
+      "relationship_code": "Relationship",
+      "action_type_code": "Action type",
+      "consent_status_code": "Consent status",
+      "clause_type_code": "Clause type",
+      "document_type_code": "Document type"
+    }
   },
   "activity_log": {
     "title": "Activity Log",

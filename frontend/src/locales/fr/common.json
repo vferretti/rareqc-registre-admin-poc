@@ -325,7 +325,25 @@
     "template_cannot_edit": "Ce formulaire a été signé par au moins un participant et ne peut être modifié",
     "template_cannot_delete": "Ce formulaire a été signé par au moins un participant et ne peut être supprimé",
     "delete_template_title": "Supprimer le formulaire",
-    "delete_template_confirm": "Êtes-vous sûr de vouloir supprimer « {{name}} » et toutes ses clauses ?"
+    "delete_template_confirm": "Êtes-vous sûr de vouloir supprimer « {{name}} » et toutes ses clauses ?",
+    "code_tables": {
+      "title": "Tables de codes",
+      "description": "Gérer les valeurs de référence utilisées dans le registre",
+      "code": "Code",
+      "label_fr": "Libellé (FR)",
+      "label_en": "Libellé (EN)",
+      "code_referenced": "Ce code est utilisé et ne peut pas être renommé",
+      "cannot_delete": "Ce code est utilisé et ne peut pas être supprimé",
+      "delete_title": "Supprimer le code",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer le code « {{code}} » ?",
+      "sex_at_birth_code": "Sexe à la naissance",
+      "vital_status_code": "Statut vital",
+      "relationship_code": "Lien de parenté",
+      "action_type_code": "Type d'action",
+      "consent_status_code": "Statut de consentement",
+      "clause_type_code": "Type de clause",
+      "document_type_code": "Type de document"
+    }
   },
   "activity_log": {
     "title": "Journal d'activités",

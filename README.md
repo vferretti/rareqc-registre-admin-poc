@@ -31,11 +31,6 @@ docker compose up --build
 docker compose --profile dev run --rm seed
 ```
 
-> **Note** : Si les changements récents ne sont pas visibles, Docker peut réutiliser un cache d'image. Forcer un rebuild complet avec :
-> ```bash
-> docker compose build --no-cache && docker compose up -d
-> ```
-
 | Service    | URL                          |
 |------------|------------------------------|
 | Frontend   | http://localhost:3001         |
@@ -66,6 +61,20 @@ npm run dev
 | PostgreSQL | localhost:5440               |
 
 Le serveur Vite proxy automatiquement `/api` vers le port 8082.
+
+### Après un changement de code backend
+
+`docker compose up --build` utilise le cache Docker. Si vous modifiez le code Go, les changements ne seront **pas** pris en compte à moins de forcer un rebuild :
+
+```bash
+# Rebuild sans cache + redémarrer
+docker compose build --no-cache api && docker compose up -d api
+
+# Puis re-seed si le schéma a changé
+docker compose --profile dev run --rm seed
+```
+
+> **Pourquoi ?** Docker met en cache chaque layer du Dockerfile. Si seul le code source change mais que les layers `COPY go.mod` et `go mod download` sont identiques, Docker réutilise le binaire compilé précédemment. Le flag `--no-cache` force la recompilation complète.
 
 ### Réinitialiser la base de données
 
@@ -204,10 +213,10 @@ document ──1:1── document_file (contenu binaire)
 
 | Table | Codes |
 |-------|-------|
-| `sex_at_birth` | male, female, unknown |
-| `vital_status` | alive, deceased, unknown |
-| `relationship` | self, mother, father, guardian, other |
-| `action_type` | participant_created, participant_edited, contact_created, contact_edited, contact_deleted, consent_added, consent_edited |
+| `sex_at_birth_code` | male, female, unknown |
+| `vital_status_code` | alive, deceased, unknown |
+| `relationship_code` | self, mother, father, guardian, other |
+| `action_type_code` | participant_created, participant_edited, contact_created, contact_edited, contact_deleted, consent_added, consent_edited |
 | `consent_status_code` | valid, expired, withdrawn, replaced_by_new_version |
 | `clause_type_code` | registry, recontact, external_linkage |
 | `document_type_code` | consent_template, consent_signed |

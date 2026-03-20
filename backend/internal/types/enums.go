@@ -7,7 +7,7 @@ type SexAtBirth struct {
 	NameFr string `json:"name_fr" gorm:"not null"`
 }
 
-func (SexAtBirth) TableName() string { return "sex_at_birth" }
+func (SexAtBirth) TableName() string { return "sex_at_birth_code" }
 
 // VitalStatus reference table
 type VitalStatus struct {
@@ -16,7 +16,7 @@ type VitalStatus struct {
 	NameFr string `json:"name_fr" gorm:"not null"`
 }
 
-func (VitalStatus) TableName() string { return "vital_status" }
+func (VitalStatus) TableName() string { return "vital_status_code" }
 
 // Relationship reference table
 type Relationship struct {
@@ -25,7 +25,7 @@ type Relationship struct {
 	NameFr string `json:"name_fr" gorm:"not null"`
 }
 
-func (Relationship) TableName() string { return "relationship" }
+func (Relationship) TableName() string { return "relationship_code" }
 
 // ActionType reference table
 type ActionType struct {
@@ -34,7 +34,7 @@ type ActionType struct {
 	NameFr string `json:"name_fr" gorm:"not null"`
 }
 
-func (ActionType) TableName() string { return "action_type" }
+func (ActionType) TableName() string { return "action_type_code" }
 
 // ConsentStatus reference table (valid, expired, withdrawn, replaced_by_new_version)
 type ConsentStatus struct {

@@ -40,7 +40,11 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 			like, like, like, like, like, like,
 		).Limit(10).Find(&participants)
 
+	// Deduplicate across all search sources
+	seen := make(map[int]bool)
+
 	for _, p := range participants {
+		seen[p.ID] = true
 		name := fmt.Sprintf("%s %s", p.FirstName, p.LastName)
 		field, value := detectParticipantMatch(p, name, q)
 		suggestions = append(suggestions, SearchSuggestion{
@@ -51,18 +55,32 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 		})
 	}
 
+	// Search by external ID
+	var extIDs []types.ExternalID
+	r.db.Preload("Participant").Preload("ExternalSystem").
+		Where("lower(external_id) LIKE ?", like).
+		Limit(10).Find(&extIDs)
+
+	for _, e := range extIDs {
+		if seen[e.ParticipantID] {
+			continue
+		}
+		seen[e.ParticipantID] = true
+		pName := fmt.Sprintf("%s %s", e.Participant.FirstName, e.Participant.LastName)
+		suggestions = append(suggestions, SearchSuggestion{
+			ParticipantID:   e.ParticipantID,
+			ParticipantName: pName,
+			MatchField:      "external_id",
+			MatchValue:      fmt.Sprintf("%s: %s", e.ExternalSystem.Name, e.ExternalID),
+		})
+	}
+
 	// Search by contact name, email, or phone (non-self contacts)
 	var contacts []types.Contact
 	r.db.Preload("Participant").Where(
 		"relationship_code != 'self' AND (unaccent(lower(first_name)) LIKE unaccent(?) OR unaccent(lower(last_name)) LIKE unaccent(?) OR unaccent(lower(first_name || ' ' || last_name)) LIKE unaccent(?) OR lower(email) LIKE ? OR phone LIKE ?)",
 		like, like, like, like, like,
 	).Limit(10).Find(&contacts)
-
-	// Deduplicate: skip contacts whose participant is already in results
-	seen := make(map[int]bool)
-	for _, s := range suggestions {
-		seen[s.ParticipantID] = true
-	}
 
 	for _, ct := range contacts {
 		if seen[ct.ParticipantID] {
