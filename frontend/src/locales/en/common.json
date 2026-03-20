@@ -24,6 +24,7 @@
   "nav": {
     "home": "Home",
     "patients": "Participants",
+    "communications": "Communications",
     "activity": "Activities",
     "admin": "Administration",
     "guide": "Help"
@@ -366,6 +367,11 @@
       "delete_title": "Delete system",
       "delete_confirm": "Are you sure you want to delete the system \"{{name}}\"?"
     }
+  },
+  "communications": {
+    "title": "Communications",
+    "description": "Manage communications with participants",
+    "under_construction": "This section is under construction."
   },
   "activity_log": {
     "title": "Activity Log",

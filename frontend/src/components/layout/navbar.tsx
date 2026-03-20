@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, History, Settings, ChevronDown, UserRound, LogOut } from "lucide-react";
+import { Users, Mail, History, Settings, ChevronDown, UserRound, LogOut } from "lucide-react";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ export function Navbar() {
 
   const links = [
     { to: "/participants", label: t("nav.patients"), icon: Users },
+    { to: "/communications", label: t("nav.communications"), icon: Mail },
     { to: "/activity", label: t("nav.activity"), icon: History },
   ];
 

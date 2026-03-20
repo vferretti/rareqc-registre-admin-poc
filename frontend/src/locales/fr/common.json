@@ -24,6 +24,7 @@
   "nav": {
     "home": "Accueil",
     "patients": "Participants",
+    "communications": "Communications",
     "activity": "Activités",
     "admin": "Administration",
     "guide": "Aide"
@@ -366,6 +367,11 @@
       "delete_title": "Supprimer le système",
       "delete_confirm": "Êtes-vous sûr de vouloir supprimer le système « {{name}} » ?"
     }
+  },
+  "communications": {
+    "title": "Communications",
+    "description": "Gestion des communications avec les participants",
+    "under_construction": "Cette section est en construction."
   },
   "activity_log": {
     "title": "Journal d'activités",
