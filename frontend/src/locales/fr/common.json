@@ -107,6 +107,7 @@
     "noResults": "Aucun résultat",
     "search_placeholder": "Rechercher…",
     "clear": "Effacer",
+    "copied": "Copié !",
     "actions": "Actions",
     "replace": "Remplacer",
     "table": {
@@ -128,11 +129,15 @@
       "button": "Filtrer par IDs",
       "title": "Filtrer par liste d'IDs",
       "source": "Source des IDs",
-      "source_internal": "ID interne",
+      "source_internal": "Registre",
       "ids_label": "IDs (un par ligne)",
       "apply": "Appliquer",
       "not_found_one": "{{count}} ID non trouvé",
-      "not_found_other": "{{count}} IDs non trouvés"
+      "not_found_other": "{{count}} IDs non trouvés",
+      "found_count_one": "{{count}} trouvé",
+      "found_count_other": "{{count}} trouvés",
+      "validating": "Validation…",
+      "cut_not_found": "Copier et enlever de la liste"
     },
     "columns": {
       "id": "ID",

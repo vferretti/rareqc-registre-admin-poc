@@ -107,6 +107,7 @@
     "noResults": "No results",
     "search_placeholder": "Search…",
     "clear": "Clear",
+    "copied": "Copied!",
     "actions": "Actions",
     "replace": "Replace",
     "table": {
@@ -128,11 +129,15 @@
       "button": "Filter by IDs",
       "title": "Filter by ID list",
       "source": "ID source",
-      "source_internal": "Internal ID",
+      "source_internal": "Registry",
       "ids_label": "IDs (one per line)",
       "apply": "Apply",
       "not_found_one": "{{count}} ID not found",
-      "not_found_other": "{{count}} IDs not found"
+      "not_found_other": "{{count}} IDs not found",
+      "found_count_one": "{{count}} found",
+      "found_count_other": "{{count}} found",
+      "validating": "Validating…",
+      "cut_not_found": "Copy and remove from list"
     },
     "columns": {
       "id": "ID",

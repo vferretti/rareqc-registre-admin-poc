@@ -85,7 +85,6 @@ export default function Participants() {
   });
   const [extSystemFilter, setExtSystemFilter] = useState<string[]>([]);
   const [bulkIds, setBulkIds] = useState<number[] | null>(null);
-  const [bulkNotFound, setBulkNotFound] = useState<string[]>([]);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
 
   // Escape key exits fullscreen
@@ -435,9 +434,9 @@ export default function Participants() {
         open={bulkDialogOpen}
         onOpenChange={setBulkDialogOpen}
         hasActiveFilter={bulkIds !== null}
-        onApply={(ids, notFound) => {
+        notFound={[]}
+        onApply={(ids) => {
           setBulkIds(ids);
-          setBulkNotFound(notFound);
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
         }}
       />
@@ -490,11 +489,6 @@ export default function Participants() {
                 </Badge>
               )}
             </Button>
-            {bulkNotFound.length > 0 && (
-              <span className="text-sm text-destructive">
-                {t("participants.bulk_id_filter.not_found", { count: bulkNotFound.length })}
-              </span>
-            )}
             {(consentFilter.registry.length > 0 ||
               consentFilter.recontact.length > 0 ||
               consentFilter.external_linkage.length > 0 ||
@@ -508,7 +502,6 @@ export default function Participants() {
                   setConsentFilter({ registry: [], recontact: [], external_linkage: [] });
                   setExtSystemFilter([]);
                   setBulkIds(null);
-                  setBulkNotFound([]);
                   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                 }}
               >
