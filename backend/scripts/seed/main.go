@@ -86,22 +86,70 @@ func main() {
 	db.Exec("DELETE FROM contact")
 	db.Exec("DELETE FROM participant")
 
-	log.Println("Seeding 100 participants...")
+	log.Println("Seeding 200 participants...")
 
-	// Base time: 30 days ago, we'll stagger forward
-	baseTime := time.Now().Add(-30 * 24 * time.Hour)
+	// Distribute participants across 7 quarters (Q3 2024 → Q1 2026)
+	// with progressive growth: fewer early, more recent
+	type quarterSlot struct {
+		start time.Time
+		end   time.Time
+	}
+	quarters := []quarterSlot{
+		{time.Date(2024, 7, 1, 0, 0, 0, 0, time.UTC), time.Date(2024, 9, 30, 0, 0, 0, 0, time.UTC)},   // 24Q3
+		{time.Date(2024, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC)},  // 24Q4
+		{time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2025, 3, 31, 0, 0, 0, 0, time.UTC)},    // 25Q1
+		{time.Date(2025, 4, 1, 0, 0, 0, 0, time.UTC), time.Date(2025, 6, 30, 0, 0, 0, 0, time.UTC)},    // 25Q2
+		{time.Date(2025, 7, 1, 0, 0, 0, 0, time.UTC), time.Date(2025, 9, 30, 0, 0, 0, 0, time.UTC)},    // 25Q3
+		{time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)},  // 25Q4
+		{time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)},    // 26Q1
+	}
+	// Progressive distribution: 10, 15, 20, 25, 35, 45, 50 = 200
+	perQuarter := []int{10, 15, 20, 25, 35, 45, 50}
 
-	// 85 children, 15 adults
-	childCount := 85
-	adultCount := 15
+	// 85% children, 15% adults
+	childCount := 170
+	adultCount := 30
+	totalCount := childCount + adultCount
+
+	// Build a list of enrollment timestamps spread across quarters
+	enrollTimes := make([]time.Time, 0, totalCount)
+	for qi, count := range perQuarter {
+		q := quarters[qi]
+		dayRange := int(q.end.Sub(q.start).Hours() / 24)
+		if dayRange < 1 {
+			dayRange = 1
+		}
+		for j := 0; j < count; j++ {
+			randomDay := rand.Intn(dayRange)
+			randomHour := rand.Intn(10) + 8 // 08:00-17:59
+			ts := q.start.Add(time.Duration(randomDay)*24*time.Hour + time.Duration(randomHour)*time.Hour)
+			enrollTimes = append(enrollTimes, ts)
+		}
+	}
+	// Shuffle to mix children and adults
+	rand.Shuffle(len(enrollTimes), func(i, j int) {
+		enrollTimes[i], enrollTimes[j] = enrollTimes[j], enrollTimes[i]
+	})
 
 	for i := 0; i < childCount; i++ {
-		ts := baseTime.Add(time.Duration(i) * 7 * time.Hour)
+		ts := enrollTimes[i]
 		seedChild(db, i, ts)
 	}
 	for i := 0; i < adultCount; i++ {
-		ts := baseTime.Add(time.Duration(childCount+i) * 7 * time.Hour)
+		ts := enrollTimes[childCount+i]
 		seedAdult(db, childCount+i, ts)
+	}
+
+	// Override created_at to match enrollment timestamps (GORM autoCreateTime sets to NOW)
+	var allParticipants []types.Participant
+	db.Order("id ASC").Find(&allParticipants)
+	// Sort enrollTimes back for sequential assignment
+	sortedEnrollTimes := make([]time.Time, len(enrollTimes))
+	copy(sortedEnrollTimes, enrollTimes)
+	for i, p := range allParticipants {
+		if i < len(enrollTimes) {
+			db.Model(&p).Update("created_at", enrollTimes[i])
+		}
 	}
 
 	// Load consent PDF into document table
@@ -113,7 +161,7 @@ func main() {
 	// Seed external systems and IDs
 	seedExternalSystems(db)
 
-	log.Println("Seed complete: 100 participants created with activity logs, consents, and external IDs")
+	log.Printf("Seed complete: %d participants created across 7 quarters with activity logs, consents, and external IDs", totalCount)
 }
 
 func createActivityLog(db *gorm.DB, actionTypeCode string, participantID int, author string, details string, createdAt time.Time) {

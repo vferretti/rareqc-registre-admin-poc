@@ -406,7 +406,16 @@
   "reports": {
     "title": "Rapport",
     "description": "Rapports et statistiques du registre",
-    "under_construction": "Cette section est en construction."
+    "summary": "Sommaire",
+    "total_participants": "Total participants",
+    "female_count": "Féminin",
+    "male_count": "Masculin",
+    "average_age": "Âge moyen",
+    "years": "ans",
+    "deceased_count": "Décédés",
+    "valid_consents": "Consentements valides",
+    "external_systems": "Systèmes externes",
+    "growth_title": "Croissance des inscriptions"
   },
   "activity_log": {
     "title": "Journal d'activités",

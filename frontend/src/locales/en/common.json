@@ -406,7 +406,16 @@
   "reports": {
     "title": "Reports",
     "description": "Registry reports and statistics",
-    "under_construction": "This section is under construction."
+    "summary": "Summary",
+    "total_participants": "Total participants",
+    "female_count": "Female",
+    "male_count": "Male",
+    "average_age": "Average age",
+    "years": "years",
+    "deceased_count": "Deceased",
+    "valid_consents": "Valid consents",
+    "external_systems": "External systems",
+    "growth_title": "Enrollment growth"
   },
   "activity_log": {
     "title": "Activity Log",
