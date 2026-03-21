@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, Mail, History, Settings, ChevronDown, UserRound, LogOut } from "lucide-react";
+import { Users, Mail, History, Settings, ChevronDown, UserRound, LogOut, FileBarChart, ScrollText, ShoppingCart } from "lucide-react";
+import { useCartContext } from "@/contexts/cart-context";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
 import {
@@ -22,11 +23,11 @@ export function Navbar() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { count: cartCount } = useCartContext();
 
   const links = [
     { to: "/participants", label: t("nav.patients"), icon: Users },
     { to: "/communications", label: t("nav.communications"), icon: Mail },
-    { to: "/activity", label: t("nav.activity"), icon: History },
   ];
 
   const toggleLanguage = () => {
@@ -57,8 +58,44 @@ export function Navbar() {
             {link.label}
           </Link>
         ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-navbar-muted transition-colors hover:bg-navbar-accent hover:text-navbar-active outline-none cursor-pointer",
+              (location.pathname === "/activity" || location.pathname === "/reports") && "text-navbar-active",
+            )}
+          >
+            <History className="size-4" />
+            {t("nav.activity")}
+            <ChevronDown className="size-3" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => navigate("/reports")}>
+              <FileBarChart className="size-4" />
+              {t("nav.reports")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/activity")}>
+              <ScrollText className="size-4" />
+              {t("nav.activity_log")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="flex items-center gap-4">
+        <Link
+          to="/cart"
+          className={cn(
+            "relative inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-navbar-muted transition-colors hover:bg-navbar-accent hover:text-navbar-active",
+            location.pathname === "/cart" && "text-navbar-active",
+          )}
+        >
+          <ShoppingCart className="size-4" />
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          )}
+        </Link>
         <Link
           to="/admin"
           className={cn(

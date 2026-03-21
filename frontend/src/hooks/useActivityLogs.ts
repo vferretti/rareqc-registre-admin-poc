@@ -14,6 +14,10 @@ interface UseActivityLogsParams {
   search?: string;
   /** Filter by action type code. */
   actionType?: string;
+  /** Filter from date (YYYY-MM-DD). */
+  dateFrom?: string;
+  /** Filter to date (YYYY-MM-DD). */
+  dateTo?: string;
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
@@ -27,6 +31,8 @@ export function useActivityLogs({
   participantId,
   search,
   actionType,
+  dateFrom,
+  dateTo,
 }: UseActivityLogsParams) {
   const params = new URLSearchParams({
     page_index: String(pageIndex),
@@ -40,6 +46,12 @@ export function useActivityLogs({
   }
   if (actionType) {
     params.set("action_type", actionType);
+  }
+  if (dateFrom) {
+    params.set("date_from", dateFrom);
+  }
+  if (dateTo) {
+    params.set("date_to", dateTo);
   }
 
   const url = participantId

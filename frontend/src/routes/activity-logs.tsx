@@ -35,13 +35,16 @@ import {
 } from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
 import { ACTION_BADGE } from "@/lib/badge-variants";
+import { MultiSelectFilter } from "@/components/base/multi-select-filter";
+import { CalendarDays, ListFilter, X } from "lucide-react";
+import { Input } from "@/components/base/ui/input";
+import { Button } from "@/components/base/ui/button";
+import { Badge } from "@/components/base/badges/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/base/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/base/ui/dropdown-menu";
 import { InputSearch } from "@/components/base/input-search";
 import { HighlightText } from "@/components/base/highlight-text";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -73,13 +76,15 @@ export default function ActivityLogs() {
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const [search, setSearch] = useState("");
-  const [actionType, setActionType] = useState("");
+  const [actionTypes, setActionTypes] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
   // Reset to first page when filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch, actionType]);
+  }, [debouncedSearch, actionTypes, dateFrom, dateTo]);
 
   const { logs, total, totalPages, isLoading, error } = useActivityLogs({
     pageIndex: pagination.pageIndex,
@@ -87,7 +92,9 @@ export default function ActivityLogs() {
     sortField: sorting[0]?.id ?? "created_at",
     sortOrder: sorting[0]?.desc ? "desc" : "asc",
     search: debouncedSearch || undefined,
-    actionType: actionType || undefined,
+    actionType: actionTypes.length > 0 ? actionTypes.join(",") : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   });
 
   const columns = useMemo<ColumnDef<ActivityLog>[]>(
@@ -219,26 +226,74 @@ export default function ActivityLogs() {
               placeholder={t("activity_log.search_placeholder")}
               className="max-w-2xl flex-1"
             />
-            <Select
-              value={actionType}
-              onValueChange={(v) => setActionType(v === "all" ? "" : v)}
-            >
-              <SelectTrigger className="w-52">
-                <SelectValue
-                  placeholder={t("activity_log.filter_action_type")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">
-                  {t("activity_log.all_actions")}
-                </SelectItem>
-                {ACTION_TYPES.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {t(`enums.action_type.${code}`, { defaultValue: code })}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <CalendarDays className="size-4" />
+                  {t("activity_log.date_period")}
+                  {(dateFrom || dateTo) && (
+                    <Badge variant="default" className="ml-1">1</Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="p-3 min-w-56">
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_from")}</label>
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      max={dateTo || undefined}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_to")}</label>
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      min={dateFrom || undefined}
+                    />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => { setDateFrom(""); setDateTo(""); }}
+                    >
+                      {t("common.clear")}
+                    </Button>
+                  )}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <MultiSelectFilter
+              icon={ListFilter}
+              label={t("activity_log.filter_action_type")}
+              options={ACTION_TYPES.map((code) => ({
+                value: code,
+                label: t(`enums.action_type.${code}`, { defaultValue: code }),
+              }))}
+              selected={actionTypes}
+              onChange={setActionTypes}
+            />
+            {(actionTypes.length > 0 || dateFrom || dateTo) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setActionTypes([]);
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+              >
+                <X className="size-3.5" />
+                {t("common.clear")}
+              </Button>
+            )}
           </div>
           {error && (
             <p className="text-destructive mb-4">{t("common.error")}</p>

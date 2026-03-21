@@ -11,7 +11,9 @@ import ParticipantDetail from "./routes/participant";
 import ActivityLogs from "./routes/activity-logs";
 import Home from "./routes/home";
 import Communications from "./routes/communications";
+import Cart from "./routes/cart";
 import Admin from "./routes/admin";
+import Reports from "./routes/reports";
 
 const router = createBrowserRouter([
   {
@@ -38,8 +40,16 @@ const router = createBrowserRouter([
         element: <Communications />,
       },
       {
+        path: "reports",
+        element: <Reports />,
+      },
+      {
         path: "activity",
         element: <ActivityLogs />,
+      },
+      {
+        path: "cart",
+        element: <Cart />,
       },
       {
         path: "admin",

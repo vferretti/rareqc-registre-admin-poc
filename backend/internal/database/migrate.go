@@ -87,6 +87,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.Guid{},
 		&types.ExternalSystem{},
 		&types.ExternalID{},
+		&types.CartItem{},
 	); err != nil {
 		return err
 	}

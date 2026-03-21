@@ -2,6 +2,7 @@ package repository
 
 import (
 	"math"
+	"strings"
 
 	"gorm.io/gorm"
 	"registre-admin/internal/types"
@@ -40,6 +41,8 @@ type ListParams struct {
 	ParticipantID *int
 	ActionType    string
 	Search        string
+	DateFrom      string
+	DateTo        string
 	IncludeName   bool
 }
 
@@ -59,7 +62,18 @@ func (r *ActivityRepository) List(p ListParams) ([]ActivityLogResponse, int, int
 		query = query.Where("participant_id = ?", *p.ParticipantID)
 	}
 	if p.ActionType != "" {
-		query = query.Where("action_type_code = ?", p.ActionType)
+		types := strings.Split(p.ActionType, ",")
+		if len(types) == 1 {
+			query = query.Where("action_type_code = ?", types[0])
+		} else {
+			query = query.Where("action_type_code IN ?", types)
+		}
+	}
+	if p.DateFrom != "" {
+		query = query.Where("activity_log.created_at >= ?", p.DateFrom+"T00:00:00Z")
+	}
+	if p.DateTo != "" {
+		query = query.Where("activity_log.created_at < ?", p.DateTo+"T23:59:59Z")
 	}
 	if p.Search != "" {
 		like := "%" + p.Search + "%"

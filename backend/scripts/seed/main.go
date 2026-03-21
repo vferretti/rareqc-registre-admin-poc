@@ -433,10 +433,10 @@ func seedConsents(db *gorm.DB) {
 		}
 
 		// Phase 2: randomly expire/withdraw some consents
-		// Business rule: if registry is withdrawn, recontact and external_linkage must also be withdrawn
-		registryWithdrawn := false
-		var withdrawDate time.Time
-		var withdrawAuthor string
+		// Business rule: if registry is withdrawn or expired, all other clauses get the same status
+		var registryCascadeStatus string
+		var cascadeDate time.Time
+		var cascadeAuthor string
 
 		for i := range created {
 			if created[i].clauseType != "registry" {
@@ -448,20 +448,18 @@ func seedConsents(db *gorm.DB) {
 				if roll >= 15 {
 					newStatus = "withdrawn"
 				}
-				withdrawDate = consentDate.Add(time.Duration(rand.Intn(18)+3) * 24 * time.Hour)
-				withdrawDate = time.Date(withdrawDate.Year(), withdrawDate.Month(), withdrawDate.Day(), 0, 0, 0, 0, time.UTC)
-				withdrawAuthor = pick(authors)
+				cascadeDate = consentDate.Add(time.Duration(rand.Intn(18)+3) * 24 * time.Hour)
+				cascadeDate = time.Date(cascadeDate.Year(), cascadeDate.Month(), cascadeDate.Day(), 0, 0, 0, 0, time.UTC)
+				cascadeAuthor = pick(authors)
 
 				created[i].consent.StatusCode = newStatus
-				created[i].consent.Date = withdrawDate
+				created[i].consent.Date = cascadeDate
 				db.Save(&created[i].consent)
 
 				editDetails := fmt.Sprintf("%s — valid → %s", created[i].clauseType, newStatus)
-				createActivityLog(db, "consent_edited", p.ID, withdrawAuthor, editDetails, withdrawDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+				createActivityLog(db, "consent_edited", p.ID, cascadeAuthor, editDetails, cascadeDate.Add(time.Duration(rand.Intn(8))*time.Hour))
 
-				if newStatus == "withdrawn" {
-					registryWithdrawn = true
-				}
+				registryCascadeStatus = newStatus
 			}
 		}
 
@@ -469,14 +467,14 @@ func seedConsents(db *gorm.DB) {
 			if created[i].clauseType == "registry" {
 				continue
 			}
-			if registryWithdrawn {
-				// Cascade: registry withdrawn → all other clauses withdrawn
-				created[i].consent.StatusCode = "withdrawn"
-				created[i].consent.Date = withdrawDate
+			if registryCascadeStatus != "" {
+				// Cascade: registry withdrawn/expired → all other clauses get same status
+				created[i].consent.StatusCode = registryCascadeStatus
+				created[i].consent.Date = cascadeDate
 				db.Save(&created[i].consent)
 
-				editDetails := fmt.Sprintf("%s — valid → withdrawn (registre retiré)", created[i].clauseType)
-				createActivityLog(db, "consent_edited", p.ID, withdrawAuthor, editDetails, withdrawDate.Add(time.Duration(rand.Intn(8))*time.Hour))
+				editDetails := fmt.Sprintf("%s — valid → %s (registre %s)", created[i].clauseType, registryCascadeStatus, registryCascadeStatus)
+				createActivityLog(db, "consent_edited", p.ID, cascadeAuthor, editDetails, cascadeDate.Add(time.Duration(rand.Intn(8))*time.Hour))
 			} else {
 				// Independent expire/withdraw for non-registry clauses
 				roll := rand.Intn(100)

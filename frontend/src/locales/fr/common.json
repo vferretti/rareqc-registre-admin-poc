@@ -10,8 +10,12 @@
     "explore_title": "Navigation",
     "explore_participants": "Participants",
     "explore_participants_description": "Consulter et gérer les dossiers des participants",
-    "explore_activity": "Activités",
+    "explore_reports": "Créer des rapports",
+    "explore_reports_description": "Générer des rapports et statistiques du registre",
+    "explore_activity": "Journal des activités",
     "explore_activity_description": "Consulter le journal des actions sur le registre",
+    "explore_admin": "Administration",
+    "explore_admin_description": "Gérer la configuration et les données de référence du registre",
     "recent_activity": "Activités récentes",
     "view_all_activity": "Voir toutes les activités →",
     "search_no_results": "Aucun résultat"
@@ -25,7 +29,9 @@
     "home": "Accueil",
     "patients": "Participants",
     "communications": "Communications",
-    "activity": "Activités",
+    "activity": "Historique",
+    "reports": "Rapport",
+    "activity_log": "Journal des activités",
     "admin": "Administration",
     "guide": "Aide"
   },
@@ -379,6 +385,29 @@
     "description": "Gestion des communications avec les participants",
     "under_construction": "Cette section est en construction."
   },
+  "cart": {
+    "title": "Panier",
+    "description": "Participants sélectionnés pour des actions en lot",
+    "empty": "Le panier est vide",
+    "clear": "Vider le panier",
+    "export": "Exporter",
+    "search_placeholder": "Rechercher dans le panier…",
+    "item_count_one": "{{count}} participant",
+    "item_count_other": "{{count}} participants",
+    "columns": {
+      "id": "ID",
+      "last_name": "Nom",
+      "first_name": "Prénom",
+      "date_of_birth": "Date de naissance",
+      "sex_at_birth": "Sexe",
+      "ramq": "RAMQ"
+    }
+  },
+  "reports": {
+    "title": "Rapport",
+    "description": "Rapports et statistiques du registre",
+    "under_construction": "Cette section est en construction."
+  },
   "activity_log": {
     "title": "Journal d'activités",
     "description": "Historique des actions sur le registre",
@@ -390,6 +419,9 @@
       "details": "Détails"
     },
     "search_placeholder": "Rechercher par auteur, participant ou détails",
+    "date_period": "Période",
+    "date_from": "Date début",
+    "date_to": "Date fin",
     "filter_action_type": "Type d'action",
     "all_actions": "Toutes les actions",
     "empty": "Aucune activité enregistrée",

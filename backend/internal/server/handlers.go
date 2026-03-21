@@ -36,6 +36,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	extIDRepo := repository.NewExternalIDRepository(db)
 	codeTableRepo := repository.NewCodeTableRepository(db)
 	extSysRepo := repository.NewExternalSystemRepository(db)
+	cartRepo := repository.NewCartRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -80,6 +81,15 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/external-systems", CreateExternalSystemHandler(extSysRepo))
 		api.PUT("/external-systems/:id", UpdateExternalSystemHandler(extSysRepo))
 		api.DELETE("/external-systems/:id", DeleteExternalSystemHandler(extSysRepo))
+
+		cart := api.Group("/cart")
+		{
+			cart.GET("/items", ListCartItemsHandler(cartRepo))
+			cart.GET("/count", CartCountHandler(cartRepo))
+			cart.POST("/items", AddCartItemsHandler(cartRepo))
+			cart.DELETE("/items", RemoveCartItemsHandler(cartRepo))
+			cart.DELETE("", ClearCartHandler(cartRepo))
+		}
 	}
 
 	return r

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Download, Link as LinkIcon, ListFilter, Plus, X } from "lucide-react";
+import { CheckCircle2, Download, Link as LinkIcon, ListFilter, Plus, ShoppingCart, X } from "lucide-react";
+import { useCartContext } from "@/contexts/cart-context";
 import ExcelJS from "exceljs";
 import {
   type ColumnDef,
@@ -62,6 +63,7 @@ const DEFAULT_COLUMN_VISIBILITY: Record<string, boolean> = { vital_status_code: 
 export default function Participants() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { selectedParticipantIds, addParticipants, removeParticipants } = useCartContext();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([
@@ -187,6 +189,50 @@ export default function Participants() {
 
   const columns = useMemo<ColumnDef<Participant>[]>(
     () => [
+      {
+        id: "cart",
+        size: 40,
+        header: () => {
+          const pageIds = participants.map((p) => p.id);
+          const allInCart = pageIds.length > 0 && pageIds.every((id) => selectedParticipantIds.has(id));
+          return (
+            <button
+              type="button"
+              className="flex items-center justify-center w-full cursor-pointer"
+              onClick={() => {
+                if (allInCart) {
+                  removeParticipants(pageIds);
+                } else {
+                  const toAdd = pageIds.filter((id) => !selectedParticipantIds.has(id));
+                  addParticipants(toAdd);
+                }
+              }}
+            >
+              <ShoppingCart className={cn("size-4", allInCart ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+            </button>
+          );
+        },
+        cell: ({ row }) => {
+          const id = row.original.id;
+          const inCart = selectedParticipantIds.has(id);
+          return (
+            <button
+              type="button"
+              className="flex items-center justify-center w-full cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (inCart) {
+                  removeParticipants([id]);
+                } else {
+                  addParticipants([id]);
+                }
+              }}
+            >
+              <ShoppingCart className={cn("size-4", inCart ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+            </button>
+          );
+        },
+      },
       {
         accessorKey: "id",
         size: 80,
@@ -364,7 +410,7 @@ export default function Participants() {
         cell: ({ getValue }) => <DateCell date={getValue<string | null>()} />,
       },
     ],
-    [t],
+    [t, participants, selectedParticipantIds, addParticipants, removeParticipants],
   );
 
   const table = useReactTable({

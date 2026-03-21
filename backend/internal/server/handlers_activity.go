@@ -33,6 +33,8 @@ func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFun
 			PaginationParams: params,
 			ActionType:       c.Query("action_type"),
 			Search:           c.Query("search"),
+			DateFrom:         c.Query("date_from"),
+			DateTo:           c.Query("date_to"),
 			IncludeName:      true,
 		}
 		if pid := c.Query("participant_id"); pid != "" {

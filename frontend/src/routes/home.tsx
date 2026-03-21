@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, Activity, ArrowRight } from "lucide-react";
+import { Users, FileBarChart, ScrollText, Settings, ArrowRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/base/ui/card";
 import { PageHeader } from "@/components/base/page/page-header";
 import { ActivityTimelineItem } from "@/components/feature/activity-timeline-item";
@@ -51,16 +51,46 @@ export default function Home() {
                   <ArrowRight className="size-5 shrink-0 text-muted-foreground" />
                 </Link>
                 <Link
+                  to="/reports"
+                  className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-accent"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <FileBarChart className="size-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">{t("home.explore_reports")}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t("home.explore_reports_description")}
+                    </div>
+                  </div>
+                  <ArrowRight className="size-5 shrink-0 text-muted-foreground" />
+                </Link>
+                <Link
                   to="/activity"
                   className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-accent"
                 >
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Activity className="size-5" />
+                    <ScrollText className="size-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{t("home.explore_activity")}</div>
                     <div className="text-sm text-muted-foreground">
                       {t("home.explore_activity_description")}
+                    </div>
+                  </div>
+                  <ArrowRight className="size-5 shrink-0 text-muted-foreground" />
+                </Link>
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-accent"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Settings className="size-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">{t("home.explore_admin")}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t("home.explore_admin_description")}
                     </div>
                   </div>
                   <ArrowRight className="size-5 shrink-0 text-muted-foreground" />

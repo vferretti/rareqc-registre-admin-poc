@@ -193,14 +193,14 @@ func (r *ConsentRepository) UpdateTemplate(templateDocID int, name string, fileD
 	})
 }
 
-// WithdrawNonRegistryConsents sets all non-registry consents for a participant to "withdrawn".
+// CascadeRegistryStatus sets all non-registry consents for a participant to the given status.
 // Returns the list of clause_type_codes that were updated.
-func (r *ConsentRepository) WithdrawNonRegistryConsents(participantID int, date time.Time) ([]string, error) {
+func (r *ConsentRepository) CascadeRegistryStatus(participantID int, statusCode string, date time.Time) ([]string, error) {
 	var consents []types.Consent
 	err := r.db.
 		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
 		Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
-			participantID, "registry", "withdrawn").
+			participantID, "registry", statusCode).
 		Find(&consents).Error
 	if err != nil {
 		return nil, err
@@ -208,12 +208,11 @@ func (r *ConsentRepository) WithdrawNonRegistryConsents(participantID int, date 
 
 	var updated []string
 	for _, c := range consents {
-		c.StatusCode = "withdrawn"
+		c.StatusCode = statusCode
 		c.Date = date
 		if err := r.db.Save(&c).Error; err != nil {
 			return nil, err
 		}
-		// Fetch clause type for logging
 		var clause types.ConsentClause
 		r.db.Select("clause_type_code").First(&clause, c.ClauseID)
 		updated = append(updated, clause.ClauseTypeCode)

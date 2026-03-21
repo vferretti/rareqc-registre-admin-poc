@@ -257,16 +257,16 @@ func UpdateConsentHandler(consentRepo *repository.ConsentRepository, activityRep
 				return
 			}
 
-			// Business rule: if registry consent is withdrawn, cascade to all other clauses
+			// Business rule: if registry consent is withdrawn or expired, cascade to all other clauses
 			clauseType, _ := consentRepo.ClauseTypeForClause(consent.ClauseID)
-			if clauseType == "registry" && req.StatusCode == "withdrawn" {
-				cascaded, err := consentRepo.WithdrawNonRegistryConsents(consent.ParticipantID, date)
+			if clauseType == "registry" && (req.StatusCode == "withdrawn" || req.StatusCode == "expired") {
+				cascaded, err := consentRepo.CascadeRegistryStatus(consent.ParticipantID, req.StatusCode, date)
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to cascade withdrawal"})
+					c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to cascade status change"})
 					return
 				}
 				for _, ct := range cascaded {
-					d := fmt.Sprintf("%s — valid → withdrawn (registre retiré)", ct)
+					d := fmt.Sprintf("%s — %s → %s (registre %s)", ct, oldStatus, req.StatusCode, req.StatusCode)
 					_ = activityRepo.Record(consentRepo.DB(), "consent_edited", &consent.ParticipantID, author, &d)
 				}
 			}
