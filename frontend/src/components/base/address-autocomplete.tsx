@@ -136,8 +136,9 @@ export function AddressInput({
         }}
         disabled={disabled}
         placeholder={placeholder}
-        autoComplete="nope"
-        name="aqres-lookup"
+        autoComplete="new-password"
+        name={`_aqres_${Math.random()}`}
+        id={`_aqres_${Math.random()}`}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && suggestions.length > 0}
