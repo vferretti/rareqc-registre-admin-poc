@@ -81,8 +81,11 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 					contact.City = sc.City
 					contact.Province = sc.Province
 					contact.CodePostal = sc.CodePostal
+					contact.Latitude = sc.Latitude
+					contact.Longitude = sc.Longitude
 				}
 			}
+			geocodeContact(&contact, req.Latitude, req.Longitude)
 			if err := contactRepo.Create(tx, &contact); err != nil {
 				return err
 			}
@@ -170,6 +173,7 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 			contact.City = req.City
 			contact.Province = req.Province
 			contact.CodePostal = req.CodePostal
+			geocodeContact(&contact, req.Latitude, req.Longitude)
 
 			if err := contactRepo.Save(tx, &contact); err != nil {
 				return err

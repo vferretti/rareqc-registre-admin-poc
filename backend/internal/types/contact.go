@@ -18,6 +18,8 @@ type Contact struct {
 	City              string       `json:"city"`
 	Province          string       `json:"province"`
 	CodePostal        string       `json:"code_postal"`
+	Latitude          *float64     `json:"latitude,omitempty" gorm:"type:double precision"`
+	Longitude         *float64     `json:"longitude,omitempty" gorm:"type:double precision"`
 	PreferredLanguage string       `json:"preferred_language" gorm:"type:text;default:'fr'"`
 	CreatedAt         time.Time    `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt         time.Time    `json:"updated_at" gorm:"autoUpdateTime"`

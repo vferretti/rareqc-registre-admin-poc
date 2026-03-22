@@ -389,6 +389,7 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				sc.Province = req.Province
 				sc.CodePostal = req.CodePostal
 				sc.PreferredLanguage = req.PreferredLanguage
+				geocodeContact(sc, req.Latitude, req.Longitude)
 				if err := contactRepo.Save(tx, sc); err != nil {
 					return err
 				}
@@ -488,6 +489,7 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				CodePostal:        req.CodePostal,
 				PreferredLanguage: req.PreferredLanguage,
 			}
+			geocodeContact(&selfContact, req.Latitude, req.Longitude)
 			if err := contactRepo.Create(tx, &selfContact); err != nil {
 				return err
 			}
@@ -517,7 +519,10 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 					contact.City = req.City
 					contact.Province = req.Province
 					contact.CodePostal = req.CodePostal
+					contact.Latitude = selfContact.Latitude
+					contact.Longitude = selfContact.Longitude
 				}
+				geocodeContact(&contact, cr.Latitude, cr.Longitude)
 				if err := contactRepo.Create(tx, &contact); err != nil {
 					return err
 				}

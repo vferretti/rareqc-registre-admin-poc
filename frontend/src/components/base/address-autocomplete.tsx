@@ -6,6 +6,8 @@ export interface ParsedAddress {
   city: string;
   province: string;
   code_postal: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Suggestion {
@@ -92,11 +94,13 @@ export function AddressInput({
         f: "json",
         maxLocations: "1",
         outFields: "*",
+        outSR: "4326",
       });
       const res = await fetch(`${AQRES_BASE}/findAddressCandidates?${params}`);
       const data = await res.json();
       if (data.candidates?.length) {
-        const attrs = data.candidates[0].attributes;
+        const candidate = data.candidates[0];
+        const attrs = candidate.attributes;
         const streetParts = [
           attrs.House,
           attrs.PreType,
@@ -111,6 +115,8 @@ export function AddressInput({
           code_postal: attrs.ZIP
             ? attrs.ZIP.replace(/(.{3})(.{3})/, "$1 $2")
             : "",
+          latitude: candidate.location?.y,
+          longitude: candidate.location?.x,
         };
         onChange(parsed.street_address);
         onAddressSelect(parsed);

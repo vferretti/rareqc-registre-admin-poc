@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"registre-admin/internal/database"
+	"registre-admin/internal/geocode"
 	"registre-admin/internal/guid"
 	"registre-admin/internal/types"
 
@@ -60,11 +61,234 @@ var cities = []string{
 	"Victoriaville", "Shawinigan", "Rouyn-Noranda", "Val-d'Or",
 }
 
-var streets = []string{
-	"rue Principale", "boulevard Laurier", "avenue du Parc", "rue Saint-Jean",
-	"rue de la Montagne", "boulevard René-Lévesque", "rue Sainte-Catherine",
-	"chemin du Roy", "avenue Cartier", "rue des Érables", "boulevard Charest",
-	"rue Saint-Joseph", "avenue Maguire", "rue du Pont", "boulevard Hamel",
+// realAddress holds a real Quebec address for seed data geocoding.
+type realAddress struct {
+	Street     string
+	City       string
+	PostalCode string
+}
+
+// 200 real Quebec addresses across major cities.
+var realAddresses = []realAddress{
+	// Montréal (40)
+	{"1000 rue Sherbrooke Ouest", "Montréal", "H3A 3G4"},
+	{"3175 chemin de la Côte-Sainte-Catherine", "Montréal", "H3T 1C5"},
+	{"845 rue Sherbrooke Est", "Montréal", "H2L 1K6"},
+	{"1255 rue University", "Montréal", "H3B 3B6"},
+	{"500 boulevard René-Lévesque Ouest", "Montréal", "H2Z 1W7"},
+	{"1001 boulevard de Maisonneuve Est", "Montréal", "H2L 4P9"},
+	{"4101 rue Sherbrooke Est", "Montréal", "H1X 2B2"},
+	{"7400 boulevard Saint-Laurent", "Montréal", "H2R 2Y1"},
+	{"2900 boulevard Édouard-Montpetit", "Montréal", "H3T 1J4"},
+	{"6100 avenue du Parc", "Montréal", "H2V 4H9"},
+	{"1515 rue Sainte-Catherine Ouest", "Montréal", "H3G 2W1"},
+	{"3200 rue Jean-Brillant", "Montréal", "H3T 1N8"},
+	{"185 avenue du Mont-Royal Est", "Montréal", "H2T 1P4"},
+	{"5100 rue Sherbrooke Est", "Montréal", "H1V 1A1"},
+	{"2313 rue Sainte-Catherine Est", "Montréal", "H2K 2J4"},
+	{"8500 boulevard Henri-Bourassa Est", "Montréal", "H1E 2S4"},
+	{"3535 avenue Papineau", "Montréal", "H2K 4J9"},
+	{"1400 boulevard de Maisonneuve Ouest", "Montréal", "H3G 1M8"},
+	{"4700 rue Saint-Denis", "Montréal", "H2J 2L5"},
+	{"6700 avenue de Chateaubriand", "Montréal", "H2S 2N7"},
+	{"1717 boulevard René-Lévesque Est", "Montréal", "H2L 4T3"},
+	{"9300 boulevard Lacordaire", "Montréal", "H1R 3A5"},
+	{"4500 rue de Bellechasse", "Montréal", "H1T 2A3"},
+	{"2100 avenue Pierre-Dupuy", "Montréal", "H3C 3R5"},
+	{"5500 avenue Gatineau", "Montréal", "H3T 1X5"},
+	{"1100 rue de la Cathédrale", "Montréal", "H3B 2S2"},
+	{"3000 avenue McGill College", "Montréal", "H3A 3J6"},
+	{"7700 boulevard Langelier", "Montréal", "H1S 1V7"},
+	{"2500 chemin de Polytechnique", "Montréal", "H3T 1J4"},
+	{"800 boulevard De La Gauchetière Ouest", "Montréal", "H5A 1K6"},
+	{"4200 rue Saint-Urbain", "Montréal", "H2W 1V3"},
+	{"1950 rue Saint-Antoine Ouest", "Montréal", "H3J 1A5"},
+	{"5800 rue Saint-Denis", "Montréal", "H2S 3L5"},
+	{"3450 rue Drummond", "Montréal", "H3G 1Y2"},
+	{"6500 rue Beaubien Est", "Montréal", "H1M 1A9"},
+	{"1200 avenue des Pins Ouest", "Montréal", "H3G 1A9"},
+	{"8100 rue du Parc", "Montréal", "H3N 1X1"},
+	{"4800 rue Molson", "Montréal", "H1Y 3G1"},
+	{"2700 boulevard Pie-IX", "Montréal", "H1V 2C8"},
+	{"1600 avenue de Lorimier", "Montréal", "H2K 3W5"},
+	// Québec (25)
+	{"1050 avenue du Séminaire", "Québec", "G1V 4K2"},
+	{"2325 rue de l'Université", "Québec", "G1V 0A6"},
+	{"900 boulevard René-Lévesque Est", "Québec", "G1R 2B5"},
+	{"1000 route de l'Église", "Québec", "G1V 3V9"},
+	{"580 Grande Allée Est", "Québec", "G1R 2K2"},
+	{"775 avenue Honoré-Mercier", "Québec", "G1R 6A5"},
+	{"2700 boulevard Laurier", "Québec", "G1V 2L8"},
+	{"1200 avenue Germain-des-Prés", "Québec", "G1V 3M7"},
+	{"5400 boulevard des Galeries", "Québec", "G2K 2B4"},
+	{"3175 chemin des Quatre-Bourgeois", "Québec", "G1W 2K7"},
+	{"555 boulevard Wilfrid-Hamel", "Québec", "G1M 2S8"},
+	{"1451 avenue Maguire", "Québec", "G1T 1Z3"},
+	{"300 boulevard Jean-Lesage", "Québec", "G1K 8K6"},
+	{"500 rue du Pont", "Québec", "G1K 6M7"},
+	{"1100 rue de la Chevrotière", "Québec", "G1R 5E5"},
+	{"2450 chemin Sainte-Foy", "Québec", "G1V 1T6"},
+	{"800 avenue Joffre", "Québec", "G1S 3L4"},
+	{"3500 boulevard de Maskinongé", "Québec", "G1X 1R1"},
+	{"1635 rue de l'Entente", "Québec", "G1S 4S9"},
+	{"825 boulevard Lebourgneuf", "Québec", "G2J 0B9"},
+	{"6380 boulevard Guillaume-Couture", "Lévis", "G6V 9P7"},
+	{"50 route du Président-Kennedy", "Lévis", "G6V 6C1"},
+	{"1175 avenue Taniata", "Lévis", "G6Z 0G2"},
+	{"735 boulevard Alphonse-Desjardins", "Lévis", "G6V 2L1"},
+	{"5700 rue J.-B.-Michaud", "Lévis", "G6V 0B1"},
+	// Laval (15)
+	{"1950 boulevard Le Corbusier", "Laval", "H7S 1Y7"},
+	{"3003 boulevard Le Carrefour", "Laval", "H7T 1C8"},
+	{"1600 boulevard de l'Avenir", "Laval", "H7S 2N5"},
+	{"3100 boulevard de la Concorde Est", "Laval", "H7E 2B8"},
+	{"1555 boulevard Chomedey", "Laval", "H7V 3Z1"},
+	{"400 boulevard Armand-Frappier", "Laval", "H7V 4B4"},
+	{"2500 boulevard Daniel-Johnson", "Laval", "H7T 2P6"},
+	{"1700 boulevard Laval", "Laval", "H7S 2M5"},
+	{"225 boulevard Sainte-Rose", "Laval", "H7L 1L6"},
+	{"6000 boulevard Robert-Bourassa", "Laval", "H7T 0C3"},
+	{"3225 avenue Francis-Hughes", "Laval", "H7L 5A5"},
+	{"705 boulevard Curé-Labelle", "Laval", "H7V 2T8"},
+	{"1415 boulevard Le Corbusier", "Laval", "H7S 2K8"},
+	{"4900 boulevard Arthur-Sauvé", "Laval", "H7R 3X7"},
+	{"1530 boulevard des Laurentides", "Laval", "H7M 2Y3"},
+	// Gatineau (10)
+	{"855 boulevard de la Gappe", "Gatineau", "J8T 8H9"},
+	{"455 boulevard de l'Hôpital", "Gatineau", "J8V 1S7"},
+	{"200 boulevard du Plateau", "Gatineau", "J9A 3G3"},
+	{"1100 boulevard Maloney Est", "Gatineau", "J8P 1H1"},
+	{"325 boulevard Gréber", "Gatineau", "J8T 5R3"},
+	{"75 rue d'Edmonton", "Gatineau", "J8Y 6S1"},
+	{"700 boulevard Saint-Joseph", "Gatineau", "J8Y 4B8"},
+	{"1500 boulevard La Vérendrye Ouest", "Gatineau", "J8T 8K5"},
+	{"200 promenade du Portage", "Gatineau", "J8X 4B7"},
+	{"425 boulevard Alexandre-Taché", "Gatineau", "J9A 1M8"},
+	// Longueuil (10)
+	{"3141 boulevard Taschereau", "Longueuil", "J4V 2H2"},
+	{"1550 boulevard Marie-Victorin", "Longueuil", "J4G 1A5"},
+	{"1111 rue Beauregard", "Longueuil", "J4K 2M3"},
+	{"2500 chemin de Chambly", "Longueuil", "J4L 1M5"},
+	{"100 place Charles-Le Moyne", "Longueuil", "J4K 2T4"},
+	{"5400 boulevard Cousineau", "Longueuil", "J3Y 3P4"},
+	{"3200 rue de Lyon", "Longueuil", "J4H 3Z6"},
+	{"1200 boulevard Roland-Therrien", "Longueuil", "J4J 5H4"},
+	{"6400 rue de la Côte-de-Liesse", "Longueuil", "J3Y 2J7"},
+	{"750 rue Adoncour", "Longueuil", "J4G 2M6"},
+	// Sherbrooke (10)
+	{"2500 boulevard de l'Université", "Sherbrooke", "J1K 2R1"},
+	{"3001 12e Avenue Nord", "Sherbrooke", "J1H 5N4"},
+	{"1200 rue King Est", "Sherbrooke", "J1G 1E4"},
+	{"900 rue du Conseil", "Sherbrooke", "J1G 1L3"},
+	{"4100 boulevard de Portland", "Sherbrooke", "J1L 1K1"},
+	{"1375 rue King Ouest", "Sherbrooke", "J1J 2B5"},
+	{"2600 rue College", "Sherbrooke", "J1M 1Z7"},
+	{"550 rue du Cégep", "Sherbrooke", "J1E 2K1"},
+	{"100 rue Belvédère Nord", "Sherbrooke", "J1H 4A9"},
+	{"1900 rue Galt Ouest", "Sherbrooke", "J1K 1K4"},
+	// Saguenay (10)
+	{"930 rue Jacques-Cartier Est", "Saguenay", "G7H 7K9"},
+	{"1671 boulevard Talbot", "Saguenay", "G7H 4C3"},
+	{"2505 rue Saint-Jean-Baptiste", "Saguenay", "G7X 4B1"},
+	{"725 boulevard du Royaume", "Saguenay", "G7S 4S6"},
+	{"455 rue Racine Est", "Saguenay", "G7H 1T3"},
+	{"1100 boulevard Saint-Paul", "Saguenay", "G7J 3Y2"},
+	{"3791 boulevard Harvey", "Saguenay", "G7X 3A8"},
+	{"2655 boulevard du Royaume", "Saguenay", "G7S 5B8"},
+	{"150 place du Portage", "Saguenay", "G7H 8M9"},
+	{"530 avenue de l'Hôtel-Dieu", "Saguenay", "G7H 5H6"},
+	// Trois-Rivières (10)
+	{"3351 boulevard des Forges", "Trois-Rivières", "G8Z 1M2"},
+	{"1991 boulevard des Récollets", "Trois-Rivières", "G8Z 3W5"},
+	{"100 rue Laviolette", "Trois-Rivières", "G9A 1T9"},
+	{"3500 rue De Courval", "Trois-Rivières", "G8Y 6S8"},
+	{"4450 boulevard Gene-H.-Kruger", "Trois-Rivières", "G9A 4M3"},
+	{"1525 boulevard des Forges", "Trois-Rivières", "G8Z 1T4"},
+	{"200 rue Bellefeuille", "Trois-Rivières", "G9A 3Y3"},
+	{"810 boulevard Thibeau", "Trois-Rivières", "G8T 7A6"},
+	{"1680 boulevard de la Pinière", "Trois-Rivières", "G8Z 1A1"},
+	{"5300 boulevard Jean-XXIII", "Trois-Rivières", "G8Z 4A6"},
+	// Terrebonne (5)
+	{"3175 boulevard de la Pinière", "Terrebonne", "J6X 4P7"},
+	{"1155 montée Masson", "Terrebonne", "J6W 6G1"},
+	{"2990 avenue des Grandes-Tourelles", "Terrebonne", "J6V 0A1"},
+	{"800 boulevard des Seigneurs", "Terrebonne", "J6W 1T5"},
+	{"600 rue Léon-Martel", "Terrebonne", "J6W 5S6"},
+	// Saint-Jean-sur-Richelieu (5)
+	{"315 rue MacDonald", "Saint-Jean-sur-Richelieu", "J3B 8J3"},
+	{"104 rue Champlain", "Saint-Jean-sur-Richelieu", "J3B 6V1"},
+	{"725 boulevard du Séminaire Nord", "Saint-Jean-sur-Richelieu", "J3A 1E1"},
+	{"190 boulevard d'Iberville", "Saint-Jean-sur-Richelieu", "J2X 2J3"},
+	{"2925 boulevard Industriel", "Saint-Jean-sur-Richelieu", "J3B 7Y5"},
+	// Drummondville (5)
+	{"400 rue Saint-Georges", "Drummondville", "J2C 4H4"},
+	{"1225 boulevard Lemire", "Drummondville", "J2C 8L8"},
+	{"2000 boulevard René-Lévesque", "Drummondville", "J2C 5W4"},
+	{"555 boulevard Saint-Joseph", "Drummondville", "J2C 2B6"},
+	{"960 rue Saint-Pierre", "Drummondville", "J2C 3V9"},
+	// Granby (5)
+	{"233 rue Principale", "Granby", "J2G 2V9"},
+	{"77 rue Dufferin", "Granby", "J2G 4X1"},
+	{"400 rue Cowie", "Granby", "J2G 3V3"},
+	{"650 rue Principale", "Granby", "J2G 8L4"},
+	{"1535 boulevard Leclerc Ouest", "Granby", "J2J 1L4"},
+	// Saint-Hyacinthe (5)
+	{"2075 rue Sicotte", "Saint-Hyacinthe", "J2S 7C5"},
+	{"1100 boulevard Laframboise", "Saint-Hyacinthe", "J2S 4Z2"},
+	{"3000 avenue Bourdages Nord", "Saint-Hyacinthe", "J2S 5W6"},
+	{"900 rue Saint-Antoine", "Saint-Hyacinthe", "J2S 6C4"},
+	{"1550 rue des Cascades Ouest", "Saint-Hyacinthe", "J2S 3H5"},
+	// Rimouski (5)
+	{"60 rue de l'Évêché Ouest", "Rimouski", "G5L 4H6"},
+	{"300 allée des Ursulines", "Rimouski", "G5L 3A1"},
+	{"150 avenue Belzile", "Rimouski", "G5L 3E6"},
+	{"455 boulevard Saint-Germain Ouest", "Rimouski", "G5L 3N2"},
+	{"1 rue du Fleuve", "Rimouski", "G5L 0A1"},
+	// Victoriaville (5)
+	{"475 boulevard des Bois-Francs Sud", "Victoriaville", "G6P 5W2"},
+	{"100 rue Notre-Dame Ouest", "Victoriaville", "G6P 1T2"},
+	{"259 boulevard des Bois-Francs Nord", "Victoriaville", "G6P 6S5"},
+	{"945 boulevard Jutras Est", "Victoriaville", "G6P 8A5"},
+	{"1700 boulevard Arthabaska Est", "Victoriaville", "G6T 2C3"},
+	// Shawinigan (5)
+	{"1250 105e Rue", "Shawinigan", "G9P 1K1"},
+	{"3355 boulevard Royal", "Shawinigan", "G9N 4V3"},
+	{"550 avenue de la Station", "Shawinigan", "G9N 1W2"},
+	{"1100 avenue Champlain", "Shawinigan", "G9N 2K1"},
+	{"150 promenade du Saint-Maurice", "Shawinigan", "G9N 1L3"},
+	// Rouyn-Noranda (5)
+	{"53 rue Gamble Ouest", "Rouyn-Noranda", "J9X 2R3"},
+	{"425 boulevard du Collège", "Rouyn-Noranda", "J9X 5E5"},
+	{"100 rue du Terminus Est", "Rouyn-Noranda", "J9X 3B5"},
+	{"270 avenue Principale", "Rouyn-Noranda", "J9X 5B9"},
+	{"850 rue Saguenay", "Rouyn-Noranda", "J9X 1K3"},
+	// Val-d'Or (5)
+	{"900 7e Rue", "Val-d'Or", "J9P 3P7"},
+	{"1185 rue Principale", "Val-d'Or", "J9P 4P8"},
+	{"400 avenue Centrale", "Val-d'Or", "J9P 1P4"},
+	{"100 rue Perreault Est", "Val-d'Or", "J9P 2G1"},
+	{"600 3e Avenue", "Val-d'Or", "J9P 1S2"},
+	// Repentigny (5)
+	{"100 boulevard Brien", "Repentigny", "J6A 8B6"},
+	{"740 rue Notre-Dame", "Repentigny", "J6A 2V8"},
+	{"222 rue de la Mairie", "Repentigny", "J5Y 0A1"},
+	{"1065 boulevard Iberville", "Repentigny", "J5Y 1P4"},
+	{"435 boulevard de L'Assomption", "Repentigny", "J6A 1E3"},
+	// Brigham, Cowansville, etc. (10)
+	{"660 chemin Hallé Est", "Brigham", "J2K 4H1"},
+	{"145 rue Principale", "Cowansville", "J2K 1J2"},
+	{"350 rue du Sud", "Cowansville", "J2K 2X5"},
+	{"1000 boulevard de Bromont", "Bromont", "J2L 1C2"},
+	{"100 rue Shefford", "Bromont", "J2L 1A1"},
+	{"50 rue Dépôt", "Magog", "J1X 0B1"},
+	{"300 rue Principale Ouest", "Magog", "J1X 2A9"},
+	{"185 rue du Moulin", "Coaticook", "J1A 2R6"},
+	{"500 rue Principale Est", "Farnham", "J2N 1L2"},
+	{"1100 boulevard Industriel", "Granby", "J2J 0K6"},
+}
+
+func randomRealAddress() realAddress {
+	return realAddresses[rand.Intn(len(realAddresses))]
 }
 
 var authors = []string{
@@ -156,6 +380,9 @@ func main() {
 	// Seed consents
 	seedConsents(db)
 
+	// Geocode self contacts
+	geocodeSelfContacts(db)
+
 	// Seed external systems and IDs
 	seedExternalSystems(db)
 
@@ -189,9 +416,7 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 	dob := randomChildDOB()
 	city := pick(cities)
 	lang := langForName(firstName)
-	address := randomAddress()
-	contactCity := pick(cities)
-	postalCode := randomPostalCode()
+	addr := randomRealAddress()
 	author := pick(authors)
 
 	ramq := generateRAMQ(firstName, lastName, dob, isFemale)
@@ -221,10 +446,10 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 		IsPrimary:         false,
 		Email:             fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
 		Phone:             randomPhone(),
-		StreetAddress:     address,
-		City:              contactCity,
+		StreetAddress:     addr.Street,
+		City:              addr.City,
 		Province:          "QC",
-		CodePostal:        postalCode,
+		CodePostal:        addr.PostalCode,
 		PreferredLanguage: lang,
 	}
 	db.Create(&selfContact)
@@ -244,10 +469,10 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 		IsPrimary:         true,
 		Email:             fmt.Sprintf("%s.%s@%s", lower(motherFirst), lower(motherLast), randomDomain()),
 		Phone:             randomPhone(),
-		StreetAddress:     address,
-		City:              contactCity,
+		StreetAddress:     addr.Street,
+		City:              addr.City,
 		Province:          "QC",
-		CodePostal:        postalCode,
+		CodePostal:        addr.PostalCode,
 		PreferredLanguage: lang,
 	}
 	db.Create(&motherContact)
@@ -273,10 +498,10 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 			IsPrimary:         false,
 			Email:             fmt.Sprintf("%s.%s@%s", lower(fatherFirst), lower(fatherLast), randomDomain()),
 			Phone:             randomPhone(),
-			StreetAddress:     address,
-			City:              contactCity,
+			StreetAddress:     addr.Street,
+			City:              addr.City,
 			Province:          "QC",
-			CodePostal:        postalCode,
+			CodePostal:        addr.PostalCode,
 			PreferredLanguage: lang,
 		}
 		db.Create(&fatherContact)
@@ -317,6 +542,7 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 
 	// Adult is their own primary contact
 	lang := langForName(firstName)
+	addr := randomRealAddress()
 	selfContact := types.Contact{
 		ParticipantID:     participant.ID,
 		FirstName:         firstName,
@@ -325,10 +551,10 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 		IsPrimary:         true,
 		Email:             fmt.Sprintf("%s.%s@%s", lower(firstName), lower(lastName), randomDomain()),
 		Phone:             randomPhone(),
-		StreetAddress:     randomAddress(),
-		City:              pick(cities),
+		StreetAddress:     addr.Street,
+		City:              addr.City,
 		Province:          "QC",
-		CodePostal:        randomPostalCode(),
+		CodePostal:        addr.PostalCode,
 		PreferredLanguage: lang,
 	}
 	db.Create(&selfContact)
@@ -606,21 +832,6 @@ func randomPhone() string {
 	return fmt.Sprintf("%s%03d%04d", pick(areaCodes), rand.Intn(1000), rand.Intn(10000))
 }
 
-func randomAddress() string {
-	return fmt.Sprintf("%d %s", rand.Intn(9999)+1, pick(streets))
-}
-
-func randomPostalCode() string {
-	letters := "ABCEGHJKLMNPRSTVXY"
-	return fmt.Sprintf("%c%d%c %d%c%d",
-		letters[rand.Intn(len(letters))],
-		rand.Intn(10),
-		letters[rand.Intn(len(letters))],
-		rand.Intn(10),
-		letters[rand.Intn(len(letters))],
-		rand.Intn(10),
-	)
-}
 
 var angloFirstNames = map[string]bool{
 	"James": true, "Ryan": true, "Connor": true, "Dylan": true, "Tyler": true,
@@ -671,6 +882,30 @@ func generateRAMQ(firstName, lastName string, dob time.Time, isFemale bool) stri
 		year, month,
 		dob.Day(), seq,
 	)
+}
+
+// geocodeSelfContacts geocodes the address of all "self" contacts using AQRÉS.
+func geocodeSelfContacts(db *gorm.DB) {
+	var contacts []types.Contact
+	db.Where("relationship_code = ? AND latitude IS NULL AND street_address != ''", "self").Find(&contacts)
+
+	geocoded := 0
+	for i, c := range contacts {
+		address := geocode.BuildAddressLine(c.StreetAddress, c.City, c.Province, c.CodePostal)
+		coords := geocode.Geocode(address)
+		if coords != nil {
+			db.Model(&contacts[i]).Updates(map[string]interface{}{
+				"latitude":  coords.Latitude,
+				"longitude": coords.Longitude,
+			})
+			geocoded++
+		}
+		// Rate limit: small pause between requests
+		if i%10 == 9 {
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+	log.Printf("Geocoded %d/%d self contacts", geocoded, len(contacts))
 }
 
 // seedExternalSystems creates external systems and assigns external IDs to some participants.
