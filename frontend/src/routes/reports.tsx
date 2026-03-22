@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, Download, Table2 } from "lucide-react";
 import {
@@ -27,6 +27,13 @@ import { useReportsSummary } from "@/hooks/useReportsSummary";
 /** Returns today's date as YYYY-MM-DD. */
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Formats a count with its percentage of total. */
+function pct(value: number, total: number): string {
+  return total > 0
+    ? `${value} (${((value / total) * 100).toFixed(1)}%)`
+    : `${value}`;
 }
 
 /** Resolves CSS variables in SVG attributes to computed values. */
@@ -112,23 +119,23 @@ export default function Reports() {
   const dateRef = useRef<HTMLInputElement>(null);
   const growthChartRef = useRef<HTMLDivElement>(null);
   const ageChartRef = useRef<HTMLDivElement>(null);
+  const cityChartRef = useRef<HTMLDivElement>(null);
   const [showGrowthTable, setShowGrowthTable] = useState(false);
   const [showAgeTable, setShowAgeTable] = useState(false);
+  const [showCityTable, setShowCityTable] = useState(false);
 
   // Listen to native 'change' event which only fires on final selection,
   // unlike React's onChange which fires on intermediate changes (month navigation)
-  const setDateRef = (el: HTMLInputElement | null) => {
-    if (el && el !== dateRef.current) {
-      el.addEventListener("change", () => {
-        if (el.value) setReportDate(el.value);
-      });
-    }
-    (dateRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
-  };
+  useEffect(() => {
+    const el = dateRef.current;
+    if (!el) return;
+    const handler = () => {
+      if (el.value) setReportDate(el.value);
+    };
+    el.addEventListener("change", handler);
+    return () => el.removeEventListener("change", handler);
+  }, []);
   const { summary, isLoading } = useReportsSummary(reportDate);
-
-  const pct = (value: number, total: number) =>
-    total > 0 ? `${value} (${((value / total) * 100).toFixed(1)}%)` : `${value}`;
 
   if (isLoading || !summary) {
     return (
@@ -157,7 +164,7 @@ export default function Reports() {
               onClick={() => dateRef.current?.showPicker()}
             />
             <input
-              ref={setDateRef}
+              ref={dateRef}
               type="date"
               defaultValue={reportDate}
               max={todayStr()}
@@ -396,6 +403,94 @@ export default function Reports() {
                       <tr key={a.range} className="border-b last:border-0">
                         <td className="py-2 pr-4">{a.range}</td>
                         <td className="py-2 text-right tabular-nums">{a.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+          {/* City distribution */}
+          <Card>
+            <CardHeader className="border-b [.border-b]:pb-2">
+              <CardTitle>{t("reports.geographic_distribution")}</CardTitle>
+              <CardAction>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setShowCityTable((v) => !v)}
+                  >
+                    <Table2 className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => downloadPng(cityChartRef.current, "distribution_geographique")}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                </div>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              {!summary.city_distribution?.length ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.noResults")}
+                </p>
+              ) : (
+                <div ref={cityChartRef}>
+                <span data-chart-title className="sr-only">{t("reports.geographic_distribution")}</span>
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(300, summary.city_distribution.length * 32)}
+                >
+                  <BarChart
+                    data={summary.city_distribution}
+                    layout="vertical"
+                    margin={{ left: 20, right: 30, bottom: 25 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      label={{
+                        value: `# ${t("reports.participants")}`,
+                        position: "insideBottom",
+                        offset: -10,
+                        fontSize: 12,
+                      }}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="city"
+                      tick={{ fontSize: 12 }}
+                      width={140}
+                    />
+                    <Tooltip />
+                    <Bar
+                      dataKey="count"
+                      name={t("reports.participants")}
+                      fill="var(--chart-1)"
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                </div>
+              )}
+              {showCityTable && summary.city_distribution?.length > 0 && (
+                <table className="w-full text-sm mt-4">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-4 font-medium">{t("reports.city")}</th>
+                      <th className="py-2 font-medium text-right">{`# ${t("reports.participants")}`}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.city_distribution.map((c) => (
+                      <tr key={c.city} className="border-b last:border-0">
+                        <td className="py-2 pr-4">{c.city}</td>
+                        <td className="py-2 text-right tabular-nums">{c.count}</td>
                       </tr>
                     ))}
                   </tbody>

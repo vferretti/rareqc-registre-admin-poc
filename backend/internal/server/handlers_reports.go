@@ -20,7 +20,8 @@ import (
 // @Router      /reports/summary [get]
 func ReportsSummaryHandler(repo *repository.ReportsRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		reportDate := time.Now()
+		// Default to start of tomorrow (includes all of today)
+		reportDate := time.Now().AddDate(0, 0, 1).Truncate(24 * time.Hour)
 
 		if rd := c.Query("report_date"); rd != "" {
 			parsed, err := time.Parse("2006-01-02", rd)
@@ -28,8 +29,8 @@ func ReportsSummaryHandler(repo *repository.ReportsRepository) gin.HandlerFunc {
 				c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid report_date format (expected YYYY-MM-DD)"})
 				return
 			}
-			// Set to end of day to include all participants created on that date
-			reportDate = parsed.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			// Start of next day so queries use created_at < reportDate
+			reportDate = parsed.AddDate(0, 0, 1)
 		}
 
 		summary, err := repo.GetSummary(reportDate)

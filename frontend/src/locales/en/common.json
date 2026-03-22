@@ -421,7 +421,9 @@
     "age_range": "Age range (years)",
     "participants": "Participants",
     "quarter": "Quarter",
-    "change_date": "Change date"
+    "change_date": "Change date",
+    "geographic_distribution": "Geographic distribution (top 10)",
+    "city": "City"
   },
   "activity_log": {
     "title": "Activity Log",

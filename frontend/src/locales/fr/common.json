@@ -421,7 +421,9 @@
     "age_range": "Tranche d'âge (ans)",
     "participants": "Participants",
     "quarter": "Trimestre",
-    "change_date": "Changer la date"
+    "change_date": "Changer la date",
+    "geographic_distribution": "Distribution géographique (top 10)",
+    "city": "Ville"
   },
   "activity_log": {
     "title": "Journal d'activités",

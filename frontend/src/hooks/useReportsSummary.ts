@@ -16,6 +16,11 @@ export interface AgeRangeCount {
   count: number;
 }
 
+export interface CityCount {
+  city: string;
+  count: number;
+}
+
 export interface ReportsSummary {
   total_participants: number;
   female_count: number;
@@ -28,6 +33,7 @@ export interface ReportsSummary {
   external_systems: ExternalSystemCount[];
   growth_by_quarter: QuarterCount[];
   age_distribution: AgeRangeCount[];
+  city_distribution: CityCount[];
 }
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
