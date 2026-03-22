@@ -406,6 +406,7 @@
   "reports": {
     "title": "Rapport",
     "description": "Rapports et statistiques du registre",
+    "as_of": "Rapport en date du",
     "summary": "Sommaire",
     "total_participants": "Total participants",
     "female_count": "Féminin",
@@ -415,7 +416,12 @@
     "deceased_count": "Décédés",
     "valid_consents": "Consentements valides",
     "external_systems": "Systèmes externes",
-    "growth_title": "Croissance des inscriptions"
+    "growth_title": "Croissance des inscriptions",
+    "age_distribution": "Distribution par âge",
+    "age_range": "Tranche d'âge (ans)",
+    "participants": "Participants",
+    "quarter": "Trimestre",
+    "change_date": "Changer la date"
   },
   "activity_log": {
     "title": "Journal d'activités",

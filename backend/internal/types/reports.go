@@ -12,6 +12,12 @@ type QuarterCount struct {
 	Count   int    `json:"count"`
 }
 
+// AgeRangeCount represents an age range with its participant count.
+type AgeRangeCount struct {
+	Range string `json:"range"`
+	Count int    `json:"count"`
+}
+
 // ReportsSummary holds all summary statistics for the reports page.
 type ReportsSummary struct {
 	TotalParticipants   int                   `json:"total_participants"`
@@ -24,4 +30,5 @@ type ReportsSummary struct {
 	ConsentExtLinkage   int                   `json:"consent_ext_linkage"`
 	ExternalSystems     []ExternalSystemCount `json:"external_systems"`
 	GrowthByQuarter     []QuarterCount        `json:"growth_by_quarter"`
+	AgeDistribution     []AgeRangeCount       `json:"age_distribution"`
 }

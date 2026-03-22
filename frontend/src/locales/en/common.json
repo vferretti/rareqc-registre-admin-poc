@@ -406,6 +406,7 @@
   "reports": {
     "title": "Reports",
     "description": "Registry reports and statistics",
+    "as_of": "Report as of",
     "summary": "Summary",
     "total_participants": "Total participants",
     "female_count": "Female",
@@ -415,7 +416,12 @@
     "deceased_count": "Deceased",
     "valid_consents": "Valid consents",
     "external_systems": "External systems",
-    "growth_title": "Enrollment growth"
+    "growth_title": "Enrollment growth",
+    "age_distribution": "Age distribution",
+    "age_range": "Age range (years)",
+    "participants": "Participants",
+    "quarter": "Quarter",
+    "change_date": "Change date"
   },
   "activity_log": {
     "title": "Activity Log",

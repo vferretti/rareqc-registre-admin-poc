@@ -78,6 +78,7 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM cart_item")
 	db.Exec("DELETE FROM external_id")
 	db.Exec("DELETE FROM consent")
 	db.Exec("DELETE FROM document_file")
@@ -143,12 +144,9 @@ func main() {
 	// Override created_at to match enrollment timestamps (GORM autoCreateTime sets to NOW)
 	var allParticipants []types.Participant
 	db.Order("id ASC").Find(&allParticipants)
-	// Sort enrollTimes back for sequential assignment
-	sortedEnrollTimes := make([]time.Time, len(enrollTimes))
-	copy(sortedEnrollTimes, enrollTimes)
 	for i, p := range allParticipants {
 		if i < len(enrollTimes) {
-			db.Model(&p).Update("created_at", enrollTimes[i])
+			db.Exec("UPDATE participant SET created_at = ? WHERE id = ?", enrollTimes[i], p.ID)
 		}
 	}
 
@@ -205,6 +203,7 @@ func seedChild(db *gorm.DB, index int, ts time.Time) {
 		RAMQ:            &ramq,
 		SexAtBirthCode:  sex,
 		VitalStatusCode: "alive",
+		CreatedAt:       ts,
 	}
 	db.Create(&participant)
 	db.Create(guid.Compute(&participant))
@@ -307,6 +306,7 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 		RAMQ:            &ramq,
 		SexAtBirthCode:  sex,
 		VitalStatusCode: "alive",
+		CreatedAt:       ts,
 	}
 	db.Create(&participant)
 	db.Create(guid.Compute(&participant))

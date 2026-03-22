@@ -1,12 +1,11 @@
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Users,
-  HeartPulse,
-  FileCheck,
-} from "lucide-react";
+import { CalendarDays, Download } from "lucide-react";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,40 +15,118 @@ import {
 import { PageHeader } from "@/components/base/page/page-header";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/base/ui/card";
+import { Button } from "@/components/base/ui/button";
+import { InformationField } from "@/components/base/information/information-field";
 import { useReportsSummary } from "@/hooks/useReportsSummary";
 
-/** A single stat row inside the summary card. */
-function StatRow({
-  icon,
-  label,
-  value,
-  muted,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string | number;
-  muted?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2 text-sm">
-        {icon}
-        <span className={muted ? "text-muted-foreground" : ""}>
-          {label}
-        </span>
-      </div>
-      <span className="font-semibold tabular-nums">{value}</span>
-    </div>
-  );
+/** Returns today's date as YYYY-MM-DD. */
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Resolves CSS variables in SVG attributes to computed values. */
+function resolveCssVars(svg: SVGElement) {
+  const style = getComputedStyle(document.documentElement);
+  svg.querySelectorAll("*").forEach((el) => {
+    for (const attr of ["fill", "stroke"]) {
+      const val = el.getAttribute(attr);
+      if (val?.startsWith("var(")) {
+        const varName = val.slice(4, -1).trim();
+        const resolved = style.getPropertyValue(varName).trim();
+        if (resolved) el.setAttribute(attr, resolved);
+      }
+    }
+  });
+}
+
+/** Downloads the content of a container (title + chart SVG) as a PNG file. */
+function downloadPng(container: HTMLDivElement | null, fileName: string) {
+  const svg = container?.querySelector("svg");
+  if (!svg) return;
+
+  const clone = svg.cloneNode(true) as SVGElement;
+  resolveCssVars(clone);
+
+  // Get title text if present
+  const titleEl = container?.querySelector("[data-chart-title]");
+  const titleText = titleEl?.textContent || "";
+
+  const svgRect = svg.getBoundingClientRect();
+  const scale = 2;
+  const titleHeight = titleText ? 36 : 0;
+  const canvasW = svgRect.width * scale;
+  const canvasH = (svgRect.height + titleHeight) * scale;
+
+  // Set explicit dimensions on the clone
+  clone.setAttribute("width", String(svgRect.width));
+  clone.setAttribute("height", String(svgRect.height));
+
+  const serializer = new XMLSerializer();
+  const svgSource = serializer.serializeToString(clone);
+  const svgBlob = new Blob([svgSource], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext("2d")!;
+
+    // White background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Draw title
+    if (titleText) {
+      ctx.fillStyle = "#1a1a1a";
+      ctx.font = `bold ${14 * scale}px sans-serif`;
+      ctx.fillText(titleText, 12 * scale, 24 * scale);
+    }
+
+    // Draw chart
+    ctx.drawImage(img, 0, titleHeight * scale, canvasW, svgRect.height * scale);
+    URL.revokeObjectURL(svgUrl);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fileName}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  };
+  img.src = svgUrl;
 }
 
 export default function Reports() {
-  const { t } = useTranslation();
-  const { summary, isLoading } = useReportsSummary();
+  const { t, i18n } = useTranslation();
+  const [reportDate, setReportDate] = useState(todayStr);
+  const dateRef = useRef<HTMLInputElement>(null);
+  const growthChartRef = useRef<HTMLDivElement>(null);
+  const ageChartRef = useRef<HTMLDivElement>(null);
+
+  // Listen to native 'change' event which only fires on final selection,
+  // unlike React's onChange which fires on intermediate changes (month navigation)
+  const setDateRef = (el: HTMLInputElement | null) => {
+    if (el && el !== dateRef.current) {
+      el.addEventListener("change", () => {
+        if (el.value) setReportDate(el.value);
+      });
+    }
+    (dateRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+  };
+  const { summary, isLoading } = useReportsSummary(reportDate);
+
+  const pct = (value: number, total: number) =>
+    total > 0 ? `${value} (${((value / total) * 100).toFixed(1)}%)` : `${value}`;
 
   if (isLoading || !summary) {
     return (
@@ -67,91 +144,101 @@ export default function Reports() {
     <>
       <PageHeader
         title={t("reports.title")}
-        description={t("reports.description")}
+        description={
+          <span className="inline-flex items-center gap-1.5 relative">
+            {t("reports.as_of")}{" "}
+            {new Date(reportDate + "T00:00:00").toLocaleDateString(
+              i18n.language === "fr" ? "fr-CA" : "en-CA",
+            )}
+            <CalendarDays
+              className="size-4 text-primary cursor-pointer hover:text-primary/80"
+              onClick={() => dateRef.current?.showPicker()}
+            />
+            <input
+              ref={setDateRef}
+              type="date"
+              defaultValue={reportDate}
+              max={todayStr()}
+              className="absolute opacity-0 w-0 h-0"
+            />
+          </span>
+        }
       />
       <div className="p-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Summary card */}
           <Card>
-            <CardHeader>
+            <CardHeader className="border-b [.border-b]:pb-2">
               <CardTitle>{t("reports.summary")}</CardTitle>
             </CardHeader>
-            <CardContent className="divide-y">
-              {/* Participants */}
-              <StatRow
-                icon={<Users className="size-4 text-primary" />}
-                label={t("reports.total_participants")}
-                value={summary.total_participants}
-              />
-              <StatRow
-                label={t("reports.female_count")}
-                value={summary.female_count}
-                muted
-              />
-              <StatRow
-                label={t("reports.male_count")}
-                value={summary.male_count}
-                muted
-              />
-              <StatRow
-                label={t("reports.average_age")}
-                value={`${summary.average_age.toFixed(1)} ${t("reports.years")}`}
-                muted
-              />
-              <StatRow
-                icon={<HeartPulse className="size-4 text-destructive" />}
-                label={t("reports.deceased_count")}
-                value={summary.deceased_count}
-              />
+            <CardContent>
+              <div className="flex flex-col gap-2">
+                <InformationField label={t("reports.total_participants")}>
+                  {summary.total_participants}
+                </InformationField>
+                <InformationField label={t("reports.female_count")}>
+                  {pct(summary.female_count, summary.total_participants)}
+                </InformationField>
+                <InformationField label={t("reports.male_count")}>
+                  {pct(summary.male_count, summary.total_participants)}
+                </InformationField>
+                <InformationField label={t("reports.average_age")}>
+                  {summary.average_age.toFixed(1)} {t("reports.years")}
+                </InformationField>
+                <InformationField label={t("reports.deceased_count")}>
+                  {pct(summary.deceased_count, summary.total_participants)}
+                </InformationField>
+              </div>
 
-              {/* Consents */}
-              <div className="pt-2">
-                <div className="flex items-center gap-2 text-sm font-medium pb-1">
-                  <FileCheck className="size-4 text-primary" />
+              {/* Valid consents */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="text-sm font-medium mb-2">
                   {t("reports.valid_consents")}
                 </div>
+                <div className="flex flex-col gap-2">
+                  <InformationField label={t("enums.clause_type.registry")}>
+                    {pct(summary.consent_registry, summary.total_participants)}
+                  </InformationField>
+                  <InformationField label={t("enums.clause_type.recontact")}>
+                    {pct(summary.consent_recontact, summary.total_participants)}
+                  </InformationField>
+                  <InformationField label={t("enums.clause_type.external_linkage")}>
+                    {pct(summary.consent_ext_linkage, summary.total_participants)}
+                  </InformationField>
+                </div>
               </div>
-              <StatRow
-                label={t("enums.clause_type.registry")}
-                value={summary.consent_registry}
-                muted
-              />
-              <StatRow
-                label={t("enums.clause_type.recontact")}
-                value={summary.consent_recontact}
-                muted
-              />
-              <StatRow
-                label={t("enums.clause_type.external_linkage")}
-                value={summary.consent_ext_linkage}
-                muted
-              />
 
               {/* External systems */}
               {summary.external_systems.length > 0 && (
-                <>
-                  <div className="pt-2">
-                    <div className="text-sm font-medium pb-1">
-                      {t("reports.external_systems")}
-                    </div>
+                <div className="mt-4 pt-4 border-t">
+                  <div className="text-sm font-medium mb-2">
+                    {t("reports.external_systems")}
                   </div>
-                  {summary.external_systems.map((es) => (
-                    <StatRow
-                      key={es.name}
-                      label={es.name}
-                      value={es.count}
-                      muted
-                    />
-                  ))}
-                </>
+                  <div className="flex flex-col gap-2">
+                    {summary.external_systems.map((es) => (
+                      <InformationField key={es.name} label={es.name}>
+                        {pct(es.count, summary.total_participants)}
+                      </InformationField>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
           {/* Growth chart */}
           <Card>
-            <CardHeader>
+            <CardHeader className="border-b [.border-b]:pb-2">
               <CardTitle>{t("reports.growth_title")}</CardTitle>
+              <CardAction>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => downloadPng(growthChartRef.current, "croissance")}
+                >
+                  <Download className="size-4" />
+                </Button>
+              </CardAction>
             </CardHeader>
             <CardContent>
               {summary.growth_by_quarter.length === 0 ? (
@@ -159,14 +246,22 @@ export default function Reports() {
                   {t("common.noResults")}
                 </p>
               ) : (
+                <div ref={growthChartRef}>
+                <span data-chart-title className="sr-only">{t("reports.growth_title")}</span>
                 <ResponsiveContainer width="100%" height={380}>
-                  <LineChart data={summary.growth_by_quarter}>
+                  <LineChart data={summary.growth_by_quarter} margin={{ bottom: 25, right: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="quarter"
                       tick={{ fontSize: 12 }}
+                      label={{
+                        value: t("reports.quarter"),
+                        position: "insideBottom",
+                        offset: -10,
+                        fontSize: 12,
+                      }}
                     />
-                    <YAxis allowDecimals={false} />
+                    <YAxis allowDecimals={false} domain={[0, (max: number) => { const tick = max <= 50 ? 10 : max <= 200 ? 25 : max <= 500 ? 50 : 100; return Math.ceil(max / tick) * tick + tick; }]} />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -178,6 +273,56 @@ export default function Reports() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* Age distribution */}
+          <Card>
+            <CardHeader className="border-b [.border-b]:pb-2">
+              <CardTitle>{t("reports.age_distribution")}</CardTitle>
+              <CardAction>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => downloadPng(ageChartRef.current, "distribution_age")}
+                >
+                  <Download className="size-4" />
+                </Button>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              {!summary.age_distribution?.length ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.noResults")}
+                </p>
+              ) : (
+                <div ref={ageChartRef}>
+                <span data-chart-title className="sr-only">{t("reports.age_distribution")}</span>
+                <ResponsiveContainer width="100%" height={340}>
+                  <BarChart data={summary.age_distribution} margin={{ bottom: 25, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="range"
+                      tick={{ fontSize: 12 }}
+                      label={{
+                        value: t("reports.age_range"),
+                        position: "insideBottom",
+                        offset: -10,
+                        fontSize: 12,
+                      }}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar
+                      dataKey="count"
+                      name={t("reports.participants")}
+                      fill="var(--chart-1)"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+                </div>
               )}
             </CardContent>
           </Card>
