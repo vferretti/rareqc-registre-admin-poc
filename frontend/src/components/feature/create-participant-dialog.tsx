@@ -191,7 +191,7 @@ export function ParticipantFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 pr-6">
             <DialogTitle>
               {t(
                 isEdit
@@ -384,11 +384,6 @@ export function ParticipantFormDialog({
               <legend className="text-sm font-semibold text-foreground">
                 {t("create_participant.section_coordinates")}
               </legend>
-              {!isEdit && (
-                <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                  {t("create_participant.coordinates_help")}
-                </p>
-              )}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   schema={schema}
@@ -537,9 +532,6 @@ export function ParticipantFormDialog({
                   <legend className="text-sm font-semibold text-foreground">
                     {t("create_participant.section_contacts")}
                   </legend>
-                  <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                    {t("create_participant.contacts_help")}
-                  </p>
 
                   {fields.map((field, index) => {
                     const sameCoordinates = form.watch(`contacts.${index}.same_coordinates`);
