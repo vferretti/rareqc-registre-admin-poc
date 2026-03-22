@@ -4,6 +4,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
 import { formatRAMQ } from "@/lib/validation";
+import { AddressInput } from "@/components/base/address-autocomplete";
 import {
   participantSchema,
   type ParticipantFormValues,
@@ -423,7 +424,16 @@ export function ParticipantFormDialog({
                         {t("create_participant.street_address")}
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <AddressInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          onAddressSelect={(addr) => {
+                            form.setValue("apartment_number", addr.apartment_number);
+                            form.setValue("city", addr.city);
+                            form.setValue("province", addr.province || "QC");
+                            form.setValue("code_postal", addr.code_postal);
+                          }}
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -635,7 +645,19 @@ export function ParticipantFormDialog({
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <FormField schema={null} control={form.control} name={`contacts.${index}.street_address`} render={({ field }) => (
-                              <FormItem><FormLabel>{t("create_participant.street_address")}</FormLabel><FormControl><Input {...field} disabled={sameCoordinates} /></FormControl></FormItem>
+                              <FormItem><FormLabel>{t("create_participant.street_address")}</FormLabel><FormControl>
+                                <AddressInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  disabled={sameCoordinates}
+                                  onAddressSelect={(addr) => {
+                                    form.setValue(`contacts.${index}.apartment_number`, addr.apartment_number);
+                                    form.setValue(`contacts.${index}.city`, addr.city);
+                                    form.setValue(`contacts.${index}.province`, addr.province || "QC");
+                                    form.setValue(`contacts.${index}.code_postal`, addr.code_postal);
+                                  }}
+                                />
+                              </FormControl></FormItem>
                             )} />
                             <FormField schema={null} control={form.control} name={`contacts.${index}.apartment_number`} render={({ field }) => (
                               <FormItem><FormLabel>{t("create_participant.apartment_number")}</FormLabel><FormControl><Input {...field} disabled={sameCoordinates} /></FormControl></FormItem>

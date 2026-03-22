@@ -123,6 +123,9 @@
       "minimize": "Quitter le plein écran"
     }
   },
+  "address": {
+    "autocomplete_placeholder": "Adresse"
+  },
   "participants": {
     "title": "Participants",
     "description": "Liste des participants du registre",

@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
+import { AddressInput } from "@/components/base/address-autocomplete";
 import {
   contactSchema,
   type ContactFormValues,
@@ -375,7 +376,17 @@ export function ContactFormDialog({
                           <FormItem>
                             <FormLabel>{t("create_participant.street_address")}</FormLabel>
                             <FormControl>
-                              <Input {...field} disabled={sameCoordinates} />
+                              <AddressInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                disabled={sameCoordinates}
+                                onAddressSelect={(addr) => {
+                                  form.setValue(`contacts.${index}.apartment_number`, addr.apartment_number);
+                                  form.setValue(`contacts.${index}.city`, addr.city);
+                                  form.setValue(`contacts.${index}.province`, addr.province || "QC");
+                                  form.setValue(`contacts.${index}.code_postal`, addr.code_postal);
+                                }}
+                              />
                             </FormControl>
                           </FormItem>
                         )}

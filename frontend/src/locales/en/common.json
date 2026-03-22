@@ -123,6 +123,9 @@
       "minimize": "Exit fullscreen"
     }
   },
+  "address": {
+    "autocomplete_placeholder": "Address"
+  },
   "participants": {
     "title": "Participants",
     "description": "List of registry participants",
