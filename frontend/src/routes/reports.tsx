@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Download } from "lucide-react";
+import { CalendarDays, Download, Table2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -112,6 +112,8 @@ export default function Reports() {
   const dateRef = useRef<HTMLInputElement>(null);
   const growthChartRef = useRef<HTMLDivElement>(null);
   const ageChartRef = useRef<HTMLDivElement>(null);
+  const [showGrowthTable, setShowGrowthTable] = useState(false);
+  const [showAgeTable, setShowAgeTable] = useState(false);
 
   // Listen to native 'change' event which only fires on final selection,
   // unlike React's onChange which fires on intermediate changes (month navigation)
@@ -231,13 +233,22 @@ export default function Reports() {
             <CardHeader className="border-b [.border-b]:pb-2">
               <CardTitle>{t("reports.growth_title")}</CardTitle>
               <CardAction>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => downloadPng(growthChartRef.current, "croissance")}
-                >
-                  <Download className="size-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setShowGrowthTable((v) => !v)}
+                  >
+                    <Table2 className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => downloadPng(growthChartRef.current, "croissance")}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                </div>
               </CardAction>
             </CardHeader>
             <CardContent>
@@ -261,7 +272,18 @@ export default function Reports() {
                         fontSize: 12,
                       }}
                     />
-                    <YAxis allowDecimals={false} domain={[0, (max: number) => { const tick = max <= 50 ? 10 : max <= 200 ? 25 : max <= 500 ? 50 : 100; return Math.ceil(max / tick) * tick + tick; }]} />
+                    <YAxis
+                      allowDecimals={false}
+                      domain={[0, (max: number) => { const tick = max <= 50 ? 10 : max <= 200 ? 25 : max <= 500 ? 50 : 100; return Math.ceil(max / tick) * tick + tick; }]}
+                      label={{
+                        value: `# ${t("reports.participants")}`,
+                        angle: -90,
+                        position: "insideLeft",
+                        offset: 10,
+                        fontSize: 12,
+                        style: { textAnchor: "middle" },
+                      }}
+                    />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -275,6 +297,24 @@ export default function Reports() {
                 </ResponsiveContainer>
                 </div>
               )}
+              {showGrowthTable && summary.growth_by_quarter.length > 0 && (
+                <table className="w-full text-sm mt-4">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-4 font-medium">{t("reports.quarter")}</th>
+                      <th className="py-2 font-medium text-right">{`# ${t("reports.participants")}`}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.growth_by_quarter.map((q) => (
+                      <tr key={q.quarter} className="border-b last:border-0">
+                        <td className="py-2 pr-4">{q.quarter}</td>
+                        <td className="py-2 text-right tabular-nums">{q.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </CardContent>
           </Card>
           {/* Age distribution */}
@@ -282,13 +322,22 @@ export default function Reports() {
             <CardHeader className="border-b [.border-b]:pb-2">
               <CardTitle>{t("reports.age_distribution")}</CardTitle>
               <CardAction>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => downloadPng(ageChartRef.current, "distribution_age")}
-                >
-                  <Download className="size-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setShowAgeTable((v) => !v)}
+                  >
+                    <Table2 className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => downloadPng(ageChartRef.current, "distribution_age")}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                </div>
               </CardAction>
             </CardHeader>
             <CardContent>
@@ -312,7 +361,17 @@ export default function Reports() {
                         fontSize: 12,
                       }}
                     />
-                    <YAxis allowDecimals={false} />
+                    <YAxis
+                      allowDecimals={false}
+                      label={{
+                        value: `# ${t("reports.participants")}`,
+                        angle: -90,
+                        position: "insideLeft",
+                        offset: 10,
+                        fontSize: 12,
+                        style: { textAnchor: "middle" },
+                      }}
+                    />
                     <Tooltip />
                     <Bar
                       dataKey="count"
@@ -323,6 +382,24 @@ export default function Reports() {
                   </BarChart>
                 </ResponsiveContainer>
                 </div>
+              )}
+              {showAgeTable && summary.age_distribution?.length > 0 && (
+                <table className="w-full text-sm mt-4">
+                  <thead>
+                    <tr className="border-b text-left text-muted-foreground">
+                      <th className="py-2 pr-4 font-medium">{t("reports.age_range")}</th>
+                      <th className="py-2 font-medium text-right">{`# ${t("reports.participants")}`}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.age_distribution.map((a) => (
+                      <tr key={a.range} className="border-b last:border-0">
+                        <td className="py-2 pr-4">{a.range}</td>
+                        <td className="py-2 text-right tabular-nums">{a.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </CardContent>
           </Card>
