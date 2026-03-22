@@ -1,13 +1,13 @@
 # RareQC — Registre Admin (POC)
 
-Application web d'administration pour un registre québécois de maladies rares. Permet la gestion des participants (patients), de leurs contacts, des consentements et du suivi de l'historique des modifications.
+Application web d'administration pour un registre québécois de maladies rares. Permet la gestion des participants (patients), de leurs contacts, des consentements, du suivi de l'historique des modifications, des rapports et de la sélection en lot (panier).
 
 ## Stack technique
 
 | Couche       | Technologies                                                       |
 |--------------|--------------------------------------------------------------------|
 | **Backend**  | Go 1.24, Gin, GORM, PostgreSQL 16, Swagger (swaggo)               |
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, i18next   |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, i18next, recharts, ExcelJS |
 | **Infra**    | Docker Compose (PostgreSQL, Go API, Nginx)                         |
 | **Qualité**  | ESLint, Prettier, Husky + lint-staged                              |
 
@@ -98,20 +98,39 @@ docker compose --profile dev run --rm seed
 | Page | Route | Description |
 |------|-------|-------------|
 | Landing | `/` | Page de connexion (simulée) |
-| Accueil | `/home` | Tableau de bord avec recherche, navigation et activités récentes |
-| Participants | `/participants` | Liste paginée, triable, avec recherche |
-| Détail participant | `/participants/:id` | Identité, coordonnées, contacts, consentements, historique |
-| Activités | `/activity` | Journal des actions avec filtres |
-| Administration | `/admin` | Page d'administration (à venir) |
+| Accueil | `/home` | Tableau de bord avec recherche globale, navigation et activités récentes |
+| Participants | `/participants` | Liste paginée, triable, filtrable avec export Excel et panier |
+| Détail participant | `/participants/:id` | Identité, coordonnées, contacts, consentements, IDs externes, historique, visite guidée |
+| Communications | `/communications` | Gestion des communications en lot (en construction) |
+| Rapports | `/reports` | Statistiques et graphiques (sommaire, croissance, âge, géographie) |
+| Historique | `/activity` | Journal des actions avec filtres (type, période, recherche) |
+| Panier | `/cart` | Participants sélectionnés pour des actions en lot |
+| Administration | `/admin` | Formulaires de consentement, tables de codes, systèmes externes |
 
 ### Recherche globale
 
-La barre de recherche sur la page d'accueil cherche dans :
+La barre de recherche (page d'accueil et liste participants) cherche dans :
+- ID interne du participant
 - Noms des participants (prénom, nom, nom complet)
-- Numéro RAMQ
+- Numéro RAMQ (insensible à la casse et aux espaces)
+- IDs externes (CQDG, CQGC, etc.)
 - Noms, courriels et téléphones des contacts
 
-Les suggestions s'affichent en temps réel avec le match en gras.
+Les suggestions s'affichent en temps réel avec le match en gras et une icône contextuelle (nom, RAMQ, courriel, téléphone, ID externe).
+
+### Filtres avancés (liste participants)
+
+- **Consentements** : dropdown groupé par type de clause (registre, recontact, liaison externe) × statut (valide, expiré, retiré, remplacé). ET entre les types, OU entre les statuts.
+- **Système externe** : multi-select des systèmes (CQDG, CQGC). Filtre les participants ayant un ID dans au moins un des systèmes sélectionnés.
+- **Filtre par liste d'IDs** : dialog avec choix de la source (Registre, CQDG, CQGC) + textarea. Validation en temps réel, couper les non-trouvés, appliquer le filtre.
+- **Effacer** : bouton qui réinitialise tous les filtres actifs.
+
+### Panier
+
+- Colonne checkbox dans le tableau des participants (toggle individuel + header toggle page)
+- Badge compteur dans la navbar (99+ si > 99)
+- Page `/cart` avec tableau, recherche locale, export Excel, vider le panier
+- Persistance côté serveur (user fictif "fake-user-1" pour le POC)
 
 ### Consentements
 
@@ -120,6 +139,32 @@ Chaque participant peut consentir à des clauses provenant de formulaires de con
 - **Formulaire de consentement – RQDM** : 3 clauses (registre, recontact, liaison externe)
 
 Chaque consentement enregistre : la clause, le statut, la date, le signataire et un document signé optionnel.
+
+### Rapports
+
+- Carte sommaire : total participants, répartition H/F, âge moyen, consentements valides, systèmes externes
+- Graphique de croissance par trimestre (ligne)
+- Distribution par âge (barres)
+- Distribution géographique (barres horizontales)
+- Chaque graphique : toggle tableau de données + export PNG
+- Filtre par date
+
+### Export Excel
+
+- **Liste participants** : exporte tous les résultats filtrés avec en-têtes traduits (FR/EN)
+- **Panier** : exporte les participants sélectionnés
+- Librairie : ExcelJS (même que unic-portal)
+
+### IDs externes et copie
+
+- Badges colorés dans l'en-tête du détail participant (un par système externe)
+- Clic sur un badge → copie l'ID dans le presse-papier avec feedback visuel (icône Check)
+- Badge ID interne également copiable
+
+### Visite guidée
+
+- Bouton "Aide" sur la page détail participant
+- Tour interactif (Joyride) qui met en surbrillance : identité, contacts, consentements, historique
 
 ---
 
@@ -132,24 +177,35 @@ backend/
 │   ├── database/
 │   │   ├── postgres.go                # Connexion PostgreSQL
 │   │   └── migrate.go                 # AutoMigrate + seed des données de référence
+│   ├── guid/                          # Calcul des GUIDs de déduplication
 │   ├── repository/                    # Couche d'accès aux données (DAO)
-│   │   ├── participant.go             # CRUD participants
+│   │   ├── participant.go             # CRUD participants + filtres avancés
 │   │   ├── contact.go                 # CRUD contacts
-│   │   ├── activity.go                # Journal d'activité
-│   │   ├── consent.go                 # Consentements et clauses
-│   │   ├── document.go                # Documents (upload/download)
-│   │   └── search.go                  # Recherche multi-champs
+│   │   ├── activity.go                # Journal d'activité avec filtres
+│   │   ├── consent.go                 # Consentements, clauses, templates, cascade
+│   │   ├── document.go                # Documents (upload/download, database ou S3)
+│   │   ├── search.go                  # Recherche multi-champs
+│   │   ├── external_id.go             # IDs externes + résolution en lot
+│   │   ├── external_system.go         # CRUD systèmes externes
+│   │   ├── cart.go                    # Panier de participants
+│   │   ├── code_table.go             # Tables de codes de référence
+│   │   └── reports.go                 # Statistiques et agrégations
 │   ├── server/                        # Handlers HTTP (Gin)
 │   │   ├── handlers.go                # Routes et configuration
-│   │   ├── handlers_participants.go   # CRUD participants
+│   │   ├── handlers_participants.go   # CRUD participants + resolve IDs
 │   │   ├── handlers_contacts.go       # Ajout/édition/suppression contacts
-│   │   ├── handlers_consent.go        # Consentements
+│   │   ├── handlers_consent.go        # Consentements + templates CRUD
 │   │   ├── handlers_documents.go      # Upload/download documents
 │   │   ├── handlers_activity.go       # Journal d'activité
-│   │   ├── handlers_search.go         # Recherche
+│   │   ├── handlers_search.go         # Recherche globale
+│   │   ├── handlers_external_id.go    # IDs externes par participant
+│   │   ├── handlers_external_system.go # CRUD systèmes externes
+│   │   ├── handlers_cart.go           # Panier (add/remove/clear/list/count)
+│   │   ├── handlers_code_table.go     # CRUD tables de codes
+│   │   ├── handlers_reports.go        # Statistiques agrégées
 │   │   └── activity.go                # Helper getAuthor
 │   └── types/                         # Modèles GORM + DTOs
-├── scripts/seed/                      # Données de test
+├── scripts/seed/                      # Données de test (200 participants)
 └── Dockerfile                         # Multi-stage build (api + seed)
 ```
 
@@ -169,25 +225,55 @@ Les handlers ne contiennent aucun appel GORM direct. Toute la logique de base de
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
+| **Santé & config** | | |
 | GET | `/api/health` | Vérification de santé |
 | GET | `/api/enums` | Tables de référence (sexe, statut, relations, etc.) |
-| GET | `/api/participants` | Liste paginée, triable, recherche |
-| GET | `/api/participants/:id` | Détail avec contacts |
+| **Participants** | | |
+| GET | `/api/participants` | Liste paginée, triable, filtres (consentement, système externe, IDs) |
+| GET | `/api/participants/:id` | Détail avec contacts et GUID |
 | POST | `/api/participants` | Création avec contact self |
 | PUT | `/api/participants/:id` | Mise à jour identité + coordonnées |
+| POST | `/api/participants/resolve-ids` | Résolution en lot d'IDs (internes ou externes) |
+| GET | `/api/participants/:id/external-ids` | IDs externes du participant |
+| **Contacts** | | |
 | POST | `/api/participants/:id/contacts` | Ajout d'un contact |
 | PUT | `/api/contacts/:id` | Édition d'un contact |
 | DELETE | `/api/contacts/:id` | Suppression (protégé si signataire) |
+| **Consentements** | | |
 | GET | `/api/participants/:id/consents` | Consentements du participant |
 | POST | `/api/participants/:id/consents` | Ajout d'un consentement |
-| PUT | `/api/consents/:id` | Édition (statut, date, signataire) |
+| PUT | `/api/consents/:id` | Édition (statut, date, signataire) + cascade |
 | GET | `/api/consent-clauses` | Clauses (filtrable par template) |
 | GET | `/api/consent-templates` | Formulaires de consentement templates |
+| POST | `/api/consent-templates` | Création de template avec clauses + PDF |
+| PUT | `/api/consent-templates/:id` | Édition de template |
+| DELETE | `/api/consent-templates/:id` | Suppression (protégée si utilisé) |
+| **Documents** | | |
 | POST | `/api/documents` | Upload de document (multipart) |
 | GET | `/api/documents/:id/file` | Téléchargement de document |
-| GET | `/api/search?q=...` | Recherche globale |
-| GET | `/api/activity-logs` | Journal d'activité paginé |
+| **Recherche** | | |
+| GET | `/api/search?q=...` | Recherche globale (nom, RAMQ, ID, contacts) |
+| **Historique** | | |
+| GET | `/api/activity-logs` | Journal d'activité paginé avec filtres (type, période, recherche) |
 | GET | `/api/participants/:id/activity-logs` | Activité d'un participant |
+| **Panier** | | |
+| GET | `/api/cart/items` | Liste des items du panier (avec données participant) |
+| GET | `/api/cart/count` | Nombre d'items |
+| POST | `/api/cart/items` | Ajouter des participants au panier |
+| DELETE | `/api/cart/items` | Retirer des participants |
+| DELETE | `/api/cart` | Vider le panier |
+| **Tables de codes** | | |
+| GET | `/api/code-tables` | Liste de toutes les tables avec entrées |
+| POST | `/api/code-tables/:table/entries` | Ajout d'un code |
+| PUT | `/api/code-tables/:table/entries/:code` | Édition d'un code |
+| DELETE | `/api/code-tables/:table/entries/:code` | Suppression (protégée si référencé) |
+| **Systèmes externes** | | |
+| GET | `/api/external-systems` | Liste des systèmes |
+| POST | `/api/external-systems` | Création d'un système |
+| PUT | `/api/external-systems/:id` | Édition |
+| DELETE | `/api/external-systems/:id` | Suppression (protégée si référencé) |
+| **Rapports** | | |
+| GET | `/api/reports/stats` | Statistiques agrégées (sommaire, croissance, âge, géographie) |
 
 ---
 
@@ -204,7 +290,13 @@ participant ──1:n── contact
      │            │
      │            └── document_id (FK vers document signé)
      │
-     └──1:n── activity_log
+     ├──1:n── activity_log
+     │
+     ├──1:n── external_id ──n:1── external_system
+     │
+     ├──1:1── guid
+     │
+     └──n:m── cart_item (par user)
 
 document ──1:1── document_file (contenu binaire)
 ```
@@ -229,19 +321,33 @@ document ──1:1── document_file (contenu binaire)
 - Un seul consentement par clause par participant (contrainte unique)
 - Les téléphones sont stockés sans formatage (10 chiffres), formatés à l'affichage
 - **Cascade de statut** : si le consentement « registre » est retiré ou expiré, les consentements « recontact » et « liaison externe » reçoivent automatiquement le même statut
+- **Validation des dates** : la date de naissance ne peut pas être dans le futur, la date de décès ne peut pas être avant la date de naissance
 
 ---
 
 ## Données de test (seed)
 
-Le seed génère 100 participants réalistes :
-- **85 enfants** (0-17 ans) avec contact mère (primaire) et optionnellement père
-- **15 adultes** (18-65 ans) avec contact « soi-même » (primaire)
-- Noms québécois, numéros RAMQ, codes postaux et indicatifs régionaux réalistes
+Le seed génère 200 participants réalistes répartis sur 7 trimestres (Q3 2024 → Q1 2026) avec une croissance progressive :
+
+| Trimestre | Participants |
+|-----------|:---:|
+| Q3 2024 | 10 |
+| Q4 2024 | 15 |
+| Q1 2025 | 20 |
+| Q2 2025 | 25 |
+| Q3 2025 | 35 |
+| Q4 2025 | 45 |
+| Q1 2026 | 50 |
+
+- **170 enfants** (0-17 ans) avec contact mère (primaire) et optionnellement père
+- **30 adultes** (18-65 ans) avec contact « soi-même » (primaire)
+- Noms québécois et anglophones, numéros RAMQ, codes postaux et indicatifs régionaux réalistes
 - **2 formulaires de consentement** (RareQc et RQDM) avec clauses et PDFs templates
-- **100 documents signés** (un par participant)
-- **~200 consentements** avec signataires (adultes signent eux-mêmes, mineurs signés par contact primaire)
-- Entrées d'activité réparties sur 30 jours
+- **200 documents signés** (un par participant)
+- **~400 consentements** avec statuts variés (valide, expiré, retiré) et cascade appliquée
+- **2 systèmes externes** (CQDG ~60%, CQGC ~40%) avec IDs aléatoires
+- **300+ entrées d'activité** réparties sur les 7 trimestres
+- **4 auteurs** : John Smith, Marie Tremblay, Pierre Gagnon, Sophie Lavoie
 
 ```bash
 docker compose --profile dev run --rm seed
