@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, Copy, Fingerprint, Pencil, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Copy, Fingerprint, Pencil, ShoppingCart, Trash2, UserPlus } from "lucide-react";
 import { useTour } from "@/hooks/useTour";
 import { participantDetailTour } from "@/tours/participant-detail";
 import { useParticipant } from "@/hooks/useParticipant";
@@ -46,6 +46,7 @@ import { useConsents } from "@/hooks/useConsents";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import { useExternalIds } from "@/hooks/useExternalIds";
+import { useCart } from "@/hooks/useCart";
 import type { Contact } from "@/types/participant";
 
 /** Rotating badge colors for external systems. */
@@ -185,6 +186,7 @@ export default function ParticipantDetail() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [guidDialogOpen, setGuidDialogOpen] = useState(false);
   const { TourButton, TourOverlay } = useTour(participantDetailTour);
+  const { items: cartItems, addItems, removeItems } = useCart();
   const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
@@ -245,6 +247,16 @@ export default function ParticipantDetail() {
   const otherContacts =
     participant.contacts?.filter((c) => c.relationship_code !== "self") ?? [];
 
+  const isInCart = cartItems.some((item) => item.participant_id === participant.id);
+
+  const toggleCart = async () => {
+    if (isInCart) {
+      await removeItems([participant.id]);
+    } else {
+      await addItems([participant.id]);
+    }
+  };
+
   const handleSuccess = () => void mutate(undefined, { revalidate: true });
 
   return (
@@ -254,6 +266,7 @@ export default function ParticipantDetail() {
         title={
           <span className="flex items-center gap-3">
             {participant.first_name} {participant.last_name}
+            <span data-tour="badges" className="flex items-center gap-2">
             <Badge
               variant="blue"
               className="text-xs font-normal cursor-pointer select-none"
@@ -285,17 +298,18 @@ export default function ParticipantDetail() {
                 <TooltipContent>{i18n.language === "en" ? ext.system_title_en : ext.system_title_fr}</TooltipContent>
               </Tooltip>
             ))}
+            </span>
           </span>
         }
         actions={
           <div className="flex gap-2">
-          <TourButton />
           <Button variant="outline" asChild>
             <Link to="/participants">
               <ArrowLeft className="mr-1 size-4" />
               {t("participant_detail.back")}
             </Link>
           </Button>
+          <TourButton />
           </div>
         }
       />
@@ -312,7 +326,21 @@ export default function ParticipantDetail() {
                 <CardTitle>
                   {t("participant_detail.section_identity")}
                 </CardTitle>
-                <CardAction>
+                <CardAction data-tour="identity-actions">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={toggleCart}
+                      >
+                        <ShoppingCart className={`size-4 ${isInCart ? "text-primary fill-primary" : ""}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isInCart ? t("cart.remove") : t("cart.add")}
+                    </TooltipContent>
+                  </Tooltip>
                   {participant.guid && (
                     <Tooltip>
                       <TooltipTrigger asChild>

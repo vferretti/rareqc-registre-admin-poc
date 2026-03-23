@@ -84,8 +84,12 @@
     "last": "Finish",
     "next": "Next",
     "skip": "Skip",
+    "badges_title": "Identifiers",
+    "badges_content": "The participant's identifiers in the registry and external systems are displayed here as badges. Click a badge to copy the identifier to the clipboard.",
     "identity_title": "Identity & contact info",
-    "identity_content": "This card displays the participant's identity (name, date of birth, RAMQ, vital status) and contact information. Click the pencil icon to edit.",
+    "identity_content": "This card displays the participant's identity (name, date of birth, RAMQ, vital status) and contact information.",
+    "identity_actions_title": "Actions",
+    "identity_actions_content": "The cart button adds or removes this participant for bulk actions. The fingerprint icon shows the participant's unique identifiers (GUIDs). The pencil opens the edit form.",
     "contacts_title": "Contacts",
     "contacts_content": "The participant's contacts are listed here (mother, father, guardian, etc.). You can add, edit or delete contacts. A contact who signed a consent cannot be deleted.",
     "consents_title": "Consents",
@@ -152,15 +156,15 @@
       "id": "ID",
       "last_name": "Last name",
       "first_name": "First name",
-      "date_of_birth": "Date of birth",
-      "sex_at_birth": "Sex at birth",
+      "date_of_birth": "DOB",
+      "sex_at_birth": "Sex",
       "vital_status": "Vital status",
       "ramq": "RAMQ",
       "consent": "Consent",
       "consent_registry": "Registry",
       "consent_recontact": "Recontact",
       "consent_external_linkage": "Linkage",
-      "created_at": "Registration date"
+      "created_at": "Enrolled"
     }
   },
   "create_participant": {
@@ -391,6 +395,8 @@
   "cart": {
     "title": "Cart",
     "description": "Participants selected for bulk actions",
+    "add": "Add to cart",
+    "remove": "Remove from cart",
     "empty": "The cart is empty",
     "clear": "Clear cart",
     "export": "Export",
@@ -401,7 +407,7 @@
       "id": "ID",
       "last_name": "Last name",
       "first_name": "First name",
-      "date_of_birth": "Date of birth",
+      "date_of_birth": "DOB",
       "sex_at_birth": "Sex",
       "ramq": "RAMQ"
     }

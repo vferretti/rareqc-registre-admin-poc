@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 
 export interface ParsedAddress {
   street_address: string;
@@ -124,6 +125,7 @@ export function AddressInput({
 
   return (
     <div ref={containerRef} className="relative">
+      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
       <input
         value={value}
         onChange={(e) => {
@@ -140,7 +142,7 @@ export function AddressInput({
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && suggestions.length > 0}
-        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-9 w-full rounded-md border border-input bg-transparent pl-8 pr-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       />
       {open && suggestions.length > 0 && (
         <ul className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">
