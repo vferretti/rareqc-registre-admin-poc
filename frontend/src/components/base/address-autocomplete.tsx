@@ -34,12 +34,14 @@ export function AddressInput({
 }: AddressInputProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const justSelectedRef = useRef(false);
 
-  // Fetch suggestions on value change
+  // Fetch suggestions on value change (only when focused)
   useEffect(() => {
+    if (!focused) return;
     if (justSelectedRef.current) {
       justSelectedRef.current = false;
       return;
@@ -69,7 +71,7 @@ export function AddressInput({
       }
     }, 300);
     return () => clearTimeout(debounceRef.current);
-  }, [value]);
+  }, [value, focused]);
 
   // Close on outside click
   useEffect(() => {
@@ -128,6 +130,8 @@ export function AddressInput({
           onChange(e.target.value);
           setOpen(true);
         }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         disabled={disabled}
         placeholder={placeholder}
         autoComplete="new-password"
