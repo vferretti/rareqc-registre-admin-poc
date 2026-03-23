@@ -38,7 +38,7 @@ export function BulkIdFilterDialog({
   const [notFoundIds, setNotFoundIds] = useState<string[]>([]);
   const [foundCount, setFoundCount] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Clear state when dialog opens and filter was cleared
   useEffect(() => {

@@ -84,8 +84,12 @@
     "last": "Terminer",
     "next": "Suivant",
     "skip": "Passer",
+    "badges_title": "Identifiants",
+    "badges_content": "Les identifiants du participant dans le registre et les systèmes externes sont affichés ici sous forme de badges. Cliquez sur un badge pour copier l'identifiant dans le presse-papier.",
     "identity_title": "Identité et coordonnées",
-    "identity_content": "Cette carte affiche l'identité du participant (nom, date de naissance, RAMQ, statut vital) et ses coordonnées. Cliquez sur l'icône crayon pour modifier.",
+    "identity_content": "Cette carte affiche l'identité du participant (nom, date de naissance, RAMQ, statut vital) et ses coordonnées.",
+    "identity_actions_title": "Actions",
+    "identity_actions_content": "Le panier permet d'ajouter ou retirer ce participant pour des actions en lot. L'empreinte digitale affiche les identifiants uniques (GUID) du participant. Le crayon ouvre le formulaire de modification.",
     "contacts_title": "Contacts",
     "contacts_content": "Les contacts du participant sont listés ici (mère, père, tuteur, etc.). Vous pouvez ajouter, modifier ou supprimer des contacts. Un contact signataire d'un consentement ne peut pas être supprimé.",
     "consents_title": "Consentements",
@@ -152,15 +156,15 @@
       "id": "ID",
       "last_name": "Nom",
       "first_name": "Prénom",
-      "date_of_birth": "Date de naissance",
-      "sex_at_birth": "Sexe à la naissance",
+      "date_of_birth": "DDN",
+      "sex_at_birth": "Sexe",
       "vital_status": "Statut vital",
       "ramq": "RAMQ",
       "consent": "Consentement",
       "consent_registry": "Registre",
       "consent_recontact": "Recontact",
       "consent_external_linkage": "Liaison",
-      "created_at": "Date d'inscription"
+      "created_at": "Inscrit le"
     }
   },
   "create_participant": {
@@ -391,6 +395,8 @@
   "cart": {
     "title": "Panier",
     "description": "Participants sélectionnés pour des actions en lot",
+    "add": "Ajouter au panier",
+    "remove": "Retirer du panier",
     "empty": "Le panier est vide",
     "clear": "Vider le panier",
     "export": "Exporter",
@@ -401,7 +407,7 @@
       "id": "ID",
       "last_name": "Nom",
       "first_name": "Prénom",
-      "date_of_birth": "Date de naissance",
+      "date_of_birth": "DDN",
       "sex_at_birth": "Sexe",
       "ramq": "RAMQ"
     }

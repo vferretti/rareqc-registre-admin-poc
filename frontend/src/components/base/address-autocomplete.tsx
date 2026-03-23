@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MapPin } from "lucide-react";
 
 export interface ParsedAddress {
   street_address: string;
@@ -36,12 +37,14 @@ export function AddressInput({
 }: AddressInputProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const justSelectedRef = useRef(false);
 
-  // Fetch suggestions on value change
+  // Fetch suggestions on value change (only when focused)
   useEffect(() => {
+    if (!focused) return;
     if (justSelectedRef.current) {
       justSelectedRef.current = false;
       return;
@@ -71,7 +74,7 @@ export function AddressInput({
       }
     }, 300);
     return () => clearTimeout(debounceRef.current);
-  }, [value]);
+  }, [value, focused]);
 
   // Close on outside click
   useEffect(() => {
@@ -128,12 +131,15 @@ export function AddressInput({
 
   return (
     <div ref={containerRef} className="relative">
+      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
       <input
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
           setOpen(true);
         }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         disabled={disabled}
         placeholder={placeholder}
         autoComplete="new-password"
@@ -142,7 +148,7 @@ export function AddressInput({
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && suggestions.length > 0}
-        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-9 w-full rounded-md border border-input bg-transparent pl-8 pr-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       />
       {open && suggestions.length > 0 && (
         <ul className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-60 overflow-auto">

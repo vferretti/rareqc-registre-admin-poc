@@ -3,9 +3,19 @@ import type { TourStepDef } from "@/hooks/useTour";
 /** Tour steps for the participant detail page. */
 export const participantDetailTour: TourStepDef[] = [
   {
+    target: '[data-tour="badges"]',
+    titleKey: "tour.badges_title",
+    contentKey: "tour.badges_content",
+  },
+  {
     target: '[data-tour="identity"]',
     titleKey: "tour.identity_title",
     contentKey: "tour.identity_content",
+  },
+  {
+    target: '[data-tour="identity-actions"]',
+    titleKey: "tour.identity_actions_title",
+    contentKey: "tour.identity_actions_content",
   },
   {
     target: '[data-tour="contacts"]',
