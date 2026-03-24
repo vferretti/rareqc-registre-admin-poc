@@ -78,6 +78,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - Node 22 (via nvm)
 - Path alias: `@/` → `src/`
 - Components: shadcn/ui in `src/components/base/ui/`, feature components in `src/components/feature/`
+- **Always use shadcn/ui components** before creating custom ones. If a shadcn component exists for the need (date picker, select, dialog, etc.), use it. Never use native HTML inputs (`type="date"`, `type="file"`, etc.) directly — wrap them in shadcn components for cross-browser consistency.
 - Reusable base components in `src/components/base/` (e.g., `file-upload.tsx`, `multi-select-filter.tsx`)
 - i18n: French (default) and English, files in `src/locales/{fr,en}/common.json`
 - API client: Axios instance in `src/lib/api.ts`, base URL `/api` (proxied by Vite dev server)

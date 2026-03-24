@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, X as XIcon, Loader2, Scissors } from "lucide-react";
+import { Check, X as XIcon, Loader2, Copy, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import {
   Dialog,
@@ -99,8 +99,11 @@ export function BulkIdFilterDialog({
     }
   };
 
-  const cutNotFound = () => {
+  const copyNotFound = () => {
     navigator.clipboard.writeText(notFoundIds.join("\n"));
+  };
+
+  const removeNotFound = () => {
     const notFoundSet = new Set(notFoundIds);
     const remaining = parseIds(idsText).filter((id) => !notFoundSet.has(id));
     setIdsText(remaining.join("\n"));
@@ -205,15 +208,26 @@ export function BulkIdFilterDialog({
                   <XIcon className="size-3.5" />
                   {t("participants.bulk_id_filter.not_found", { count: notFoundIds.length })}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
-                  onClick={cutNotFound}
-                >
-                  <Scissors className="size-3 mr-1" />
-                  {t("participants.bulk_id_filter.cut_not_found")}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
+                    onClick={copyNotFound}
+                  >
+                    <Copy className="size-3 mr-1" />
+                    {t("participants.bulk_id_filter.copy_not_found")}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
+                    onClick={removeNotFound}
+                  >
+                    <Trash2 className="size-3 mr-1" />
+                    {t("participants.bulk_id_filter.remove_not_found")}
+                  </Button>
+                </div>
               </div>
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 max-h-32 overflow-auto">
                 <pre className="text-xs font-mono text-destructive">{notFoundIds.join("\n")}</pre>
