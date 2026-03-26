@@ -117,6 +117,7 @@
     "noResults": "No results",
     "search_placeholder": "Search…",
     "clear": "Clear",
+    "today": "Today",
     "copied": "Copied!",
     "actions": "Actions",
     "replace": "Replace",
@@ -150,7 +151,8 @@
       "found_count_one": "{{count}} found",
       "found_count_other": "{{count}} found",
       "validating": "Validating…",
-      "cut_not_found": "Copy and remove from list"
+      "copy_not_found": "Copy",
+      "remove_not_found": "Remove from list"
     },
     "columns": {
       "id": "ID",

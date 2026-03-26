@@ -137,12 +137,32 @@ export default function Reports() {
   }, []);
   const { summary, isLoading } = useReportsSummary(reportDate);
 
+  const dateDescription = (
+    <span className="inline-flex items-center gap-1.5 relative">
+      {t("reports.as_of")}{" "}
+      {new Date(reportDate + "T00:00:00").toLocaleDateString(
+        i18n.language === "fr" ? "fr-CA" : "en-CA",
+      )}
+      <CalendarDays
+        className="size-4 text-primary cursor-pointer hover:text-primary/80"
+        onClick={() => dateRef.current?.showPicker()}
+      />
+      <input
+        ref={dateRef}
+        type="date"
+        defaultValue={reportDate}
+        max={todayStr()}
+        className="absolute opacity-0 w-0 h-0"
+      />
+    </span>
+  );
+
   if (isLoading || !summary) {
     return (
       <>
         <PageHeader
           title={t("reports.title")}
-          description={t("reports.description")}
+          description={dateDescription}
         />
         <div className="p-8 text-muted-foreground">{t("common.loading")}</div>
       </>
@@ -153,25 +173,7 @@ export default function Reports() {
     <>
       <PageHeader
         title={t("reports.title")}
-        description={
-          <span className="inline-flex items-center gap-1.5 relative">
-            {t("reports.as_of")}{" "}
-            {new Date(reportDate + "T00:00:00").toLocaleDateString(
-              i18n.language === "fr" ? "fr-CA" : "en-CA",
-            )}
-            <CalendarDays
-              className="size-4 text-primary cursor-pointer hover:text-primary/80"
-              onClick={() => dateRef.current?.showPicker()}
-            />
-            <input
-              ref={dateRef}
-              type="date"
-              defaultValue={reportDate}
-              max={todayStr()}
-              className="absolute opacity-0 w-0 h-0"
-            />
-          </span>
-        }
+        description={dateDescription}
       />
       <div className="p-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
