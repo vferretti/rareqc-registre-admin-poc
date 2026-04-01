@@ -24,7 +24,11 @@ import {
 } from "@/components/base/table/table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
-import { TextCell, BadgeCell, TimestampCell } from "@/components/base/table/cells";
+import {
+  TextCell,
+  BadgeCell,
+  TimestampCell,
+} from "@/components/base/table/cells";
 import { PageHeader } from "@/components/base/page/page-header";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
 import {
@@ -48,17 +52,8 @@ import {
 import { InputSearch } from "@/components/base/input-search";
 import { HighlightText } from "@/components/base/highlight-text";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { ACTION_TYPES } from "@/lib/constants";
 import type { ActivityLog } from "@/types/activity-log";
-
-const ACTION_TYPES = [
-  "participant_created",
-  "participant_edited",
-  "contact_created",
-  "contact_edited",
-  "contact_deleted",
-  "consent_added",
-  "consent_edited",
-] as const;
 
 /** Global activity logs page with server-side pagination and sorting. */
 export default function ActivityLogs() {
@@ -129,7 +124,10 @@ export default function ActivityLogs() {
         ),
         cell: ({ getValue }) => (
           <TextCell>
-            <HighlightText text={getValue<string>()} highlight={debouncedSearch} />
+            <HighlightText
+              text={getValue<string>()}
+              highlight={debouncedSearch}
+            />
           </TextCell>
         ),
       },
@@ -232,14 +230,18 @@ export default function ActivityLogs() {
                   <CalendarDays className="size-4" />
                   {t("activity_log.date_period")}
                   {(dateFrom || dateTo) && (
-                    <Badge variant="default" className="ml-1">1</Badge>
+                    <Badge variant="default" className="ml-1">
+                      1
+                    </Badge>
                   )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="p-3 min-w-56">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_from")}</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {t("activity_log.date_from")}
+                    </label>
                     <Input
                       type="date"
                       value={dateFrom}
@@ -248,7 +250,9 @@ export default function ActivityLogs() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_to")}</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {t("activity_log.date_to")}
+                    </label>
                     <Input
                       type="date"
                       value={dateTo}
@@ -261,7 +265,10 @@ export default function ActivityLogs() {
                       variant="ghost"
                       size="sm"
                       className="w-full"
-                      onClick={() => { setDateFrom(""); setDateTo(""); }}
+                      onClick={() => {
+                        setDateFrom("");
+                        setDateTo("");
+                      }}
                     >
                       {t("common.clear")}
                     </Button>

@@ -48,14 +48,16 @@ import {
   useConsentTemplates,
   type ConsentTemplate,
 } from "@/hooks/useConsentTemplates";
-import { useConsentClauses, type ConsentClause } from "@/hooks/useConsentClauses";
+import {
+  useConsentClauses,
+  type ConsentClause,
+} from "@/hooks/useConsentClauses";
 import { ConsentTemplateDialog } from "@/components/feature/consent-template-dialog";
 import { CodeTableCard } from "@/components/feature/code-table-card";
 import { useCodeTables } from "@/hooks/useCodeTables";
 import { ExternalSystemCard } from "@/components/feature/external-system-card";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
-
-const CLAUSE_TYPES = ["registry", "recontact", "external_linkage"] as const;
+import { CLAUSE_TYPES } from "@/lib/constants";
 
 export default function Admin() {
   const { t, i18n } = useTranslation();
@@ -65,12 +67,21 @@ export default function Admin() {
   const { systems, mutate: mutateExternalSystems } = useExternalSystems();
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
-  const [editTemplate, setEditTemplate] = useState<ConsentTemplate | null>(null);
-  const [deleteTemplate, setDeleteTemplate] = useState<ConsentTemplate | null>(null);
+  const [editTemplate, setEditTemplate] = useState<ConsentTemplate | null>(
+    null,
+  );
+  const [deleteTemplate, setDeleteTemplate] = useState<ConsentTemplate | null>(
+    null,
+  );
 
-  const findClause = (templateId: number, typeCode: string): ConsentClause | undefined =>
+  const findClause = (
+    templateId: number,
+    typeCode: string,
+  ): ConsentClause | undefined =>
     clauses.find(
-      (c) => c.template_document_id === templateId && c.clause_type_code === typeCode,
+      (c) =>
+        c.template_document_id === templateId &&
+        c.clause_type_code === typeCode,
     );
 
   const clausesForTemplate = (templateId: number) =>
@@ -200,7 +211,10 @@ export default function Admin() {
                               {CLAUSE_TYPES.map((ct) => {
                                 const clause = findClause(tpl.id, ct);
                                 return (
-                                  <td key={ct} className="py-2 px-4 text-center">
+                                  <td
+                                    key={ct}
+                                    className="py-2 px-4 text-center"
+                                  >
                                     {clause ? (
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -225,7 +239,10 @@ export default function Admin() {
                               })}
                               <td className="py-2 px-4 text-center">
                                 <Button variant="ghost" size="sm" asChild>
-                                  <a href={`/api/documents/${tpl.id}/file`} download>
+                                  <a
+                                    href={`/api/documents/${tpl.id}/file`}
+                                    download
+                                  >
                                     <Download className="size-4" />
                                   </a>
                                 </Button>
@@ -260,7 +277,9 @@ export default function Admin() {
                                           disabled={tpl.has_consents}
                                           onClick={() => setDeleteTemplate(tpl)}
                                         >
-                                          <Trash2 className={`size-4 ${tpl.has_consents ? "" : "text-destructive"}`} />
+                                          <Trash2
+                                            className={`size-4 ${tpl.has_consents ? "" : "text-destructive"}`}
+                                          />
                                         </Button>
                                       </span>
                                     </TooltipTrigger>
@@ -289,7 +308,9 @@ export default function Admin() {
               <div className="flex items-center gap-3">
                 <Database className="size-5 text-primary" />
                 <div className="text-left">
-                  <div className="font-medium">{t("admin.code_tables.title")}</div>
+                  <div className="font-medium">
+                    {t("admin.code_tables.title")}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {t("admin.code_tables.description")}
                   </div>
@@ -317,7 +338,9 @@ export default function Admin() {
               <div className="flex items-center gap-3">
                 <Link className="size-5 text-primary" />
                 <div className="text-left">
-                  <div className="font-medium">{t("admin.external_systems.title")}</div>
+                  <div className="font-medium">
+                    {t("admin.external_systems.title")}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {t("admin.external_systems.description")}
                   </div>
@@ -341,18 +364,26 @@ export default function Admin() {
         editTemplateId={editTemplate?.id}
         editTemplateName={editTemplate?.name}
         editFileName={editTemplate?.file_name}
-        editClauses={editTemplate ? clausesForTemplate(editTemplate.id) : undefined}
+        editClauses={
+          editTemplate ? clausesForTemplate(editTemplate.id) : undefined
+        }
       />
 
       <AlertDialog
         open={deleteTemplate !== null}
-        onOpenChange={(o) => { if (!o) setDeleteTemplate(null); }}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTemplate(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("admin.delete_template_title")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("admin.delete_template_title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("admin.delete_template_confirm", { name: deleteTemplate?.name })}
+              {t("admin.delete_template_confirm", {
+                name: deleteTemplate?.name,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

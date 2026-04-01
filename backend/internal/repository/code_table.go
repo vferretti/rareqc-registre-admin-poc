@@ -25,9 +25,7 @@ var registry = []codeTableMeta{
 	{Table: "sex_at_birth_code", FKTable: "participant", FKColumn: "sex_at_birth_code"},
 	{Table: "vital_status_code", FKTable: "participant", FKColumn: "vital_status_code"},
 	{Table: "relationship_code", FKTable: "contact", FKColumn: "relationship_code"},
-	{Table: "action_type_code", FKTable: "activity_log", FKColumn: "action_type_code"},
 	{Table: "consent_status_code", FKTable: "consent", FKColumn: "status_code"},
-	{Table: "clause_type_code", FKTable: "consent_clause", FKColumn: "clause_type_code"},
 	{Table: "document_type_code", FKTable: "document", FKColumn: "type_code"},
 }
 

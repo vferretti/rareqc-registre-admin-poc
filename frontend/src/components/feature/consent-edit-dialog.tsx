@@ -21,6 +21,7 @@ import {
 } from "@/components/base/ui/select";
 import type { Contact } from "@/types/participant";
 import type { ConsentResponse } from "@/types/consent";
+import { CONSENT_STATUSES } from "@/lib/constants";
 
 interface ConsentEditDialogProps {
   open: boolean;
@@ -29,13 +30,6 @@ interface ConsentEditDialogProps {
   contacts: Contact[];
   onSuccess?: () => void;
 }
-
-const CONSENT_STATUS_OPTIONS = [
-  "valid",
-  "expired",
-  "withdrawn",
-  "replaced_by_new_version",
-] as const;
 
 /** Required field label with red asterisk. */
 function RequiredLabel({ children }: { children: React.ReactNode }) {
@@ -137,7 +131,9 @@ export function ConsentEditDialog({
         <div className="space-y-4">
           <div className="space-y-1">
             {consent.template_name && (
-              <p className="text-sm text-muted-foreground">{consent.template_name}</p>
+              <p className="text-sm text-muted-foreground">
+                {consent.template_name}
+              </p>
             )}
             <Label>{t("participant_detail.consent_clause")}</Label>
             <p className="text-sm text-foreground">
@@ -157,7 +153,7 @@ export function ConsentEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONSENT_STATUS_OPTIONS.map((code) => (
+                  {CONSENT_STATUSES.map((code) => (
                     <SelectItem key={code} value={code}>
                       {t(`enums.consent_status.${code}`)}
                     </SelectItem>
@@ -185,9 +181,7 @@ export function ConsentEditDialog({
             <Select value={signedById} onValueChange={setSignedById}>
               <SelectTrigger>
                 <SelectValue
-                  placeholder={t(
-                    "participant_detail.signed_by_placeholder",
-                  )}
+                  placeholder={t("participant_detail.signed_by_placeholder")}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -210,13 +204,20 @@ export function ConsentEditDialog({
           </div>
 
           <div className="space-y-2">
-            <Label><Trans i18nKey="participant_detail.document_signed">Document <strong>signed</strong></Trans></Label>
+            <Label>
+              <Trans i18nKey="participant_detail.document_signed">
+                Document <strong>signed</strong>
+              </Trans>
+            </Label>
             {existingDocId && !file && consent.document_name && (
               <div className="flex items-center gap-2">
                 <button
                   className="text-sm text-primary hover:underline cursor-pointer"
                   onClick={() =>
-                    window.open(`/api/documents/${existingDocId}/file`, "_blank")
+                    window.open(
+                      `/api/documents/${existingDocId}/file`,
+                      "_blank",
+                    )
                   }
                 >
                   {consent.document_name}

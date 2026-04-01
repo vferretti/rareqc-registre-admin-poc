@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/base/ui/dropdown-menu";
+import { CLAUSE_TYPES, CONSENT_STATUSES } from "@/lib/constants";
 
 interface ClauseFilterState {
   registry: string[];
@@ -16,19 +17,6 @@ interface ClauseFilterState {
 }
 
 type ClauseType = keyof ClauseFilterState;
-
-const CLAUSE_TYPES: ClauseType[] = [
-  "registry",
-  "recontact",
-  "external_linkage",
-];
-
-const STATUS_CODES = [
-  "valid",
-  "expired",
-  "withdrawn",
-  "replaced_by_new_version",
-] as const;
 
 interface ConsentClauseFilterProps {
   value: ClauseFilterState;
@@ -81,7 +69,7 @@ export function ConsentClauseFilter({
                 {t(`participants.columns.consent_${clause}`)}
               </div>
               <div className="flex flex-col gap-1.5 pl-1">
-                {STATUS_CODES.map((status) => (
+                {CONSENT_STATUSES.map((status) => (
                   <label
                     key={status}
                     className="flex items-center gap-2 text-sm cursor-pointer"
