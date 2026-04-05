@@ -199,3 +199,67 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 		c.JSON(http.StatusOK, contact)
 	}
 }
+
+// DeleteContactHandler removes a contact by ID and records the activity.
+//
+// @Summary     Delete a contact
+// @Description Deletes a contact by ID. Cannot delete a "self" contact or one referenced by a consent.
+// @Tags        contacts
+// @Produce     json
+// @Param       contactId path int true "Contact ID"
+// @Success     200 {object} object{message=string}
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /contacts/{contactId} [delete]
+func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		contact, err := contactRepo.FindByID(c.Param("contactId"))
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
+			return
+		}
+
+		if contact.RelationshipCode == "self" {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete self contact"})
+			return
+		}
+
+		referenced, err := contactRepo.IsReferencedByConsent(contact.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consent references"})
+			return
+		}
+		if referenced {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete contact: referenced as consent signer"})
+			return
+		}
+
+		author := getAuthor(c)
+
+		err = contactRepo.Transaction(func(tx *gorm.DB) error {
+			wasPrimary := contact.IsPrimary
+			if err := contactRepo.Delete(tx, &contact); err != nil {
+				return err
+			}
+			if wasPrimary {
+				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if count == 0 {
+					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
+				}
+			}
+			details := fmt.Sprintf("%s %s", contact.FirstName, contact.LastName)
+			return activityRepo.Record(tx, "contact_deleted", &contact.ParticipantID, author, &details)
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete contact"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})
+	}
+}

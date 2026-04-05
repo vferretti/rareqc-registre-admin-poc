@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { ConsentClause } from "@/hooks/useConsentClauses";
+import { CLAUSE_TYPES } from "@/lib/constants";
 
 interface ConsentTemplateDialogProps {
   open: boolean;
@@ -39,8 +40,6 @@ interface ClauseEntry {
   clauseFr: string;
   clauseEn: string;
 }
-
-const CLAUSE_TYPES = ["registry", "recontact", "external_linkage"];
 
 function emptyClause(): ClauseEntry {
   return { clauseTypeCode: "", clauseFr: "", clauseEn: "" };
@@ -85,7 +84,11 @@ export function ConsentTemplateDialog({
     setClauses([emptyClause()]);
   };
 
-  const updateClause = (index: number, field: keyof ClauseEntry, value: string) => {
+  const updateClause = (
+    index: number,
+    field: keyof ClauseEntry,
+    value: string,
+  ) => {
     setClauses((prev) =>
       prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
     );
@@ -196,11 +199,16 @@ export function ConsentTemplateDialog({
             </div>
 
             {clauses.map((clause, index) => (
-              <div key={index} className="rounded-md border p-3 flex flex-col gap-2">
+              <div
+                key={index}
+                className="rounded-md border p-3 flex flex-col gap-2"
+              >
                 <div className="flex items-center justify-between">
                   <Select
                     value={clause.clauseTypeCode}
-                    onValueChange={(v) => updateClause(index, "clauseTypeCode", v)}
+                    onValueChange={(v) =>
+                      updateClause(index, "clauseTypeCode", v)
+                    }
                   >
                     <SelectTrigger className="w-64">
                       <SelectValue placeholder={t("admin.clause_type")} />
@@ -231,7 +239,9 @@ export function ConsentTemplateDialog({
                   </Label>
                   <Textarea
                     value={clause.clauseFr}
-                    onChange={(e) => updateClause(index, "clauseFr", e.target.value)}
+                    onChange={(e) =>
+                      updateClause(index, "clauseFr", e.target.value)
+                    }
                     rows={2}
                   />
                 </div>
@@ -242,7 +252,9 @@ export function ConsentTemplateDialog({
                   </Label>
                   <Textarea
                     value={clause.clauseEn}
-                    onChange={(e) => updateClause(index, "clauseEn", e.target.value)}
+                    onChange={(e) =>
+                      updateClause(index, "clauseEn", e.target.value)
+                    }
                     rows={2}
                   />
                 </div>

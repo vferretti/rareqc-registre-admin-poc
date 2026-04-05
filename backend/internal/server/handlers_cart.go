@@ -33,6 +33,14 @@ type cartMutationResponse struct {
 }
 
 // ListCartItemsHandler returns all items in the user's cart with participant data.
+//
+// @Summary     List cart items
+// @Description Returns all items in the user's cart with participant data
+// @Tags        cart
+// @Produce     json
+// @Success     200 {object} cartListResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/items [get]
 func ListCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		items, err := repo.ListItems(fakeUserID)
@@ -45,6 +53,14 @@ func ListCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 }
 
 // CartCountHandler returns the number of items in the user's cart.
+//
+// @Summary     Get cart count
+// @Description Returns the number of items in the user's cart
+// @Tags        cart
+// @Produce     json
+// @Success     200 {object} cartCountResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/count [get]
 func CartCountHandler(repo *repository.CartRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		count, err := repo.CountItems(fakeUserID)
@@ -57,6 +73,17 @@ func CartCountHandler(repo *repository.CartRepository) gin.HandlerFunc {
 }
 
 // AddCartItemsHandler adds participants to the user's cart.
+//
+// @Summary     Add items to cart
+// @Description Adds one or more participants to the user's cart
+// @Tags        cart
+// @Accept      json
+// @Produce     json
+// @Param       body body addCartRequest true "Participant IDs to add"
+// @Success     200 {object} cartMutationResponse
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/items [post]
 func AddCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req addCartRequest
@@ -74,6 +101,17 @@ func AddCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 }
 
 // RemoveCartItemsHandler removes specific participants from the user's cart.
+//
+// @Summary     Remove items from cart
+// @Description Removes one or more participants from the user's cart
+// @Tags        cart
+// @Accept      json
+// @Produce     json
+// @Param       body body removeCartRequest true "Participant IDs to remove"
+// @Success     200 {object} cartMutationResponse
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/items [delete]
 func RemoveCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req removeCartRequest
@@ -91,6 +129,14 @@ func RemoveCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 }
 
 // ClearCartHandler empties the user's cart.
+//
+// @Summary     Clear cart
+// @Description Removes all items from the user's cart
+// @Tags        cart
+// @Produce     json
+// @Success     200 {object} cartMutationResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart [delete]
 func ClearCartHandler(repo *repository.CartRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := repo.ClearCart(fakeUserID); err != nil {

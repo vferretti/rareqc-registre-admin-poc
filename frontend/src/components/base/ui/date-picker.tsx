@@ -1,5 +1,6 @@
 import * as React from "react";
 import { format, parse, setMonth, setYear, getMonth, getYear } from "date-fns";
+import type { Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -92,7 +93,10 @@ function DatePicker({
   // Year range for dropdown
   const minYear = minDate ? getYear(minDate) : getYear(new Date()) - 100;
   const maxYear = maxDate ? getYear(maxDate) : getYear(new Date()) + 10;
-  const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+  const years = Array.from(
+    { length: maxYear - minYear + 1 },
+    (_, i) => minYear + i,
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -120,7 +124,9 @@ function DatePicker({
         <div className="flex items-center gap-2 px-3 pt-3 pb-1">
           <Select
             value={String(getMonth(displayMonth))}
-            onValueChange={(v) => setDisplayMonth(setMonth(displayMonth, Number(v)))}
+            onValueChange={(v) =>
+              setDisplayMonth(setMonth(displayMonth, Number(v)))
+            }
           >
             <SelectTrigger className="h-8 flex-1 text-sm">
               <SelectValue />
@@ -135,7 +141,9 @@ function DatePicker({
           </Select>
           <Select
             value={String(getYear(displayMonth))}
-            onValueChange={(v) => setDisplayMonth(setYear(displayMonth, Number(v)))}
+            onValueChange={(v) =>
+              setDisplayMonth(setYear(displayMonth, Number(v)))
+            }
           >
             <SelectTrigger className="h-8 w-24 text-sm">
               <SelectValue />
