@@ -21,6 +21,8 @@ export const contactSchema = (t: TFunction) =>
     city: z.string(),
     province: z.string(),
     code_postal: z.string(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
   });
 
 /** Zod schema for the participant form (identity + coordinates + contacts). */
@@ -43,6 +45,8 @@ export const participantSchema = (t: TFunction) =>
     city: z.string(),
     province: z.string(),
     code_postal: z.string(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
     preferred_language: z.string(),
     contacts: z.array(contactSchema(t)),
   });
