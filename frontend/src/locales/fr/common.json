@@ -479,5 +479,9 @@
     "connected_as": "Connecté en tant que {{email}}",
     "profile_settings": "Paramètres du profil",
     "logout": "Déconnexion"
+  },
+  "map": {
+    "title": "Carte des participants",
+    "participant_count": "{{count}} participants géolocalisés"
   }
 }

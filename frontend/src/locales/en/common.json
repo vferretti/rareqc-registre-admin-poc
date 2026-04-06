@@ -479,5 +479,9 @@
     "connected_as": "Connected as {{email}}",
     "profile_settings": "Profile Settings",
     "logout": "Log out"
+  },
+  "map": {
+    "title": "Participant Map",
+    "participant_count": "{{count}} geocoded participants"
   }
 }

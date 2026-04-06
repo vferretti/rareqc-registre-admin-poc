@@ -44,6 +44,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.GET("/health", HealthHandler())
 		api.GET("/enums", EnumsHandler(db))
 		api.GET("/reports/summary", ReportsSummaryHandler(reportsRepo))
+		api.GET("/map/participants", MapParticipantsHandler(db))
 
 		api.GET("/participants", ListParticipantsHandler(participantRepo))
 		api.GET("/participants/:id", GetParticipantHandler(participantRepo))
