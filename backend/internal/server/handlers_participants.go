@@ -24,7 +24,7 @@ import (
 // @Success     200 {object} resolveIDsResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Router      /participants/resolve-ids [post]
-func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDRepo *repository.ExternalIDRepository) gin.HandlerFunc {
+func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDRepo *repository.ExternalIDRepository, guidRepo *repository.GuidRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req resolveIDsRequest
 		if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 || req.Source == "" {
@@ -35,7 +35,8 @@ func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDR
 		var resolvedIDs []int
 		var notFound []string
 
-		if req.Source == "internal" {
+		switch req.Source {
+		case "internal":
 			// Parse string IDs to ints, check existence
 			seen := make(map[int]bool)
 			for _, raw := range req.IDs {
@@ -52,7 +53,9 @@ func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDR
 					notFound = append(notFound, raw)
 				}
 			}
-		} else {
+		case "guid":
+			resolvedIDs, notFound = guidRepo.ResolveByGuid(req.IDs)
+		default:
 			resolvedIDs, notFound = extIDRepo.ResolveBySystem(req.Source, req.IDs)
 		}
 

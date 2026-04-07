@@ -38,7 +38,10 @@ export function BulkIdFilterDialog({
   const [notFoundIds, setNotFoundIds] = useState<string[]>([]);
   const [foundCount, setFoundCount] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const [copied, setCopied] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   // Clear state when dialog opens and filter was cleared
   useEffect(() => {
@@ -73,7 +76,10 @@ export function BulkIdFilterDialog({
   }, [source]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const parseIds = (text: string) =>
-    text.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
+    text
+      .split(/[\n,;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
   const resetResults = () => {
     setResolvedIds([]);
@@ -101,6 +107,8 @@ export function BulkIdFilterDialog({
 
   const copyNotFound = () => {
     navigator.clipboard.writeText(notFoundIds.join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   const removeNotFound = () => {
@@ -113,7 +121,9 @@ export function BulkIdFilterDialog({
   const placeholder =
     source === "internal"
       ? "42\n87\n150"
-      : `${source}-123456\n${source}-789012`;
+      : source === "guid"
+        ? "a3f5b2c1d4e6...\nd9e7f8a4b2c1..."
+        : `${source}-123456\n${source}-789012`;
 
   const handleApply = () => {
     onApply(resolvedIds, notFoundIds);
@@ -131,7 +141,7 @@ export function BulkIdFilterDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t("participants.bulk_id_filter.title")}</DialogTitle>
         </DialogHeader>
@@ -146,6 +156,12 @@ export function BulkIdFilterDialog({
                 <RadioGroupItem value="internal" id="source-internal" />
                 <Label htmlFor="source-internal" className="font-normal">
                   {t("participants.bulk_id_filter.source_internal")}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="guid" id="source-guid" />
+                <Label htmlFor="source-guid" className="font-normal">
+                  {t("participants.bulk_id_filter.source_guid")}
                 </Label>
               </div>
               {systems.map((s) => (
@@ -176,7 +192,9 @@ export function BulkIdFilterDialog({
                 {!isValidating && foundCount > 0 && (
                   <span className="flex items-center gap-1 text-xs text-green-600">
                     <Check className="size-3" />
-                    {t("participants.bulk_id_filter.found_count", { count: foundCount })}
+                    {t("participants.bulk_id_filter.found_count", {
+                      count: foundCount,
+                    })}
                   </span>
                 )}
               </div>
@@ -185,7 +203,10 @@ export function BulkIdFilterDialog({
                   variant="ghost"
                   size="sm"
                   className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
-                  onClick={() => { setIdsText(""); resetResults(); }}
+                  onClick={() => {
+                    setIdsText("");
+                    resetResults();
+                  }}
                 >
                   {t("common.clear")}
                 </Button>
@@ -206,7 +227,9 @@ export function BulkIdFilterDialog({
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1 text-sm text-destructive font-medium">
                   <XIcon className="size-3.5" />
-                  {t("participants.bulk_id_filter.not_found", { count: notFoundIds.length })}
+                  {t("participants.bulk_id_filter.not_found", {
+                    count: notFoundIds.length,
+                  })}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
@@ -215,7 +238,11 @@ export function BulkIdFilterDialog({
                     className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
                     onClick={copyNotFound}
                   >
-                    <Copy className="size-3 mr-1" />
+                    {copied ? (
+                      <Check className="size-3 mr-1 text-green-600" />
+                    ) : (
+                      <Copy className="size-3 mr-1" />
+                    )}
                     {t("participants.bulk_id_filter.copy_not_found")}
                   </Button>
                   <Button
@@ -230,22 +257,23 @@ export function BulkIdFilterDialog({
                 </div>
               </div>
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 max-h-32 overflow-auto">
-                <pre className="text-xs font-mono text-destructive">{notFoundIds.join("\n")}</pre>
+                <pre className="text-xs font-mono text-destructive">
+                  {notFoundIds.join("\n")}
+                </pre>
               </div>
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             {t("common.cancel")}
           </Button>
           <Button
             onClick={handleApply}
-            disabled={isValidating || foundCount === 0 || notFoundIds.length > 0}
+            disabled={
+              isValidating || foundCount === 0 || notFoundIds.length > 0
+            }
           >
             {t("participants.bulk_id_filter.apply")}
             {foundCount > 0 && ` (${foundCount})`}

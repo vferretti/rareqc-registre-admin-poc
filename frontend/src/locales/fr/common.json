@@ -144,6 +144,7 @@
       "title": "Filtrer par liste d'IDs",
       "source": "Source des IDs",
       "source_internal": "Registre",
+      "source_guid": "GUID",
       "ids_label": "IDs (un par ligne)",
       "apply": "Appliquer",
       "not_found_one": "{{count}} ID non trouvé",

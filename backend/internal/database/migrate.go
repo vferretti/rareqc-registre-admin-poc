@@ -126,6 +126,9 @@ func AutoMigrate(db *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_contact_last_name_trgm ON contact USING gin (lower(unaccent(last_name)) gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_contact_email_trgm ON contact USING gin (lower(email) gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_contact_phone_trgm ON contact USING gin (phone gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_guid_basic ON guid (guid_basic)",
+		"CREATE INDEX IF NOT EXISTS idx_guid_ramq ON guid (guid_ramq)",
+		"CREATE INDEX IF NOT EXISTS idx_guid_birthplace ON guid (guid_birthplace)",
 	}
 	for _, idx := range searchIndexes {
 		if err := db.Exec(idx).Error; err != nil {

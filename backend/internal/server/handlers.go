@@ -34,6 +34,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	consentRepo := repository.NewConsentRepository(db)
 	docRepo := repository.NewDocumentRepository(db)
 	extIDRepo := repository.NewExternalIDRepository(db)
+	guidRepo := repository.NewGuidRepository(db)
 	codeTableRepo := repository.NewCodeTableRepository(db)
 	extSysRepo := repository.NewExternalSystemRepository(db)
 	cartRepo := repository.NewCartRepository(db)
@@ -47,7 +48,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		api.GET("/participants", ListParticipantsHandler(participantRepo))
 		api.GET("/participants/:id", GetParticipantHandler(participantRepo))
-		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo))
+		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo, guidRepo))
 		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
 

@@ -144,6 +144,7 @@
       "title": "Filter by ID list",
       "source": "ID source",
       "source_internal": "Registry",
+      "source_guid": "GUID",
       "ids_label": "IDs (one per line)",
       "apply": "Apply",
       "not_found_one": "{{count}} ID not found",
