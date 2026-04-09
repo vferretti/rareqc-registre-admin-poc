@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/base/ui/dropdown-menu";
 import { CLAUSE_TYPES, CONSENT_STATUSES } from "@/lib/constants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 
 interface ClauseFilterState {
   registry: string[];
@@ -28,7 +30,9 @@ export function ConsentClauseFilter({
   value,
   onChange,
 }: ConsentClauseFilterProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
 
   const totalSelected =
     value.registry.length +
@@ -78,7 +82,7 @@ export function ConsentClauseFilter({
                       checked={value[clause].includes(status)}
                       onCheckedChange={() => toggle(clause, status)}
                     />
-                    {t(`enums.consent_status.${status}`)}
+                    {enumLabel(enums?.consent_status, status, lang)}
                   </label>
                 ))}
               </div>

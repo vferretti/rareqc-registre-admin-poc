@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import { DatePicker } from "@/components/base/ui/date-picker";
+import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import type { CommunicationResponse } from "@/types/communication";
 import type { Contact } from "@/types/participant";
@@ -48,7 +49,7 @@ export function CommunicationFormDialog({
   const { enums } = useEnums();
   const isEdit = !!communication;
 
-  const [methodCode, setMethodCode] = useState("phone");
+  const [methodCode, setMethodCode] = useState("email");
   const [contactId, setContactId] = useState<string>(NONE_VALUE);
   const [subjectCode, setSubjectCode] = useState("");
   const [outcomeCode, setOutcomeCode] = useState<string>(NONE_VALUE);
@@ -73,7 +74,7 @@ export function CommunicationFormDialog({
       setCommDate(communication.communication_date.slice(0, 10));
       setComment(communication.comment ?? "");
     } else {
-      setMethodCode("phone");
+      setMethodCode("email");
       setContactId(NONE_VALUE);
       setSubjectCode("");
       setOutcomeCode(NONE_VALUE);
@@ -191,7 +192,7 @@ export function CommunicationFormDialog({
                     {c.is_primary
                       ? ` — ${t("participant_detail.primary_contact")}`
                       : c.relationship_code !== "self"
-                        ? ` — ${t(`enums.relationship.${c.relationship_code}`, { defaultValue: c.relationship_code })}`
+                        ? ` — ${enumLabel(enums?.relationship, c.relationship_code, i18n.language)}`
                         : ""}
                   </SelectItem>
                 ))}

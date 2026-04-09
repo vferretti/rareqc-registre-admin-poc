@@ -55,9 +55,11 @@ import { ParticipantCommunications } from "@/components/feature/participant-comm
 import { useConsents } from "@/hooks/useConsents";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import { useExternalIds } from "@/hooks/useExternalIds";
 import { useCart } from "@/hooks/useCart";
-import type { Contact } from "@/types/participant";
+import type { Contact, EnumsResponse } from "@/types/participant";
 
 /** Rotating badge colors for external systems. */
 const EXT_BADGE_COLORS = [
@@ -105,12 +107,16 @@ function Field({
 function ContactCard({
   contact,
   t,
+  enums,
+  lang,
   onEdit,
   onDelete,
   canDelete = true,
 }: {
   contact: Contact;
   t: (key: string, options?: Record<string, string>) => string;
+  enums: EnumsResponse | undefined;
+  lang: string;
   onEdit: () => void;
   onDelete: () => void;
   canDelete?: boolean;
@@ -123,9 +129,7 @@ function ContactCard({
             {contact.first_name} {contact.last_name}
           </span>
           <Badge variant="secondary">
-            {t(`enums.relationship.${contact.relationship_code}`, {
-              defaultValue: contact.relationship_code,
-            })}
+            {enumLabel(enums?.relationship, contact.relationship_code, lang)}
           </Badge>
           {contact.is_primary && (
             <Badge variant="blue">
@@ -195,6 +199,8 @@ function ContactCard({
 export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const { participant, isLoading, error, mutate } = useParticipant(id);
   const { consents } = useConsents(participant?.id);
   const { externalIds } = useExternalIds(participant?.id);
@@ -421,9 +427,10 @@ export default function ParticipantDetail() {
                           "secondary"
                         }
                       >
-                        {t(
-                          `enums.sex_at_birth.${participant.sex_at_birth_code}`,
-                          { defaultValue: participant.sex_at_birth_code },
+                        {enumLabel(
+                          enums?.sex_at_birth,
+                          participant.sex_at_birth_code,
+                          lang,
                         )}
                       </Badge>
                     </Field>
@@ -442,9 +449,10 @@ export default function ParticipantDetail() {
                           "secondary"
                         }
                       >
-                        {t(
-                          `enums.vital_status.${participant.vital_status_code}`,
-                          { defaultValue: participant.vital_status_code },
+                        {enumLabel(
+                          enums?.vital_status,
+                          participant.vital_status_code,
+                          lang,
                         )}
                       </Badge>
                     </Field>
@@ -527,6 +535,8 @@ export default function ParticipantDetail() {
                           key={contact.id}
                           contact={contact}
                           t={t}
+                          enums={enums}
+                          lang={lang}
                           onEdit={() => setEditingContact(contact)}
                           onDelete={() => setDeletingContact(contact)}
                           canDelete={!signerContactIds.has(contact.id)}

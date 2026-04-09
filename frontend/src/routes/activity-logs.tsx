@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { translateDetails } from "@/components/feature/activity-timeline-item";
+import { translateDetails } from "@/lib/translate-details";
 import {
   type ColumnDef,
   type SortingState,
@@ -53,11 +53,15 @@ import { InputSearch } from "@/components/base/input-search";
 import { HighlightText } from "@/components/base/highlight-text";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ACTION_TYPES } from "@/lib/constants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { ActivityLog } from "@/types/activity-log";
 
 /** Global activity logs page with server-side pagination and sorting. */
 export default function ActivityLogs() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
   ]);
@@ -147,7 +151,7 @@ export default function ActivityLogs() {
           const code = getValue<string>();
           return (
             <BadgeCell variant={ACTION_BADGE[code] ?? "secondary"}>
-              {t(`enums.action_type.${code}`, { defaultValue: code })}
+              {enumLabel(enums?.action_type, code, lang)}
             </BadgeCell>
           );
         },
@@ -178,7 +182,7 @@ export default function ActivityLogs() {
         cell: ({ getValue }) => {
           const val = getValue<string | null>();
           if (!val) return <TextCell>—</TextCell>;
-          const translated = translateDetails(val, t);
+          const translated = translateDetails(val, enums, lang);
           return (
             <TextCell>
               <HighlightText text={translated} highlight={debouncedSearch} />
@@ -281,7 +285,7 @@ export default function ActivityLogs() {
               label={t("activity_log.filter_action_type")}
               options={ACTION_TYPES.map((code) => ({
                 value: code,
-                label: t(`enums.action_type.${code}`, { defaultValue: code }),
+                label: enumLabel(enums?.action_type, code, lang),
               }))}
               selected={actionTypes}
               onChange={setActionTypes}

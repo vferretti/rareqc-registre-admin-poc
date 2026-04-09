@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/base/ui/select";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { Contact } from "@/types/participant";
 import type { ConsentResponse } from "@/types/consent";
 import { CONSENT_STATUSES } from "@/lib/constants";
@@ -48,7 +50,9 @@ export function ConsentEditDialog({
   contacts,
   onSuccess,
 }: ConsentEditDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [statusCode, setStatusCode] = useState("");
@@ -137,9 +141,7 @@ export function ConsentEditDialog({
             )}
             <Label>{t("participant_detail.consent_clause")}</Label>
             <p className="text-sm text-foreground">
-              {t(`enums.clause_type.${consent.clause_type_code}`, {
-                defaultValue: consent.clause_type_code,
-              })}
+              {enumLabel(enums?.clause_type, consent.clause_type_code, lang)}
             </p>
           </div>
 
@@ -155,7 +157,7 @@ export function ConsentEditDialog({
                 <SelectContent>
                   {CONSENT_STATUSES.map((code) => (
                     <SelectItem key={code} value={code}>
-                      {t(`enums.consent_status.${code}`)}
+                      {enumLabel(enums?.consent_status, code, lang)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -193,10 +195,7 @@ export function ConsentEditDialog({
                 {nonSelfContacts.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.first_name} {c.last_name} (
-                    {t(`enums.relationship.${c.relationship_code}`, {
-                      defaultValue: c.relationship_code,
-                    })}
-                    )
+                    {enumLabel(enums?.relationship, c.relationship_code, lang)})
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -60,6 +60,8 @@ export interface EnumsResponse {
   vital_status: EnumValue[];
   relationship: EnumValue[];
   action_type: EnumValue[];
+  consent_status: EnumValue[];
+  clause_type: EnumValue[];
   communication_methods: EnumValue[];
   communication_subjects: EnumValue[];
   phone_outcomes: EnumValue[];

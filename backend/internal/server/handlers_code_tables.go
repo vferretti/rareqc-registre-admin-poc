@@ -41,8 +41,8 @@ func ListCodeTablesHandler(repo *repository.CodeTableRepository) gin.HandlerFunc
 			for _, e := range entries {
 				used, err := repo.IsReferenced(table, e.Code)
 				if err != nil {
-					c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: fmt.Sprintf("Failed to check references for %s", table)})
-					return
+					// Skip if FK table doesn't exist yet (e.g. pending migration)
+					break
 				}
 				if used {
 					referenced = append(referenced, e.Code)

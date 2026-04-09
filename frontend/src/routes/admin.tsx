@@ -58,9 +58,13 @@ import { useCodeTables } from "@/hooks/useCodeTables";
 import { ExternalSystemCard } from "@/components/feature/external-system-card";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { CLAUSE_TYPES } from "@/lib/constants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 
 export default function Admin() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const { templates, mutate: mutateTemplates } = useConsentTemplates();
   const { clauses, mutate: mutateClauses } = useConsentClauses();
   const { codeTables, mutate: mutateCodeTables } = useCodeTables();
@@ -193,7 +197,7 @@ export default function Admin() {
                                 key={ct}
                                 className="py-2 px-4 font-medium text-center"
                               >
-                                {t(`enums.clause_type.${ct}`)}
+                                {enumLabel(enums?.clause_type, ct, lang)}
                               </th>
                             ))}
                             <th className="py-2 px-4 font-medium text-center">

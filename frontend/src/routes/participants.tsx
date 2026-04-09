@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Download, Link as LinkIcon, ListFilter, Plus, ShoppingCart, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Download,
+  Link as LinkIcon,
+  ListFilter,
+  Plus,
+  ShoppingCart,
+  X,
+} from "lucide-react";
 import { useCartContext } from "@/contexts/cart-context";
 import ExcelJS from "exceljs";
 import {
@@ -28,10 +36,16 @@ import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
 import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
 import { InputSearch } from "@/components/base/input-search";
-import { ConsentClauseFilter, type ClauseFilterState } from "@/components/base/consent-clause-filter";
+import {
+  ConsentClauseFilter,
+  type ClauseFilterState,
+} from "@/components/base/consent-clause-filter";
 import { MultiSelectFilter } from "@/components/base/multi-select-filter";
 import { TableFullscreenButton } from "@/components/base/table/table-fullscreen-button";
-import { TableColumnVisibility, type ColumnVisibilityItem } from "@/components/base/table/table-column-visibility";
+import {
+  TableColumnVisibility,
+  type ColumnVisibilityItem,
+} from "@/components/base/table/table-column-visibility";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
 import {
@@ -54,16 +68,28 @@ import {
   getColumnPinningCellStyle,
 } from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
-import { SEX_BADGE, VITAL_STATUS_BADGE, CONSENT_STATUS_ICON, CONSENT_STATUS_COLOR } from "@/lib/badge-variants";
+import {
+  SEX_BADGE,
+  VITAL_STATUS_BADGE,
+  CONSENT_STATUS_ICON,
+  CONSENT_STATUS_COLOR,
+} from "@/lib/badge-variants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { Participant } from "@/types/participant";
 
-const DEFAULT_COLUMN_VISIBILITY: Record<string, boolean> = { vital_status_code: false };
+const DEFAULT_COLUMN_VISIBILITY: Record<string, boolean> = {
+  vital_status_code: false,
+};
 
 /** Participants list page with server-side pagination, sorting, and search. */
 export default function Participants() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const navigate = useNavigate();
-  const { selectedParticipantIds, addParticipants, removeParticipants } = useCartContext();
+  const { selectedParticipantIds, addParticipants, removeParticipants } =
+    useCartContext();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([
@@ -78,7 +104,9 @@ export default function Participants() {
     right: [],
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
-  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(DEFAULT_COLUMN_VISIBILITY);
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >(DEFAULT_COLUMN_VISIBILITY);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [consentFilter, setConsentFilter] = useState<ClauseFilterState>({
     registry: [],
@@ -92,7 +120,9 @@ export default function Participants() {
   // Escape key exits fullscreen
   useEffect(() => {
     if (!isFullscreen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [isFullscreen]);
@@ -106,9 +136,16 @@ export default function Participants() {
       sortField: sorting[0]?.id ?? "last_name",
       sortOrder: sorting[0]?.desc ? "desc" : "asc",
       search: debouncedSearch || undefined,
-      consentRegistry: consentFilter.registry.length > 0 ? consentFilter.registry : undefined,
-      consentRecontact: consentFilter.recontact.length > 0 ? consentFilter.recontact : undefined,
-      consentExternalLinkage: consentFilter.external_linkage.length > 0 ? consentFilter.external_linkage : undefined,
+      consentRegistry:
+        consentFilter.registry.length > 0 ? consentFilter.registry : undefined,
+      consentRecontact:
+        consentFilter.recontact.length > 0
+          ? consentFilter.recontact
+          : undefined,
+      consentExternalLinkage:
+        consentFilter.external_linkage.length > 0
+          ? consentFilter.external_linkage
+          : undefined,
       externalSystems: extSystemFilter.length > 0 ? extSystemFilter : undefined,
       participantIds: bulkIds !== null ? bulkIds : undefined,
     });
@@ -127,10 +164,17 @@ export default function Participants() {
         sort_order: sorting[0]?.desc ? "desc" : "asc",
       });
       if (debouncedSearch) params.set("search", debouncedSearch);
-      if (consentFilter.registry.length > 0) params.set("consent_registry", consentFilter.registry.join(","));
-      if (consentFilter.recontact.length > 0) params.set("consent_recontact", consentFilter.recontact.join(","));
-      if (consentFilter.external_linkage.length > 0) params.set("consent_external_linkage", consentFilter.external_linkage.join(","));
-      if (extSystemFilter.length > 0) params.set("external_system", extSystemFilter.join(","));
+      if (consentFilter.registry.length > 0)
+        params.set("consent_registry", consentFilter.registry.join(","));
+      if (consentFilter.recontact.length > 0)
+        params.set("consent_recontact", consentFilter.recontact.join(","));
+      if (consentFilter.external_linkage.length > 0)
+        params.set(
+          "consent_external_linkage",
+          consentFilter.external_linkage.join(","),
+        );
+      if (extSystemFilter.length > 0)
+        params.set("external_system", extSystemFilter.join(","));
       if (bulkIds !== null) params.set("participant_ids", bulkIds.join(","));
 
       const { data } = await api.get(`/participants?${params.toString()}`);
@@ -158,14 +202,24 @@ export default function Participants() {
           p.id,
           p.last_name,
           p.first_name,
-          p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(i18n.language) : "",
-          t(`enums.sex_at_birth.${p.sex_at_birth_code}`, { defaultValue: p.sex_at_birth_code }),
-          t(`enums.vital_status.${p.vital_status_code}`, { defaultValue: p.vital_status_code }),
+          p.date_of_birth
+            ? new Date(p.date_of_birth).toLocaleDateString(i18n.language)
+            : "",
+          enumLabel(enums?.sex_at_birth, p.sex_at_birth_code, lang),
+          enumLabel(enums?.vital_status, p.vital_status_code, lang),
           p.ramq ?? "",
-          p.consent_registry ? t(`enums.consent_status.${p.consent_registry}`, { defaultValue: p.consent_registry }) : "",
-          p.consent_recontact ? t(`enums.consent_status.${p.consent_recontact}`, { defaultValue: p.consent_recontact }) : "",
-          p.consent_external_linkage ? t(`enums.consent_status.${p.consent_external_linkage}`, { defaultValue: p.consent_external_linkage }) : "",
-          p.created_at ? new Date(p.created_at).toLocaleDateString(i18n.language) : "",
+          p.consent_registry
+            ? enumLabel(enums?.consent_status, p.consent_registry, lang)
+            : "",
+          p.consent_recontact
+            ? enumLabel(enums?.consent_status, p.consent_recontact, lang)
+            : "",
+          p.consent_external_linkage
+            ? enumLabel(enums?.consent_status, p.consent_external_linkage, lang)
+            : "",
+          p.created_at
+            ? new Date(p.created_at).toLocaleDateString(i18n.language)
+            : "",
         ]);
       }
 
@@ -194,7 +248,9 @@ export default function Participants() {
         size: 40,
         header: () => {
           const pageIds = participants.map((p) => p.id);
-          const allInCart = pageIds.length > 0 && pageIds.every((id) => selectedParticipantIds.has(id));
+          const allInCart =
+            pageIds.length > 0 &&
+            pageIds.every((id) => selectedParticipantIds.has(id));
           return (
             <button
               type="button"
@@ -203,12 +259,21 @@ export default function Participants() {
                 if (allInCart) {
                   removeParticipants(pageIds);
                 } else {
-                  const toAdd = pageIds.filter((id) => !selectedParticipantIds.has(id));
+                  const toAdd = pageIds.filter(
+                    (id) => !selectedParticipantIds.has(id),
+                  );
                   addParticipants(toAdd);
                 }
               }}
             >
-              <ShoppingCart className={cn("size-4", allInCart ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+              <ShoppingCart
+                className={cn(
+                  "size-4",
+                  allInCart
+                    ? "text-primary fill-primary/20"
+                    : "text-muted-foreground",
+                )}
+              />
             </button>
           );
         },
@@ -228,7 +293,14 @@ export default function Participants() {
                 }
               }}
             >
-              <ShoppingCart className={cn("size-4", inCart ? "text-primary fill-primary/20" : "text-muted-foreground")} />
+              <ShoppingCart
+                className={cn(
+                  "size-4",
+                  inCart
+                    ? "text-primary fill-primary/20"
+                    : "text-muted-foreground",
+                )}
+              />
             </button>
           );
         },
@@ -317,7 +389,7 @@ export default function Participants() {
           const code = getValue<string>();
           return (
             <BadgeCell variant={SEX_BADGE[code] ?? "secondary"}>
-              {t(`enums.sex_at_birth.${code}`, { defaultValue: code })}
+              {enumLabel(enums?.sex_at_birth, code, lang)}
             </BadgeCell>
           );
         },
@@ -338,7 +410,7 @@ export default function Participants() {
           const code = getValue<string>();
           return (
             <BadgeCell variant={VITAL_STATUS_BADGE[code] ?? "secondary"}>
-              {t(`enums.vital_status.${code}`, { defaultValue: code })}
+              {enumLabel(enums?.vital_status, code, lang)}
             </BadgeCell>
           );
         },
@@ -368,7 +440,13 @@ export default function Participants() {
             {t("participants.columns.consent")}
           </span>
         ),
-        columns: (["consent_registry", "consent_recontact", "consent_external_linkage"] as const).map((key) => ({
+        columns: (
+          [
+            "consent_registry",
+            "consent_recontact",
+            "consent_external_linkage",
+          ] as const
+        ).map((key) => ({
           accessorKey: key,
           size: 90,
           header: () => (
@@ -378,17 +456,24 @@ export default function Participants() {
           ),
           cell: ({ getValue }: { getValue: () => string | null }) => {
             const code = getValue();
-            if (!code) return <span className="block text-center text-muted-foreground">—</span>;
+            if (!code)
+              return (
+                <span className="block text-center text-muted-foreground">
+                  —
+                </span>
+              );
             const Icon = CONSENT_STATUS_ICON[code] ?? CheckCircle2;
             return (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="flex justify-center">
-                    <Icon className={`size-4 ${CONSENT_STATUS_COLOR[code] ?? "text-muted-foreground"}`} />
+                    <Icon
+                      className={`size-4 ${CONSENT_STATUS_COLOR[code] ?? "text-muted-foreground"}`}
+                    />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {t(`enums.consent_status.${code}`, { defaultValue: code })}
+                  {enumLabel(enums?.consent_status, code, lang)}
                 </TooltipContent>
               </Tooltip>
             );
@@ -410,7 +495,13 @@ export default function Participants() {
         cell: ({ getValue }) => <DateCell date={getValue<string | null>()} />,
       },
     ],
-    [t, participants, selectedParticipantIds, addParticipants, removeParticipants],
+    [
+      t,
+      participants,
+      selectedParticipantIds,
+      addParticipants,
+      removeParticipants,
+    ],
   );
 
   const table = useReactTable({
@@ -422,7 +513,13 @@ export default function Participants() {
     manualSorting: true,
     manualPagination: true,
     pageCount: totalPages,
-    state: { sorting, pagination, columnPinning, columnSizing, columnVisibility },
+    state: {
+      sorting,
+      pagination,
+      columnPinning,
+      columnSizing,
+      columnVisibility,
+    },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     onColumnPinningChange: setColumnPinning,
@@ -444,10 +541,13 @@ export default function Participants() {
       ramq: t("participants.columns.ramq"),
       consent_registry: t("participants.columns.consent_registry"),
       consent_recontact: t("participants.columns.consent_recontact"),
-      consent_external_linkage: t("participants.columns.consent_external_linkage"),
+      consent_external_linkage: t(
+        "participants.columns.consent_external_linkage",
+      ),
       created_at: t("participants.columns.created_at"),
     };
-    return table.getAllLeafColumns()
+    return table
+      .getAllLeafColumns()
       .filter((col) => col.id in labels)
       .map((col) => ({
         id: col.id,
@@ -486,198 +586,226 @@ export default function Participants() {
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
         }}
       />
-      <div className={cn("p-8", isFullscreen && "fixed inset-0 z-50 bg-background overflow-auto")}>
+      <div
+        className={cn(
+          "p-8",
+          isFullscreen && "fixed inset-0 z-50 bg-background overflow-auto",
+        )}
+      >
         <TooltipProvider delayDuration={200}>
-        <div className="rounded-lg border bg-background p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <InputSearch
-              value={search}
-              onChange={(v) => {
-                setSearch(v);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-              }}
-              placeholder={t("participants.search_placeholder")}
-              className="max-w-2xl flex-1"
-            />
-            <ConsentClauseFilter
-              value={consentFilter}
-              onChange={(v) => {
-                setConsentFilter(v);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-              }}
-            />
-            {externalSystems.length > 0 && (
-              <MultiSelectFilter
-                icon={LinkIcon}
-                label={t("participants.external_system_filter")}
-                options={externalSystems.map((s) => ({
-                  value: s.name,
-                  label: s.name,
-                }))}
-                selected={extSystemFilter}
+          <div className="rounded-lg border bg-background p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <InputSearch
+                value={search}
                 onChange={(v) => {
-                  setExtSystemFilter(v);
+                  setSearch(v);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                }}
+                placeholder={t("participants.search_placeholder")}
+                className="max-w-2xl flex-1"
+              />
+              <ConsentClauseFilter
+                value={consentFilter}
+                onChange={(v) => {
+                  setConsentFilter(v);
                   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                 }}
               />
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setBulkDialogOpen(true)}
-            >
-              <ListFilter className="size-4" />
-              {t("participants.bulk_id_filter.button")}
-              {bulkIds !== null && (
-                <Badge variant="default" className="ml-1">
-                  {bulkIds.length}
-                </Badge>
+              {externalSystems.length > 0 && (
+                <MultiSelectFilter
+                  icon={LinkIcon}
+                  label={t("participants.external_system_filter")}
+                  options={externalSystems.map((s) => ({
+                    value: s.name,
+                    label: s.name,
+                  }))}
+                  selected={extSystemFilter}
+                  onChange={(v) => {
+                    setExtSystemFilter(v);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  }}
+                />
               )}
-            </Button>
-            {(consentFilter.registry.length > 0 ||
-              consentFilter.recontact.length > 0 ||
-              consentFilter.external_linkage.length > 0 ||
-              extSystemFilter.length > 0 ||
-              bulkIds !== null) && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="gap-1.5 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  setConsentFilter({ registry: [], recontact: [], external_linkage: [] });
-                  setExtSystemFilter([]);
-                  setBulkIds(null);
-                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                }}
+                className="gap-2"
+                onClick={() => setBulkDialogOpen(true)}
               >
-                <X className="size-3.5" />
-                {t("common.clear")}
+                <ListFilter className="size-4" />
+                {t("participants.bulk_id_filter.button")}
+                {bulkIds !== null && (
+                  <Badge variant="default" className="ml-1">
+                    {bulkIds.length}
+                  </Badge>
+                )}
               </Button>
+              {(consentFilter.registry.length > 0 ||
+                consentFilter.recontact.length > 0 ||
+                consentFilter.external_linkage.length > 0 ||
+                extSystemFilter.length > 0 ||
+                bulkIds !== null) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setConsentFilter({
+                      registry: [],
+                      recontact: [],
+                      external_linkage: [],
+                    });
+                    setExtSystemFilter([]);
+                    setBulkIds(null);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  }}
+                >
+                  <X className="size-3.5" />
+                  {t("common.clear")}
+                </Button>
+              )}
+            </div>
+            {error && (
+              <p className="text-destructive mb-4">{t("common.error")}</p>
             )}
-          </div>
-          {error && (
-            <p className="text-destructive mb-4">{t("common.error")}</p>
-          )}
-          <div className={cn("transition-opacity", isLoading && "opacity-50")}>
-            <div className="flex items-center justify-between mb-1">
-            <div className="text-sm text-muted-foreground">
-              {t("pagination.results", {
-                from:
-                  total > 0
-                    ? (
-                        pagination.pageIndex * pagination.pageSize +
-                        1
-                      ).toLocaleString(i18n.language)
-                    : "0",
-                to: Math.min(
-                  (pagination.pageIndex + 1) * pagination.pageSize,
-                  total,
-                ).toLocaleString(i18n.language),
-                total: total.toLocaleString(i18n.language),
-              })}
-            </div>
-            <div className="flex items-center gap-1">
-              <TableColumnVisibility
-                columns={visibilityItems}
-                onChange={(id, visible) => setColumnVisibility((prev) => ({ ...prev, [id]: visible }))}
-                onReset={() => setColumnVisibility(DEFAULT_COLUMN_VISIBILITY)}
-                pristine={JSON.stringify(columnVisibility) === JSON.stringify(DEFAULT_COLUMN_VISIBILITY)}
-              />
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleExport}
-                disabled={isExporting || total === 0}
-                title={t("participants.export")}
-              >
-                <Download className="size-4" />
-              </Button>
-              <TableFullscreenButton active={isFullscreen} onClick={setIsFullscreen} />
-            </div>
-            </div>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        colSpan={header.colSpan}
-                        className={cn(
-                          getColumnPinningHeaderCN(header),
-                          header.id === "consent" && "border-x border-border",
-                          header.id === "consent_registry" && "border-l border-border",
-                          header.id === "consent_external_linkage" && "border-r border-border",
-                        )}
-                        style={getColumnPinningHeaderStyle(header)}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        {header.column.getCanResize() && (
-                          <div
-                            onDoubleClick={() => header.column.resetSize()}
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            className={cn(
-                              "absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-foreground/50 opacity-0 hover:opacity-50",
-                              header.column.getIsResizing() && "opacity-100",
-                            )}
-                          />
-                        )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      {isLoading ? t("common.loading") : t("common.noResults")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={getColumnPinningCellCN(cell.column)}
-                          style={getColumnPinningCellStyle(cell.column)}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
+            <div
+              className={cn("transition-opacity", isLoading && "opacity-50")}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-sm text-muted-foreground">
+                  {t("pagination.results", {
+                    from:
+                      total > 0
+                        ? (
+                            pagination.pageIndex * pagination.pageSize +
+                            1
+                          ).toLocaleString(i18n.language)
+                        : "0",
+                    to: Math.min(
+                      (pagination.pageIndex + 1) * pagination.pageSize,
+                      total,
+                    ).toLocaleString(i18n.language),
+                    total: total.toLocaleString(i18n.language),
+                  })}
+                </div>
+                <div className="flex items-center gap-1">
+                  <TableColumnVisibility
+                    columns={visibilityItems}
+                    onChange={(id, visible) =>
+                      setColumnVisibility((prev) => ({
+                        ...prev,
+                        [id]: visible,
+                      }))
+                    }
+                    onReset={() =>
+                      setColumnVisibility(DEFAULT_COLUMN_VISIBILITY)
+                    }
+                    pristine={
+                      JSON.stringify(columnVisibility) ===
+                      JSON.stringify(DEFAULT_COLUMN_VISIBILITY)
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleExport}
+                    disabled={isExporting || total === 0}
+                    title={t("participants.export")}
+                  >
+                    <Download className="size-4" />
+                  </Button>
+                  <TableFullscreenButton
+                    active={isFullscreen}
+                    onClick={setIsFullscreen}
+                  />
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className={cn(
+                            getColumnPinningHeaderCN(header),
+                            header.id === "consent" && "border-x border-border",
+                            header.id === "consent_registry" &&
+                              "border-l border-border",
+                            header.id === "consent_external_linkage" &&
+                              "border-r border-border",
                           )}
-                        </TableCell>
+                          style={getColumnPinningHeaderStyle(header)}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                          {header.column.getCanResize() && (
+                            <div
+                              onDoubleClick={() => header.column.resetSize()}
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              className={cn(
+                                "absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-foreground/50 opacity-0 hover:opacity-50",
+                                header.column.getIsResizing() && "opacity-100",
+                              )}
+                            />
+                          )}
+                        </TableHead>
                       ))}
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            <PaginationBar
-              page={pagination.pageIndex + 1}
-              totalPages={totalPages}
-              totalResults={total}
-              pageSize={pagination.pageSize}
-              showResults={false}
-              onPageChange={(p) => table.setPageIndex(p - 1)}
-              onPageSizeChange={(size) => {
-                table.setPageSize(size);
-                table.setPageIndex(0);
-              }}
-            />
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        {isLoading
+                          ? t("common.loading")
+                          : t("common.noResults")}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className={getColumnPinningCellCN(cell.column)}
+                            style={getColumnPinningCellStyle(cell.column)}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <PaginationBar
+                page={pagination.pageIndex + 1}
+                totalPages={totalPages}
+                totalResults={total}
+                pageSize={pagination.pageSize}
+                showResults={false}
+                onPageChange={(p) => table.setPageIndex(p - 1)}
+                onPageSizeChange={(size) => {
+                  table.setPageSize(size);
+                  table.setPageIndex(0);
+                }}
+              />
+            </div>
           </div>
-        </div>
         </TooltipProvider>
       </div>
     </>

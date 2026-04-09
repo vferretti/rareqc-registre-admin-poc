@@ -23,6 +23,8 @@ import {
 } from "@/components/base/ui/select";
 import type { ConsentClause } from "@/hooks/useConsentClauses";
 import { CLAUSE_TYPES } from "@/lib/constants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 
 interface ConsentTemplateDialogProps {
   open: boolean;
@@ -54,7 +56,9 @@ export function ConsentTemplateDialog({
   editFileName,
   editClauses,
 }: ConsentTemplateDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const isEdit = editTemplateId != null;
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -216,7 +220,7 @@ export function ConsentTemplateDialog({
                     <SelectContent>
                       {CLAUSE_TYPES.map((ct) => (
                         <SelectItem key={ct} value={ct}>
-                          {t(`enums.clause_type.${ct}`)}
+                          {enumLabel(enums?.clause_type, ct, lang)}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -30,14 +30,21 @@ import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
 import { useCartContext } from "@/contexts/cart-context";
 import { SEX_BADGE } from "@/lib/badge-variants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { CartItem } from "@/types/cart";
 
 export default function Cart() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const { items, isLoading, removeParticipants, clearCart } = useCartContext();
   const [search, setSearch] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 25,
+  });
 
   const filteredItems = useMemo(() => {
     if (!search.trim()) return items;
@@ -57,12 +64,19 @@ export default function Cart() {
         accessorKey: "participant_id",
         size: 80,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.id")}
           </SortableHeader>
         ),
         cell: ({ row }) => (
-          <Link to={`/participants/${row.original.participant_id}`} className="text-primary underline hover:text-primary/80">
+          <Link
+            to={`/participants/${row.original.participant_id}`}
+            className="text-primary underline hover:text-primary/80"
+          >
             {row.original.participant_id}
           </Link>
         ),
@@ -71,17 +85,29 @@ export default function Cart() {
         accessorKey: "last_name",
         size: 160,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.last_name")}
           </SortableHeader>
         ),
-        cell: ({ getValue }) => <span className="font-medium"><TextCell>{getValue<string>()}</TextCell></span>,
+        cell: ({ getValue }) => (
+          <span className="font-medium">
+            <TextCell>{getValue<string>()}</TextCell>
+          </span>
+        ),
       },
       {
         accessorKey: "first_name",
         size: 160,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.first_name")}
           </SortableHeader>
         ),
@@ -91,7 +117,11 @@ export default function Cart() {
         accessorKey: "date_of_birth",
         size: 130,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.date_of_birth")}
           </SortableHeader>
         ),
@@ -101,7 +131,11 @@ export default function Cart() {
         accessorKey: "sex_at_birth_code",
         size: 120,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.sex_at_birth")}
           </SortableHeader>
         ),
@@ -109,7 +143,7 @@ export default function Cart() {
           const code = getValue<string>();
           return (
             <BadgeCell variant={SEX_BADGE[code] ?? "secondary"}>
-              {t(`enums.sex_at_birth.${code}`, { defaultValue: code })}
+              {enumLabel(enums?.sex_at_birth, code, lang)}
             </BadgeCell>
           );
         },
@@ -118,11 +152,19 @@ export default function Cart() {
         accessorKey: "ramq",
         size: 150,
         header: ({ column }) => (
-          <SortableHeader sortDirection={column.getIsSorted() || null} onSort={column.getToggleSortingHandler()} column={column}>
+          <SortableHeader
+            sortDirection={column.getIsSorted() || null}
+            onSort={column.getToggleSortingHandler()}
+            column={column}
+          >
             {t("cart.columns.ramq")}
           </SortableHeader>
         ),
-        cell: ({ getValue }) => <TextCell><span className="font-mono">{getValue<string | null>()}</span></TextCell>,
+        cell: ({ getValue }) => (
+          <TextCell>
+            <span className="font-mono">{getValue<string | null>()}</span>
+          </TextCell>
+        ),
       },
       {
         id: "actions",
@@ -169,8 +211,10 @@ export default function Cart() {
         item.participant_id,
         item.last_name,
         item.first_name,
-        item.date_of_birth ? new Date(item.date_of_birth).toLocaleDateString(i18n.language) : "",
-        t(`enums.sex_at_birth.${item.sex_at_birth_code}`, { defaultValue: item.sex_at_birth_code }),
+        item.date_of_birth
+          ? new Date(item.date_of_birth).toLocaleDateString(i18n.language)
+          : "",
+        enumLabel(enums?.sex_at_birth, item.sex_at_birth_code, lang),
         item.ramq ?? "",
       ]);
     }
@@ -189,10 +233,7 @@ export default function Cart() {
 
   return (
     <>
-      <PageHeader
-        title={t("cart.title")}
-        description={t("cart.description")}
-      />
+      <PageHeader title={t("cart.title")} description={t("cart.description")} />
       <div className="p-8">
         {items.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16 text-muted-foreground">
@@ -212,11 +253,21 @@ export default function Cart() {
                 {t("cart.item_count", { count: items.length })}
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleExport} disabled={items.length === 0}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={items.length === 0}
+                >
                   <Download className="size-4 mr-1" />
                   {t("cart.export")}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => clearCart()} disabled={items.length === 0}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearCart()}
+                  disabled={items.length === 0}
+                >
                   <Trash2 className="size-4 mr-1" />
                   {t("cart.clear")}
                 </Button>
@@ -227,8 +278,16 @@ export default function Cart() {
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} style={{ width: header.getSize() }}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -237,7 +296,10 @@ export default function Cart() {
               <TableBody>
                 {table.getRowModel().rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       {isLoading ? t("common.loading") : t("common.noResults")}
                     </TableCell>
                   </TableRow>
@@ -246,7 +308,10 @@ export default function Cart() {
                     <TableRow key={row.id}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -261,7 +326,10 @@ export default function Cart() {
               pageSize={pagination.pageSize}
               showResults={false}
               onPageChange={(p) => table.setPageIndex(p - 1)}
-              onPageSizeChange={(size) => { table.setPageSize(size); table.setPageIndex(0); }}
+              onPageSizeChange={(size) => {
+                table.setPageSize(size);
+                table.setPageIndex(0);
+              }}
             />
           </div>
         )}
