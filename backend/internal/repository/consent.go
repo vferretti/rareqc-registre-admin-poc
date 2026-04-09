@@ -261,3 +261,35 @@ func (r *ConsentRepository) ListByParticipant(participantID int) ([]ConsentRespo
 	}
 	return responses, nil
 }
+
+// ConsentExportRow is a lightweight consent row for bulk export (includes participant_id).
+type ConsentExportRow struct {
+	ParticipantID  int    `json:"participant_id"`
+	ClauseTypeCode string `json:"clause_type_code"`
+	StatusCode     string `json:"status_code"`
+	Date           string `json:"date"`
+}
+
+// ListByParticipantIDs returns consent summary rows for multiple participants.
+func (r *ConsentRepository) ListByParticipantIDs(participantIDs []int) ([]ConsentExportRow, error) {
+	var consents []types.Consent
+	err := r.db.
+		Preload("Clause").
+		Where("participant_id IN ?", participantIDs).
+		Order("participant_id ASC, id ASC").
+		Find(&consents).Error
+	if err != nil {
+		return nil, err
+	}
+
+	rows := make([]ConsentExportRow, len(consents))
+	for i, c := range consents {
+		rows[i] = ConsentExportRow{
+			ParticipantID:  c.ParticipantID,
+			ClauseTypeCode: c.Clause.ClauseTypeCode,
+			StatusCode:     c.StatusCode,
+			Date:           c.Date.Format("2006-01-02"),
+		}
+	}
+	return rows, nil
+}

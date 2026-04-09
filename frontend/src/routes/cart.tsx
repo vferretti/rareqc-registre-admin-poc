@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Download, ShoppingCart, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, ShoppingCart, Trash2 } from "lucide-react";
 import ExcelJS from "exceljs";
 import {
   type ColumnDef,
@@ -31,8 +31,10 @@ import { Button } from "@/components/base/ui/button";
 import { useCartContext } from "@/contexts/cart-context";
 import { SEX_BADGE } from "@/lib/badge-variants";
 import { enumLabel } from "@/lib/enum-label";
+import { generateCartExcelReport } from "@/lib/cart-excel-report";
 import { useEnums } from "@/hooks/useEnums";
-import type { CartItem } from "@/types/cart";
+import api from "@/lib/api";
+import type { CartItem, CartExportData } from "@/types/cart";
 
 export default function Cart() {
   const { t, i18n } = useTranslation();
@@ -40,6 +42,7 @@ export default function Cart() {
   const { enums } = useEnums();
   const { items, isLoading, removeParticipants, clearCart } = useCartContext();
   const [search, setSearch] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -231,6 +234,18 @@ export default function Cart() {
     URL.revokeObjectURL(url);
   };
 
+  const handleReportExport = async () => {
+    setIsExporting(true);
+    try {
+      const { data } = await api.post<CartExportData>("/cart/export-data");
+      await generateCartExcelReport(data, enums, lang, t);
+    } catch {
+      // silent
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader title={t("cart.title")} description={t("cart.description")} />
@@ -253,6 +268,15 @@ export default function Cart() {
                 {t("cart.item_count", { count: items.length })}
               </span>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReportExport}
+                  disabled={items.length === 0 || isExporting}
+                >
+                  <FileSpreadsheet className="size-4 mr-1" />
+                  {t("cart.excel_report")}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

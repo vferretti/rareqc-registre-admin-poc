@@ -74,3 +74,33 @@ func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalI
 	}
 	return responses, nil
 }
+
+// ExternalIDExportRow is a lightweight row for bulk export (includes participant_id).
+type ExternalIDExportRow struct {
+	ParticipantID int    `json:"participant_id"`
+	SystemName    string `json:"system_name"`
+	ExternalID    string `json:"external_id"`
+}
+
+// ListByParticipantIDs returns external IDs for multiple participants.
+func (r *ExternalIDRepository) ListByParticipantIDs(participantIDs []int) ([]ExternalIDExportRow, error) {
+	var extIDs []types.ExternalID
+	err := r.db.Preload("ExternalSystem").
+		Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+		Where("participant_id IN ?", participantIDs).
+		Order("participant_id ASC, external_system.name ASC").
+		Find(&extIDs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	rows := make([]ExternalIDExportRow, len(extIDs))
+	for i, e := range extIDs {
+		rows[i] = ExternalIDExportRow{
+			ParticipantID: e.ParticipantID,
+			SystemName:    e.ExternalSystem.Name,
+			ExternalID:    e.ExternalID,
+		}
+	}
+	return rows, nil
+}

@@ -25,6 +25,16 @@ func (r *ParticipantRepository) FindByID(id string) (types.Participant, error) {
 	return p, err
 }
 
+// FindByIDs returns participants with contacts and GUIDs for a list of IDs, sorted by ID.
+func (r *ParticipantRepository) FindByIDs(ids []int) ([]types.Participant, error) {
+	var participants []types.Participant
+	err := r.db.Preload("Contacts").Preload("Guid").
+		Where("id IN ?", ids).
+		Order("id ASC").
+		Find(&participants).Error
+	return participants, err
+}
+
 // ParticipantListItem extends Participant with consent status summaries.
 type ParticipantListItem struct {
 	types.Participant

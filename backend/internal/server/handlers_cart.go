@@ -10,6 +10,74 @@ import (
 
 const fakeUserID = "fake-user-1"
 
+// cartExportDataResponse contains all data needed for the multi-sheet Excel report.
+type cartExportDataResponse struct {
+	Participants []types.Participant                `json:"participants"`
+	Consents     []repository.ConsentExportRow      `json:"consents"`
+	ExternalIDs  []repository.ExternalIDExportRow   `json:"external_ids"`
+}
+
+// CartExportDataHandler returns all data for the cart participants (for Excel report generation).
+//
+// @Summary     Get cart export data
+// @Description Returns participants, consents, external IDs, and GUIDs for all cart items
+// @Tags        cart
+// @Produce     json
+// @Success     200 {object} cartExportDataResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/export-data [post]
+func CartExportDataHandler(
+	cartRepo *repository.CartRepository,
+	participantRepo *repository.ParticipantRepository,
+	consentRepo *repository.ConsentRepository,
+	extIDRepo *repository.ExternalIDRepository,
+) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		items, err := cartRepo.ListItems(fakeUserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch cart"})
+			return
+		}
+		if len(items) == 0 {
+			c.JSON(http.StatusOK, cartExportDataResponse{
+				Participants: []types.Participant{},
+				Consents:     []repository.ConsentExportRow{},
+				ExternalIDs:  []repository.ExternalIDExportRow{},
+			})
+			return
+		}
+
+		ids := make([]int, len(items))
+		for i, item := range items {
+			ids[i] = item.ParticipantID
+		}
+
+		participants, err := participantRepo.FindByIDs(ids)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
+			return
+		}
+
+		consents, err := consentRepo.ListByParticipantIDs(ids)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch consents"})
+			return
+		}
+
+		extIDs, err := extIDRepo.ListByParticipantIDs(ids)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch external IDs"})
+			return
+		}
+
+		c.JSON(http.StatusOK, cartExportDataResponse{
+			Participants: participants,
+			Consents:     consents,
+			ExternalIDs:  extIDs,
+		})
+	}
+}
+
 type addCartRequest struct {
 	ParticipantIDs []int `json:"participant_ids" binding:"required"`
 }
