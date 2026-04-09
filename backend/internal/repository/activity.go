@@ -8,6 +8,12 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ActivityDAO defines the interface for activity log data access.
+type ActivityDAO interface {
+	Record(tx *gorm.DB, actionTypeCode string, participantID *int, author string, details *string) error
+	List(p ListParams) ([]ActivityLogResponse, int, int, error)
+}
+
 // ActivityRepository handles database operations for activity logs.
 type ActivityRepository struct {
 	db *gorm.DB

@@ -13,8 +13,8 @@ import {
   DialogFooter,
 } from "@/components/base/ui/dialog";
 import { Button } from "@/components/base/ui/button";
-import { Input } from "@/components/base/ui/input";
 import { Label } from "@/components/base/ui/label";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -258,11 +258,9 @@ export function ConsentFormDialog({
                 <RequiredLabel>
                   {t("participant_detail.consent_date")}
                 </RequiredLabel>
-                <Input
-                  type="date"
-                  value={entry.date}
-                  onChange={(e) => updateEntry(index, { date: e.target.value })}
-                  className="max-w-48"
+                <DatePicker
+                  value={entry.date || undefined}
+                  onChange={(v) => updateEntry(index, { date: v ?? "" })}
                 />
               </div>
 

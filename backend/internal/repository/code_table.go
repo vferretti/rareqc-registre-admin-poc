@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"registre-admin/internal/types"
 )
 
 // CodeEntry represents a single row in any code/reference table.
@@ -31,6 +32,31 @@ var registry = []codeTableMeta{
 	{Table: "communication_subject", FKTable: "communication", FKColumn: "subject_code"},
 	{Table: "phone_outcome", FKTable: "communication", FKColumn: "outcome_code"},
 	{Table: "email_outcome", FKTable: "communication", FKColumn: "outcome_code"},
+}
+
+// EnumsData holds all reference data for the GET /enums endpoint.
+type EnumsData struct {
+	SexAtBirth            []types.SexAtBirth            `json:"sex_at_birth"`
+	VitalStatus           []types.VitalStatus           `json:"vital_status"`
+	Relationship          []types.Relationship          `json:"relationship"`
+	ActionType            []types.ActionType            `json:"action_type"`
+	ConsentStatus         []types.ConsentStatus         `json:"consent_status"`
+	ClauseType            []types.ClauseType            `json:"clause_type"`
+	CommunicationMethods  []types.CommunicationMethod   `json:"communication_methods"`
+	CommunicationSubjects []types.CommunicationSubject  `json:"communication_subjects"`
+	PhoneOutcomes         []types.PhoneOutcome           `json:"phone_outcomes"`
+	EmailOutcomes         []types.EmailOutcome           `json:"email_outcomes"`
+}
+
+// CodeTableDAO defines the interface for code table data access.
+type CodeTableDAO interface {
+	ListTables() []string
+	List(table string) ([]CodeEntry, error)
+	Create(table string, entry *CodeEntry) error
+	Update(table, code string, entry *CodeEntry) error
+	Delete(table, code string) error
+	IsReferenced(table, code string) (bool, error)
+	LoadAllEnums() (EnumsData, error)
 }
 
 // CodeTableRepository handles CRUD operations on all code/reference tables.
@@ -139,4 +165,40 @@ func (r *CodeTableRepository) IsReferenced(table, code string) (bool, error) {
 	var count int64
 	err = r.db.Table(meta.FKTable).Where(fmt.Sprintf("%s = ?", meta.FKColumn), code).Count(&count).Error
 	return count > 0, err
+}
+
+// LoadAllEnums returns all reference data ordered by code.
+func (r *CodeTableRepository) LoadAllEnums() (EnumsData, error) {
+	var data EnumsData
+	if err := r.db.Order("code").Find(&data.SexAtBirth).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.VitalStatus).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.Relationship).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ActionType).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ConsentStatus).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ClauseType).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.CommunicationMethods).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.CommunicationSubjects).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.PhoneOutcomes).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.EmailOutcomes).Error; err != nil {
+		return data, err
+	}
+	return data, nil
 }

@@ -6,6 +6,15 @@ import (
 	"registre-admin/internal/types"
 )
 
+// CartDAO defines the interface for cart data access.
+type CartDAO interface {
+	ListItems(userID string) ([]CartItemResponse, error)
+	AddItems(userID string, participantIDs []int) error
+	RemoveItems(userID string, participantIDs []int) error
+	ClearCart(userID string) error
+	CountItems(userID string) (int64, error)
+}
+
 // CartRepository handles database operations for the participant cart.
 type CartRepository struct {
 	db *gorm.DB

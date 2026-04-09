@@ -43,17 +43,17 @@ type UpdateCommunicationRequest struct {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/communications [get]
-func ListParticipantCommunicationsHandler(commRepo *repository.CommunicationRepository) gin.HandlerFunc {
+func ListParticipantCommunicationsHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		comms, err := commRepo.ListByParticipant(participantID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch communications"})
+			handleInternalError(c, "Failed to fetch communications")
 			return
 		}
 
@@ -74,23 +74,23 @@ func ListParticipantCommunicationsHandler(commRepo *repository.CommunicationRepo
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/communications [post]
-func CreateParticipantCommunicationHandler(commRepo *repository.CommunicationRepository) gin.HandlerFunc {
+func CreateParticipantCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		var req CreateCommunicationRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		commDate, err := time.Parse("2006-01-02", req.CommunicationDate)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date format (expected YYYY-MM-DD)"})
+			handleBadRequest(c, "Invalid date format (expected YYYY-MM-DD)")
 			return
 		}
 
@@ -107,7 +107,7 @@ func CreateParticipantCommunicationHandler(commRepo *repository.CommunicationRep
 		}
 
 		if err := commRepo.Create(&comm); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create communication"})
+			handleInternalError(c, "Failed to create communication")
 			return
 		}
 
@@ -129,29 +129,29 @@ func CreateParticipantCommunicationHandler(commRepo *repository.CommunicationRep
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /communications/{communicationId} [put]
-func UpdateCommunicationHandler(commRepo *repository.CommunicationRepository) gin.HandlerFunc {
+func UpdateCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var communicationID int
 		if _, err := fmt.Sscanf(c.Param("communicationId"), "%d", &communicationID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid communication ID"})
+			handleBadRequest(c, "Invalid communication ID")
 			return
 		}
 
 		comm, err := commRepo.FindByID(communicationID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Communication not found"})
+			handleNotFound(c, "Communication")
 			return
 		}
 
 		var req UpdateCommunicationRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		commDate, err := time.Parse("2006-01-02", req.CommunicationDate)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date format (expected YYYY-MM-DD)"})
+			handleBadRequest(c, "Invalid date format (expected YYYY-MM-DD)")
 			return
 		}
 
@@ -164,7 +164,7 @@ func UpdateCommunicationHandler(commRepo *repository.CommunicationRepository) gi
 		comm.Comment = req.Comment
 
 		if err := commRepo.Update(&comm); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update communication"})
+			handleInternalError(c, "Failed to update communication")
 			return
 		}
 
@@ -183,21 +183,21 @@ func UpdateCommunicationHandler(commRepo *repository.CommunicationRepository) gi
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /communications/{communicationId} [delete]
-func DeleteCommunicationHandler(commRepo *repository.CommunicationRepository) gin.HandlerFunc {
+func DeleteCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var communicationID int
 		if _, err := fmt.Sscanf(c.Param("communicationId"), "%d", &communicationID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid communication ID"})
+			handleBadRequest(c, "Invalid communication ID")
 			return
 		}
 
 		if _, err := commRepo.FindByID(communicationID); err != nil {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Communication not found"})
+			handleNotFound(c, "Communication")
 			return
 		}
 
 		if err := commRepo.Delete(communicationID); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete communication"})
+			handleInternalError(c, "Failed to delete communication")
 			return
 		}
 

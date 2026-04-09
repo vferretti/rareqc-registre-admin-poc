@@ -5,6 +5,20 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ContactDAO defines the interface for contact data access.
+type ContactDAO interface {
+	Transaction(fn func(tx *gorm.DB) error) error
+	FindByID(id string) (types.Contact, error)
+	Create(tx *gorm.DB, c *types.Contact) error
+	Save(tx *gorm.DB, c *types.Contact) error
+	Delete(tx *gorm.DB, c *types.Contact) error
+	SetSelfPrimary(tx *gorm.DB, participantID int, primary bool) error
+	ClearAllPrimary(tx *gorm.DB, participantID int) error
+	IsReferencedByConsent(contactID int) (bool, error)
+	IsReferencedByCommunication(contactID int) (bool, error)
+	CountNonSelfPrimary(tx *gorm.DB, participantID int) (int64, error)
+}
+
 // ContactRepository handles database operations for contacts.
 type ContactRepository struct {
 	db *gorm.DB

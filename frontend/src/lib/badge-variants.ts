@@ -15,7 +15,10 @@ export const VITAL_STATUS_BADGE: Record<
   deceased: "destructive",
 };
 
-export const CONSENT_STATUS_BADGE: Record<string, "green" | "secondary" | "destructive" | "amber"> = {
+export const CONSENT_STATUS_BADGE: Record<
+  string,
+  "green" | "secondary" | "destructive" | "amber"
+> = {
   valid: "green",
   expired: "secondary",
   withdrawn: "destructive",
@@ -30,7 +33,7 @@ export const CONSENT_STATUS_ICON: Record<string, typeof CheckCircle2> = {
 };
 
 export const CONSENT_STATUS_COLOR: Record<string, string> = {
-  valid: "text-green-600",
+  valid: "text-green-foreground",
   expired: "text-muted-foreground",
   withdrawn: "text-destructive",
   replaced_by_new_version: "text-amber-foreground",

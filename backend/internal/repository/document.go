@@ -8,6 +8,13 @@ import (
 	"registre-admin/internal/types"
 )
 
+// DocumentDAO defines the interface for document data access.
+type DocumentDAO interface {
+	Create(doc *types.Document, fileData []byte) error
+	FindByID(id int) (types.Document, error)
+	GetFile(id int) ([]byte, *types.Document, error)
+}
+
 // DocumentRepository handles database operations for documents.
 type DocumentRepository struct {
 	db          *gorm.DB

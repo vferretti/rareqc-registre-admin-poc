@@ -52,12 +52,19 @@ import {
   useConsentClauses,
   type ConsentClause,
 } from "@/hooks/useConsentClauses";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/base/table/table";
 import { ConsentTemplateDialog } from "@/components/feature/consent-template-dialog";
 import { CodeTableCard } from "@/components/feature/code-table-card";
 import { useCodeTables } from "@/hooks/useCodeTables";
 import { ExternalSystemCard } from "@/components/feature/external-system-card";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
-import { CLAUSE_TYPES } from "@/lib/constants";
 import { DeleteParticipantSection } from "@/components/feature/delete-participant-section";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
@@ -68,6 +75,7 @@ export default function Admin() {
   const { enums } = useEnums();
   const { templates, mutate: mutateTemplates } = useConsentTemplates();
   const { clauses, mutate: mutateClauses } = useConsentClauses();
+  const clauseTypes = enums?.clause_type?.map((e) => e.code) ?? [];
   const { codeTables, mutate: mutateCodeTables } = useCodeTables();
   const { systems, mutate: mutateExternalSystems } = useExternalSystems();
   const [openSections, setOpenSections] = useState<string[]>([]);
@@ -187,44 +195,36 @@ export default function Admin() {
                     </p>
                   ) : (
                     <TooltipProvider delayDuration={200}>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b text-left text-muted-foreground">
-                            <th className="py-2 pr-4 font-medium">
-                              {t("admin.template_name")}
-                            </th>
-                            {CLAUSE_TYPES.map((ct) => (
-                              <th
-                                key={ct}
-                                className="py-2 px-4 font-medium text-center"
-                              >
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t("admin.template_name")}</TableHead>
+                            {clauseTypes.map((ct) => (
+                              <TableHead key={ct} className="text-center">
                                 {enumLabel(enums?.clause_type, ct, lang)}
-                              </th>
+                              </TableHead>
                             ))}
-                            <th className="py-2 px-4 font-medium text-center">
+                            <TableHead className="text-center">
                               {t("admin.template_file")}
-                            </th>
-                            <th className="py-2 pl-4 font-medium text-center">
+                            </TableHead>
+                            <TableHead className="text-center">
                               {t("common.actions")}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {templates.map((tpl) => (
-                            <tr key={tpl.id} className="border-b last:border-0">
-                              <td className="py-2 pr-4">{tpl.name}</td>
-                              {CLAUSE_TYPES.map((ct) => {
+                            <TableRow key={tpl.id}>
+                              <TableCell>{tpl.name}</TableCell>
+                              {clauseTypes.map((ct) => {
                                 const clause = findClause(tpl.id, ct);
                                 return (
-                                  <td
-                                    key={ct}
-                                    className="py-2 px-4 text-center"
-                                  >
+                                  <TableCell key={ct} className="text-center">
                                     {clause ? (
                                       <Tooltip>
                                         <TooltipTrigger asChild>
                                           <span className="inline-flex cursor-default">
-                                            <Check className="size-4 text-green-600" />
+                                            <Check className="size-4 text-green-foreground" />
                                           </span>
                                         </TooltipTrigger>
                                         <TooltipContent
@@ -236,13 +236,13 @@ export default function Admin() {
                                       </Tooltip>
                                     ) : (
                                       <span className="inline-flex">
-                                        <X className="size-4 text-red-500" />
+                                        <X className="size-4 text-destructive" />
                                       </span>
                                     )}
-                                  </td>
+                                  </TableCell>
                                 );
                               })}
-                              <td className="py-2 px-4 text-center">
+                              <TableCell className="text-center">
                                 <Button variant="ghost" size="sm" asChild>
                                   <a
                                     href={`/api/documents/${tpl.id}/file`}
@@ -251,8 +251,8 @@ export default function Admin() {
                                     <Download className="size-4" />
                                   </a>
                                 </Button>
-                              </td>
-                              <td className="py-2 pl-4 text-center">
+                              </TableCell>
+                              <TableCell className="text-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
@@ -295,11 +295,11 @@ export default function Admin() {
                                     )}
                                   </Tooltip>
                                 </div>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </TooltipProvider>
                   )}
                 </CardContent>

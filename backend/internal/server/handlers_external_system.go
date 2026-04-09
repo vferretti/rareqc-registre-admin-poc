@@ -17,11 +17,11 @@ import (
 // @Produce     json
 // @Success     200 {array} repository.ExternalSystemResponse
 // @Router      /external-systems [get]
-func ListExternalSystemsHandler(repo *repository.ExternalSystemRepository) gin.HandlerFunc {
+func ListExternalSystemsHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		systems, err := repo.List()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to list external systems"})
+			handleInternalError(c, "Failed to list external systems")
 			return
 		}
 		c.JSON(http.StatusOK, systems)
@@ -46,21 +46,21 @@ type ExternalSystemRequest struct {
 // @Success     201 {object} types.ExternalSystem
 // @Failure     400 {object} types.ErrorResponse
 // @Router      /external-systems [post]
-func CreateExternalSystemHandler(repo *repository.ExternalSystemRepository) gin.HandlerFunc {
+func CreateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req ExternalSystemRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		if req.Name == "" || req.TitleFr == "" || req.TitleEn == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name, title_fr, and title_en are required"})
+			handleBadRequest(c, "name, title_fr, and title_en are required")
 			return
 		}
 
 		system := types.ExternalSystem{Name: req.Name, TitleFr: req.TitleFr, TitleEn: req.TitleEn}
 		if err := repo.Create(&system); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 		c.JSON(http.StatusCreated, system)
@@ -80,26 +80,26 @@ func CreateExternalSystemHandler(repo *repository.ExternalSystemRepository) gin.
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /external-systems/{id} [put]
-func UpdateExternalSystemHandler(repo *repository.ExternalSystemRepository) gin.HandlerFunc {
+func UpdateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var id int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid ID"})
+			handleBadRequest(c, "Invalid ID")
 			return
 		}
 
 		var req ExternalSystemRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		if req.Name == "" || req.TitleFr == "" || req.TitleEn == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name, title_fr, and title_en are required"})
+			handleBadRequest(c, "name, title_fr, and title_en are required")
 			return
 		}
 
 		if err := repo.Update(id, req.Name, req.TitleFr, req.TitleEn); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "updated"})
@@ -116,16 +116,16 @@ func UpdateExternalSystemHandler(repo *repository.ExternalSystemRepository) gin.
 // @Success     204
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /external-systems/{id} [delete]
-func DeleteExternalSystemHandler(repo *repository.ExternalSystemRepository) gin.HandlerFunc {
+func DeleteExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var id int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid ID"})
+			handleBadRequest(c, "Invalid ID")
 			return
 		}
 
 		if err := repo.Delete(id); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 		c.Status(http.StatusNoContent)

@@ -190,7 +190,7 @@ export function BulkIdFilterDialog({
                   </span>
                 )}
                 {!isValidating && foundCount > 0 && (
-                  <span className="flex items-center gap-1 text-xs text-green-600">
+                  <span className="flex items-center gap-1 text-xs text-green-foreground">
                     <Check className="size-3" />
                     {t("participants.bulk_id_filter.found_count", {
                       count: foundCount,
@@ -239,7 +239,7 @@ export function BulkIdFilterDialog({
                     onClick={copyNotFound}
                   >
                     {copied ? (
-                      <Check className="size-3 mr-1 text-green-600" />
+                      <Check className="size-3 mr-1 text-green-foreground" />
                     ) : (
                       <Copy className="size-3 mr-1" />
                     )}

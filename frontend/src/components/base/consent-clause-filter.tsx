@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/base/ui/dropdown-menu";
-import { CLAUSE_TYPES, CONSENT_STATUSES } from "@/lib/constants";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 
@@ -33,6 +32,9 @@ export function ConsentClauseFilter({
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { enums } = useEnums();
+  const clauseTypes = (enums?.clause_type?.map((e) => e.code) ??
+    []) as ClauseType[];
+  const consentStatuses = enums?.consent_status?.map((e) => e.code) ?? [];
 
   const totalSelected =
     value.registry.length +
@@ -67,13 +69,13 @@ export function ConsentClauseFilter({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="p-3 min-w-56">
         <div className="flex flex-col gap-3">
-          {CLAUSE_TYPES.map((clause) => (
+          {clauseTypes.map((clause) => (
             <div key={clause}>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
                 {t(`participants.columns.consent_${clause}`)}
               </div>
               <div className="flex flex-col gap-1.5 pl-1">
-                {CONSENT_STATUSES.map((status) => (
+                {consentStatuses.map((status) => (
                   <label
                     key={status}
                     className="flex items-center gap-2 text-sm cursor-pointer"

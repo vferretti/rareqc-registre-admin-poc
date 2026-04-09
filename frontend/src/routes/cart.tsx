@@ -12,16 +12,8 @@ import {
   getSortedRowModel,
   getPaginationRowModel,
   getFilteredRowModel,
-  flexRender,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/base/table/table";
+import { DataTable } from "@/components/base/data-table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
 import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
@@ -239,8 +231,8 @@ export default function Cart() {
     try {
       const { data } = await api.post<CartExportData>("/cart/export-data");
       await generateCartExcelReport(data, enums, lang, t);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("Failed to export report:", err);
     } finally {
       setIsExporting(false);
     }
@@ -297,52 +289,11 @@ export default function Cart() {
                 </Button>
               </div>
             </div>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      {isLoading ? t("common.loading") : t("common.noResults")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              table={table}
+              isLoading={isLoading}
+              emptyMessage={t("common.noResults")}
+            />
             <PaginationBar
               page={pagination.pageIndex + 1}
               totalPages={Math.ceil(filteredItems.length / pagination.pageSize)}

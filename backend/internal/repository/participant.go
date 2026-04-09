@@ -8,6 +8,19 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ParticipantDAO defines the interface for participant data access.
+type ParticipantDAO interface {
+	FindByID(id string) (types.Participant, error)
+	FindByIDs(ids []int) ([]types.Participant, error)
+	Delete(id string) error
+	List(params types.PaginationParams) ([]ParticipantListItem, int, int, error)
+	Create(tx *gorm.DB, p *types.Participant) error
+	Save(tx *gorm.DB, p *types.Participant) error
+	Exists(id int) (bool, error)
+	Transaction(fn func(tx *gorm.DB) error) error
+	Reload(p *types.Participant) error
+}
+
 // ParticipantRepository handles database operations for participants.
 type ParticipantRepository struct {
 	db *gorm.DB

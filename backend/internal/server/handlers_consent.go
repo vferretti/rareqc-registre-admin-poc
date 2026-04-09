@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
@@ -25,17 +26,17 @@ import (
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/consents [get]
-func ListParticipantConsentsHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func ListParticipantConsentsHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		consents, err := consentRepo.ListByParticipant(participantID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch consents"})
+			handleInternalError(c, "Failed to fetch consents")
 			return
 		}
 
@@ -53,7 +54,7 @@ func ListParticipantConsentsHandler(consentRepo *repository.ConsentRepository) g
 // @Success     200 {array}  types.ConsentClause
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-clauses [get]
-func ListConsentClausesHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func ListConsentClausesHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var templateID *int
 		if tid := c.Query("template_document_id"); tid != "" {
@@ -64,7 +65,7 @@ func ListConsentClausesHandler(consentRepo *repository.ConsentRepository) gin.Ha
 		}
 		clauses, err := consentRepo.ListClauses(templateID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch clauses"})
+			handleInternalError(c, "Failed to fetch clauses")
 			return
 		}
 		c.JSON(http.StatusOK, clauses)
@@ -80,7 +81,7 @@ func ListConsentClausesHandler(consentRepo *repository.ConsentRepository) gin.Ha
 // @Success     200 {array}  types.Document
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates [get]
-func ListConsentTemplatesHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	type templateResponse struct {
 		types.Document
 		HasConsents bool `json:"has_consents"`
@@ -88,7 +89,7 @@ func ListConsentTemplatesHandler(consentRepo *repository.ConsentRepository) gin.
 	return func(c *gin.Context) {
 		templates, err := consentRepo.ListConsentTemplates()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch templates"})
+			handleInternalError(c, "Failed to fetch templates")
 			return
 		}
 		results := make([]templateResponse, len(templates))
@@ -125,39 +126,39 @@ type CreateConsentRequest struct {
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/consents [post]
-func CreateParticipantConsentHandler(consentRepo *repository.ConsentRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func CreateParticipantConsentHandler(consentRepo repository.ConsentDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		var req CreateConsentRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		// Check for duplicate: same participant + same clause type (across templates)
 		clauseType, err := consentRepo.ClauseTypeForClause(req.ClauseID)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clause ID"})
+			handleBadRequest(c, "Invalid clause ID")
 			return
 		}
 		typeExists, err := consentRepo.ExistsByClauseType(participantID, clauseType)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check existing consents"})
+			handleInternalError(c, "Failed to check existing consents")
 			return
 		}
 		if typeExists {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "A consent of this type already exists for this participant"})
+			handleConflict(c, "A consent of this type already exists for this participant")
 			return
 		}
 
 		date, err := time.Parse("2006-01-02", req.Date)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date format"})
+			handleBadRequest(c, "Invalid date format")
 			return
 		}
 
@@ -170,16 +171,17 @@ func CreateParticipantConsentHandler(consentRepo *repository.ConsentRepository, 
 			DocumentID:    req.DocumentID,
 		}
 
-		if err := consentRepo.Create(&consent); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create consent"})
-			return
-		}
-
-		// Record activity
 		author := getAuthor(c)
 		details := fmt.Sprintf("%s — %s", req.StatusCode, req.Date)
-		if err := activityRepo.Record(consentRepo.DB(), "consent_added", &participantID, author, &details); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to record activity"})
+
+		err = consentRepo.DB().Transaction(func(tx *gorm.DB) error {
+			if err := tx.Create(&consent).Error; err != nil {
+				return err
+			}
+			return activityRepo.Record(tx, "consent_added", &participantID, author, &details)
+		})
+		if err != nil {
+			handleInternalError(c, "Failed to create consent")
 			return
 		}
 
@@ -211,29 +213,29 @@ type UpdateConsentRequest struct {
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consents/{consentId} [put]
-func UpdateConsentHandler(consentRepo *repository.ConsentRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var consentID int
 		if _, err := fmt.Sscanf(c.Param("consentId"), "%d", &consentID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid consent ID"})
+			handleBadRequest(c, "Invalid consent ID")
 			return
 		}
 
 		consent, err := consentRepo.FindByID(consentID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Consent not found"})
+			handleNotFound(c, "Consent")
 			return
 		}
 
 		var req UpdateConsentRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		date, err := time.Parse("2006-01-02", req.Date)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date format"})
+			handleBadRequest(c, "Invalid date format")
 			return
 		}
 
@@ -243,33 +245,49 @@ func UpdateConsentHandler(consentRepo *repository.ConsentRepository, activityRep
 		consent.SignedByID = req.SignedByID
 		consent.DocumentID = req.DocumentID
 
-		if err := consentRepo.Update(&consent); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update consent"})
+		err = consentRepo.DB().Transaction(func(tx *gorm.DB) error {
+			if err := tx.Save(&consent).Error; err != nil {
+				return err
+			}
+
+			// Record activity if status changed
+			if oldStatus != req.StatusCode {
+				author := getAuthor(c)
+				details := fmt.Sprintf("%s → %s", oldStatus, req.StatusCode)
+				if err := activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &details); err != nil {
+					return err
+				}
+
+				// Business rule: if registry consent is withdrawn or expired, cascade to all other clauses
+				clauseType, _ := consentRepo.ClauseTypeForClause(consent.ClauseID)
+				if clauseType == "registry" && (req.StatusCode == "withdrawn" || req.StatusCode == "expired") {
+					// Cascade: update all non-registry consents for this participant
+					var consents []types.Consent
+					if err := tx.
+						Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+						Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
+							consent.ParticipantID, "registry", req.StatusCode).
+						Find(&consents).Error; err != nil {
+						return err
+					}
+					for _, cs := range consents {
+						cs.StatusCode = req.StatusCode
+						cs.Date = date
+						if err := tx.Save(&cs).Error; err != nil {
+							return err
+						}
+						var clause types.ConsentClause
+						tx.Select("clause_type_code").First(&clause, cs.ClauseID)
+						d := fmt.Sprintf("%s — %s → %s (registre %s)", clause.ClauseTypeCode, oldStatus, req.StatusCode, req.StatusCode)
+						_ = activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &d)
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			handleInternalError(c, "Failed to update consent")
 			return
-		}
-
-		// Record activity if status changed
-		if oldStatus != req.StatusCode {
-			author := getAuthor(c)
-			details := fmt.Sprintf("%s → %s", oldStatus, req.StatusCode)
-			if err := activityRepo.Record(consentRepo.DB(), "consent_edited", &consent.ParticipantID, author, &details); err != nil {
-				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to record activity"})
-				return
-			}
-
-			// Business rule: if registry consent is withdrawn or expired, cascade to all other clauses
-			clauseType, _ := consentRepo.ClauseTypeForClause(consent.ClauseID)
-			if clauseType == "registry" && (req.StatusCode == "withdrawn" || req.StatusCode == "expired") {
-				cascaded, err := consentRepo.CascadeRegistryStatus(consent.ParticipantID, req.StatusCode, date)
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to cascade status change"})
-					return
-				}
-				for _, ct := range cascaded {
-					d := fmt.Sprintf("%s — %s → %s (registre %s)", ct, oldStatus, req.StatusCode, req.StatusCode)
-					_ = activityRepo.Record(consentRepo.DB(), "consent_edited", &consent.ParticipantID, author, &d)
-				}
-			}
 		}
 
 		c.JSON(http.StatusOK, consent)
@@ -297,43 +315,43 @@ type CreateConsentTemplateClause struct {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates [post]
-func CreateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func CreateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.PostForm("name")
 		clausesJSON := c.PostForm("clauses")
 
 		if name == "" || clausesJSON == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name and clauses are required"})
+			handleBadRequest(c, "name and clauses are required")
 			return
 		}
 
 		var clauseReqs []CreateConsentTemplateClause
 		if err := json.Unmarshal([]byte(clausesJSON), &clauseReqs); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clauses JSON"})
+			handleBadRequest(c, "Invalid clauses JSON")
 			return
 		}
 
 		if len(clauseReqs) == 0 {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "At least one clause is required"})
+			handleBadRequest(c, "At least one clause is required")
 			return
 		}
 
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "file is required"})
+			handleBadRequest(c, "file is required")
 			return
 		}
 
 		file, err := fileHeader.Open()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			handleInternalError(c, "Failed to read file")
 			return
 		}
 		defer file.Close()
 
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			handleInternalError(c, "Failed to read file")
 			return
 		}
 
@@ -361,7 +379,7 @@ func CreateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin
 		}
 
 		if err := consentRepo.CreateTemplate(&doc, fileBytes, clauses); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create template"})
+			handleInternalError(c, "Failed to create template")
 			return
 		}
 
@@ -380,26 +398,26 @@ func CreateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates/{id} [delete]
-func DeleteConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func DeleteConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var id int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid template ID"})
+			handleBadRequest(c, "Invalid template ID")
 			return
 		}
 
 		hasConsents, err := consentRepo.HasConsentsForTemplate(id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consents"})
+			handleInternalError(c, "Failed to check consents")
 			return
 		}
 		if hasConsents {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "Cannot delete: participants have signed this template"})
+			handleConflict(c, "Cannot delete: participants have signed this template")
 			return
 		}
 
 		if err := consentRepo.DeleteTemplate(id); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete template"})
+			handleInternalError(c, "Failed to delete template")
 			return
 		}
 
@@ -423,39 +441,39 @@ func DeleteConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates/{id} [put]
-func UpdateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin.HandlerFunc {
+func UpdateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var id int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &id); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid template ID"})
+			handleBadRequest(c, "Invalid template ID")
 			return
 		}
 
 		hasConsents, err := consentRepo.HasConsentsForTemplate(id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consents"})
+			handleInternalError(c, "Failed to check consents")
 			return
 		}
 		if hasConsents {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: "Cannot edit: participants have signed this template"})
+			handleConflict(c, "Cannot edit: participants have signed this template")
 			return
 		}
 
 		name := c.PostForm("name")
 		clausesJSON := c.PostForm("clauses")
 		if name == "" || clausesJSON == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name and clauses are required"})
+			handleBadRequest(c, "name and clauses are required")
 			return
 		}
 
 		var clauseReqs []CreateConsentTemplateClause
 		if err := json.Unmarshal([]byte(clausesJSON), &clauseReqs); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid clauses JSON"})
+			handleBadRequest(c, "Invalid clauses JSON")
 			return
 		}
 
 		if len(clauseReqs) == 0 {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "At least one clause is required"})
+			handleBadRequest(c, "At least one clause is required")
 			return
 		}
 
@@ -464,13 +482,13 @@ func UpdateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin
 		if fileHeader, err := c.FormFile("file"); err == nil {
 			file, err := fileHeader.Open()
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+				handleInternalError(c, "Failed to read file")
 				return
 			}
 			defer file.Close()
 			fileBytes, err = io.ReadAll(file)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+				handleInternalError(c, "Failed to read file")
 				return
 			}
 		}
@@ -485,7 +503,7 @@ func UpdateConsentTemplateHandler(consentRepo *repository.ConsentRepository) gin
 		}
 
 		if err := consentRepo.UpdateTemplate(id, name, fileBytes, clauses); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update template"})
+			handleInternalError(c, "Failed to update template")
 			return
 		}
 

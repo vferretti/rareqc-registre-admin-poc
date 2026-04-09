@@ -7,6 +7,14 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ExternalSystemDAO defines the interface for external system data access.
+type ExternalSystemDAO interface {
+	List() ([]ExternalSystemResponse, error)
+	Create(system *types.ExternalSystem) error
+	Update(id int, name, titleFr, titleEn string) error
+	Delete(id int) error
+}
+
 // ExternalSystemRepository handles CRUD operations on external systems.
 type ExternalSystemRepository struct {
 	db *gorm.DB

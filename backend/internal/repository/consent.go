@@ -7,6 +7,26 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ConsentDAO defines the interface for consent data access.
+type ConsentDAO interface {
+	FindByID(id int) (types.Consent, error)
+	Update(consent *types.Consent) error
+	DB() *gorm.DB
+	ExistsByClause(participantID, clauseID int) (bool, error)
+	ExistsByClauseType(participantID int, clauseTypeCode string) (bool, error)
+	ClauseTypeForClause(clauseID int) (string, error)
+	Create(consent *types.Consent) error
+	ListClauses(templateDocID *int) ([]types.ConsentClause, error)
+	ListConsentTemplates() ([]types.Document, error)
+	CreateTemplate(doc *types.Document, fileData []byte, clauses []types.ConsentClause) error
+	HasConsentsForTemplate(templateDocID int) (bool, error)
+	DeleteTemplate(templateDocID int) error
+	UpdateTemplate(templateDocID int, name string, fileData []byte, clauses []types.ConsentClause) error
+	CascadeRegistryStatus(participantID int, statusCode string, date time.Time) ([]string, error)
+	ListByParticipant(participantID int) ([]ConsentResponse, error)
+	ListByParticipantIDs(participantIDs []int) ([]ConsentExportRow, error)
+}
+
 // ConsentRepository handles database operations for consents.
 type ConsentRepository struct {
 	db *gorm.DB

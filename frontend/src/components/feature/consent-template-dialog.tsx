@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { ConsentClause } from "@/hooks/useConsentClauses";
-import { CLAUSE_TYPES } from "@/lib/constants";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 
@@ -218,9 +217,9 @@ export function ConsentTemplateDialog({
                       <SelectValue placeholder={t("admin.clause_type")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CLAUSE_TYPES.map((ct) => (
-                        <SelectItem key={ct} value={ct}>
-                          {enumLabel(enums?.clause_type, ct, lang)}
+                      {(enums?.clause_type ?? []).map((e) => (
+                        <SelectItem key={e.code} value={e.code}>
+                          {enumLabel(enums?.clause_type, e.code, lang)}
                         </SelectItem>
                       ))}
                     </SelectContent>

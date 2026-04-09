@@ -5,6 +5,16 @@ import (
 	"registre-admin/internal/types"
 )
 
+// CommunicationDAO defines the interface for communication data access.
+type CommunicationDAO interface {
+	ListByParticipant(participantID int) ([]CommunicationResponse, error)
+	FindByID(id int) (types.Communication, error)
+	Create(c *types.Communication) error
+	Update(c *types.Communication) error
+	Delete(id int) error
+	DB() *gorm.DB
+}
+
 // CommunicationRepository handles database operations for communications.
 type CommunicationRepository struct {
 	db *gorm.DB

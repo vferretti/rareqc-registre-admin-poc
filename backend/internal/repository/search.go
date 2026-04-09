@@ -8,6 +8,11 @@ import (
 	"registre-admin/internal/types"
 )
 
+// SearchDAO defines the interface for search data access.
+type SearchDAO interface {
+	Search(q string) []SearchSuggestion
+}
+
 // SearchRepository handles search queries across participants and contact.
 type SearchRepository struct {
 	db *gorm.DB

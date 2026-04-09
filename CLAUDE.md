@@ -135,3 +135,22 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - `CQDG` — Centre québécois de données génomiques
 - `CQGC` — Centre québécois de génomique clinique
 - External IDs displayed as colored badges in participant detail header, sorted alphabetically by system name
+
+## TODO — Production readiness
+
+### Backend
+- [ ] **B1** Auth JWT (Keycloak) — remplacer `fakeUserID` et `X-Author`
+- [ ] **B2** CORS — env var au lieu de `*`
+- [ ] **B3** Connection pool PostgreSQL (`MaxOpenConns`, `MaxIdleConns`)
+- [ ] **B4** Graceful shutdown (`http.Server` + `signal.Notify`)
+- [ ] **B5** Config par env vars (port, DB creds, SSL) — refuser de démarrer si manquant
+- [ ] **B7** Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)
+- [ ] **B13** Health check qui ping la DB
+- [ ] **B14** Tests unitaires (DAO interfaces déjà en place)
+- [ ] **B15** Validation d'entrée (binding tags required, formats)
+- [ ] **B16** Corriger les N+1 queries (templates, code tables, external systems)
+- [ ] **B17** Logging structuré
+
+### Frontend
+- [ ] **F12** Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal
+- [ ] Bug: lignes du Panier plus hautes que dans la table Participants (même `DataTable`, mêmes styles computed — font-size 14px, line-height 20px, padding 8px). Le contenu fait 21px dans Participants vs 32px dans le Panier, sur TOUTES les colonnes. Piste : la table Participants a `columnResizeMode` actif qui force TanStack à mettre des `style={{ width }}` inline sur le `<table>` et les cellules — ça pourrait contraindre la hauteur. Tester en ajoutant `columnResizeMode: "onChange"` au `useReactTable` du Panier. Déjà tenté mais pas retesté après le refactoring DataTable.

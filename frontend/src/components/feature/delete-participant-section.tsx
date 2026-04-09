@@ -116,7 +116,7 @@ export function DeleteParticipantSection() {
         )}
 
         {deleted && (
-          <p className="text-sm text-green-600">
+          <p className="text-sm text-green-foreground">
             {t("admin.delete_participant.success")}
           </p>
         )}

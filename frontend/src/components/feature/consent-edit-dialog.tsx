@@ -10,8 +10,8 @@ import {
   DialogFooter,
 } from "@/components/base/ui/dialog";
 import { Button } from "@/components/base/ui/button";
-import { Input } from "@/components/base/ui/input";
 import { Label } from "@/components/base/ui/label";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,6 @@ import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import type { Contact } from "@/types/participant";
 import type { ConsentResponse } from "@/types/consent";
-import { CONSENT_STATUSES } from "@/lib/constants";
 
 interface ConsentEditDialogProps {
   open: boolean;
@@ -155,9 +154,9 @@ export function ConsentEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONSENT_STATUSES.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      {enumLabel(enums?.consent_status, code, lang)}
+                  {enums?.consent_status?.map((e) => (
+                    <SelectItem key={e.code} value={e.code}>
+                      {enumLabel(enums?.consent_status, e.code, lang)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -168,10 +167,9 @@ export function ConsentEditDialog({
               <RequiredLabel>
                 {t("participant_detail.consent_date")}
               </RequiredLabel>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+              <DatePicker
+                value={date || undefined}
+                onChange={(v) => setDate(v ?? "")}
               />
             </div>
           </div>

@@ -28,32 +28,32 @@ import (
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /documents [post]
-func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFunc {
+func UploadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		name := c.PostForm("name")
 		typeCode := c.PostForm("type_code")
 
 		if name == "" || typeCode == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name and type_code are required"})
+			handleBadRequest(c, "name and type_code are required")
 			return
 		}
 
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "file is required"})
+			handleBadRequest(c, "file is required")
 			return
 		}
 
 		file, err := fileHeader.Open()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			handleInternalError(c, "Failed to read file")
 			return
 		}
 		defer file.Close()
 
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to read file"})
+			handleInternalError(c, "Failed to read file")
 			return
 		}
 
@@ -79,7 +79,7 @@ func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFu
 		}
 
 		if err := docRepo.Create(&doc, fileBytes); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create document"})
+			handleInternalError(c, "Failed to create document")
 			return
 		}
 
@@ -100,17 +100,17 @@ func UploadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFu
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Router      /documents/{id}/file [get]
-func DownloadDocumentHandler(docRepo *repository.DocumentRepository) gin.HandlerFunc {
+func DownloadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid document ID"})
+			handleBadRequest(c, "Invalid document ID")
 			return
 		}
 
 		fileBytes, doc, err := docRepo.GetFile(id)
 		if err != nil {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Document not found"})
+			handleNotFound(c, "Document")
 			return
 		}
 
@@ -121,7 +121,7 @@ func DownloadDocumentHandler(docRepo *repository.DocumentRepository) gin.Handler
 		}
 
 		if len(fileBytes) == 0 {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Document file not found"})
+			handleNotFound(c, "Document file")
 			return
 		}
 

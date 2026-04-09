@@ -5,6 +5,13 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ExternalIDDAO defines the interface for external ID data access.
+type ExternalIDDAO interface {
+	ResolveBySystem(systemName string, ids []string) ([]int, []string)
+	ListByParticipant(participantID int) ([]ExternalIDResponse, error)
+	ListByParticipantIDs(participantIDs []int) ([]ExternalIDExportRow, error)
+}
+
 // ExternalIDRepository handles database operations for external IDs.
 type ExternalIDRepository struct {
 	db *gorm.DB

@@ -67,8 +67,8 @@ export function ParticipantCommunications({
       await api.delete(`/communications/${deleting.id}`);
       mutate();
       setDeleting(null);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("Failed to delete communication:", err);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,7 +8,6 @@ import {
   Fingerprint,
   Pencil,
   ShoppingCart,
-  Trash2,
   UserPlus,
 } from "lucide-react";
 import { useTour } from "@/hooks/useTour";
@@ -47,6 +46,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/base/ui/dialog";
+import { Field } from "@/components/base/field";
+import { ContactCard } from "@/components/feature/contact-card";
 import { ParticipantFormDialog } from "@/components/feature/create-participant-dialog";
 import { ContactFormDialog } from "@/components/feature/contact-form-dialog";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
@@ -54,13 +55,14 @@ import { ParticipantConsents } from "@/components/feature/participant-consents";
 import { ParticipantCommunications } from "@/components/feature/participant-communications";
 import { useConsents } from "@/hooks/useConsents";
 import { useCommunications } from "@/hooks/useCommunications";
+import { useCopyFeedback } from "@/hooks/useCopyFeedback";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import { useExternalIds } from "@/hooks/useExternalIds";
 import { useCart } from "@/hooks/useCart";
-import type { Contact, EnumsResponse } from "@/types/participant";
+import type { Contact } from "@/types/participant";
 
 /** Rotating badge colors for external systems. */
 const EXT_BADGE_COLORS = [
@@ -74,129 +76,7 @@ const EXT_BADGE_COLORS = [
   "lime",
 ] as const;
 
-/** Hook that copies text to clipboard and returns a "just copied" state for feedback. */
-function useCopyFeedback(timeout = 1500) {
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const copy = useCallback(
-    (key: string, text: string) => {
-      navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      setTimeout(() => setCopiedKey(null), timeout);
-    },
-    [timeout],
-  );
-  return { copiedKey, copy };
-}
-
-/** Displays a label/value pair inside a definition list. */
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium">{children || "—"}</dd>
-    </div>
-  );
-}
-
-/** Renders a single contact card with name, relationship, coordinates, and action buttons. */
-function ContactCard({
-  contact,
-  t,
-  enums,
-  lang,
-  onEdit,
-  onDelete,
-  canDelete = true,
-}: {
-  contact: Contact;
-  t: (key: string, options?: Record<string, string>) => string;
-  enums: EnumsResponse | undefined;
-  lang: string;
-  onEdit: () => void;
-  onDelete: () => void;
-  canDelete?: boolean;
-}) {
-  return (
-    <div className="rounded-lg border border-border p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">
-            {contact.first_name} {contact.last_name}
-          </span>
-          <Badge variant="secondary">
-            {enumLabel(enums?.relationship, contact.relationship_code, lang)}
-          </Badge>
-          {contact.is_primary && (
-            <Badge variant="blue">
-              {t("participant_detail.primary_contact")}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" onClick={onEdit}>
-                <Pencil className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("common.edit")}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={canDelete ? onDelete : undefined}
-                  disabled={!canDelete}
-                >
-                  <Trash2
-                    className={`size-4 ${canDelete ? "text-destructive" : ""}`}
-                  />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {canDelete
-                ? t("common.delete")
-                : t("participant_detail.cannot_delete_contact_referenced")}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-2">
-        <Field label={t("participant_detail.email")}>
-          {contact.email || "—"}
-        </Field>
-        <Field label={t("participant_detail.phone")}>
-          {formatPhone(contact.phone)}
-        </Field>
-        <Field label={t("participant_detail.street_address")}>
-          {formatAddress(
-            contact.apartment_number,
-            contact.street_address,
-            contact.city,
-            contact.province,
-            contact.code_postal,
-          )}
-        </Field>
-        <Field label={t("participant_detail.preferred_language")}>
-          {t(`enums.language.${contact.preferred_language}`, {
-            defaultValue: contact.preferred_language,
-          })}
-        </Field>
-      </dl>
-    </div>
-  );
-}
-
-/** Participant detail page — identity, coordinates, contacts, and activity history. */
+/** Participant detail page -- identity, coordinates, contacts, and activity history. */
 export default function ParticipantDetail() {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
@@ -357,7 +237,7 @@ export default function ParticipantDetail() {
 
         <div className="p-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left column — Identity + Contacts */}
+            {/* Left column -- Identity + Contacts */}
             <div className="space-y-6">
               {/* Identity & coordinates card */}
               <Card data-tour="identity">
@@ -439,11 +319,11 @@ export default function ParticipantDetail() {
                     </Field>
                     <Field label={t("participant_detail.ramq")}>
                       <span className="font-mono">
-                        {participant.ramq || "—"}
+                        {participant.ramq || "\u2014"}
                       </span>
                     </Field>
                     <Field label={t("participant_detail.city_of_birth")}>
-                      {participant.city_of_birth || "—"}
+                      {participant.city_of_birth || "\u2014"}
                     </Field>
                     <Field label={t("participant_detail.vital_status")}>
                       <Badge
@@ -473,7 +353,7 @@ export default function ParticipantDetail() {
                   </h3>
                   <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                     <Field label={t("participant_detail.email")}>
-                      {selfContact?.email || "—"}
+                      {selfContact?.email || "\u2014"}
                     </Field>
                     <Field label={t("participant_detail.phone")}>
                       {formatPhone(selfContact?.phone)}
@@ -487,7 +367,7 @@ export default function ParticipantDetail() {
                             selfContact.province,
                             selfContact.code_postal,
                           )
-                        : "—"}
+                        : "\u2014"}
                     </Field>
                     <Field label={t("participant_detail.preferred_language")}>
                       {selfContact
@@ -497,7 +377,7 @@ export default function ParticipantDetail() {
                               defaultValue: selfContact.preferred_language,
                             },
                           )
-                        : "—"}
+                        : "\u2014"}
                     </Field>
                   </dl>
                 </CardContent>
@@ -551,7 +431,7 @@ export default function ParticipantDetail() {
               </Card>
             </div>
 
-            {/* Right column — Consents + Activity history */}
+            {/* Right column -- Consents + Activity history */}
             <div className="flex flex-col gap-6">
               <div data-tour="consents">
                 <ParticipantConsents
@@ -673,7 +553,7 @@ export default function ParticipantDetail() {
                         onClick={() => copyGuid(value)}
                       >
                         {copiedGuid === value ? (
-                          <Check className="size-4 text-green-600" />
+                          <Check className="size-4 text-green-foreground" />
                         ) : (
                           <Copy className="size-4" />
                         )}

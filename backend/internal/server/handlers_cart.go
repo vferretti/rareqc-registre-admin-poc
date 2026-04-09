@@ -27,15 +27,15 @@ type cartExportDataResponse struct {
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart/export-data [post]
 func CartExportDataHandler(
-	cartRepo *repository.CartRepository,
-	participantRepo *repository.ParticipantRepository,
-	consentRepo *repository.ConsentRepository,
-	extIDRepo *repository.ExternalIDRepository,
+	cartRepo repository.CartDAO,
+	participantRepo repository.ParticipantDAO,
+	consentRepo repository.ConsentDAO,
+	extIDRepo repository.ExternalIDDAO,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		items, err := cartRepo.ListItems(fakeUserID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch cart"})
+			handleInternalError(c, "Failed to fetch cart")
 			return
 		}
 		if len(items) == 0 {
@@ -54,19 +54,19 @@ func CartExportDataHandler(
 
 		participants, err := participantRepo.FindByIDs(ids)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
+			handleInternalError(c, "Failed to fetch participants")
 			return
 		}
 
 		consents, err := consentRepo.ListByParticipantIDs(ids)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch consents"})
+			handleInternalError(c, "Failed to fetch consents")
 			return
 		}
 
 		extIDs, err := extIDRepo.ListByParticipantIDs(ids)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch external IDs"})
+			handleInternalError(c, "Failed to fetch external IDs")
 			return
 		}
 
@@ -109,11 +109,11 @@ type cartMutationResponse struct {
 // @Success     200 {object} cartListResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart/items [get]
-func ListCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
+func ListCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		items, err := repo.ListItems(fakeUserID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch cart"})
+			handleInternalError(c, "Failed to fetch cart")
 			return
 		}
 		c.JSON(http.StatusOK, cartListResponse{Items: items, Count: len(items)})
@@ -129,11 +129,11 @@ func ListCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 // @Success     200 {object} cartCountResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart/count [get]
-func CartCountHandler(repo *repository.CartRepository) gin.HandlerFunc {
+func CartCountHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		count, err := repo.CountItems(fakeUserID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to count cart items"})
+			handleInternalError(c, "Failed to count cart items")
 			return
 		}
 		c.JSON(http.StatusOK, cartCountResponse{Count: count})
@@ -152,15 +152,15 @@ func CartCountHandler(repo *repository.CartRepository) gin.HandlerFunc {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart/items [post]
-func AddCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
+func AddCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req addCartRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "participant_ids is required"})
+			handleBadRequest(c, "participant_ids is required")
 			return
 		}
 		if err := repo.AddItems(fakeUserID, req.ParticipantIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to add items"})
+			handleInternalError(c, "Failed to add items")
 			return
 		}
 		count, _ := repo.CountItems(fakeUserID)
@@ -180,15 +180,15 @@ func AddCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart/items [delete]
-func RemoveCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
+func RemoveCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req removeCartRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "participant_ids is required"})
+			handleBadRequest(c, "participant_ids is required")
 			return
 		}
 		if err := repo.RemoveItems(fakeUserID, req.ParticipantIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to remove items"})
+			handleInternalError(c, "Failed to remove items")
 			return
 		}
 		count, _ := repo.CountItems(fakeUserID)
@@ -205,10 +205,10 @@ func RemoveCartItemsHandler(repo *repository.CartRepository) gin.HandlerFunc {
 // @Success     200 {object} cartMutationResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /cart [delete]
-func ClearCartHandler(repo *repository.CartRepository) gin.HandlerFunc {
+func ClearCartHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := repo.ClearCart(fakeUserID); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to clear cart"})
+			handleInternalError(c, "Failed to clear cart")
 			return
 		}
 		c.JSON(http.StatusOK, cartMutationResponse{Success: true, Count: 0})

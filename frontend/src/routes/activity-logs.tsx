@@ -12,16 +12,8 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
-  flexRender,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/base/table/table";
+import { DataTable } from "@/components/base/data-table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
 import {
@@ -31,18 +23,12 @@ import {
 } from "@/components/base/table/cells";
 import { PageHeader } from "@/components/base/page/page-header";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
-import {
-  getColumnPinningHeaderCN,
-  getColumnPinningCellCN,
-  getColumnPinningHeaderStyle,
-  getColumnPinningCellStyle,
-} from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
 import { ACTION_BADGE } from "@/lib/badge-variants";
 import { MultiSelectFilter } from "@/components/base/multi-select-filter";
 import { CalendarDays, ListFilter, X } from "lucide-react";
-import { Input } from "@/components/base/ui/input";
 import { Button } from "@/components/base/ui/button";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import { Badge } from "@/components/base/badges/badge";
 import {
   DropdownMenu,
@@ -52,7 +38,6 @@ import {
 import { InputSearch } from "@/components/base/input-search";
 import { HighlightText } from "@/components/base/highlight-text";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { ACTION_TYPES } from "@/lib/constants";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import type { ActivityLog } from "@/types/activity-log";
@@ -246,22 +231,24 @@ export default function ActivityLogs() {
                     <label className="text-xs font-medium text-muted-foreground">
                       {t("activity_log.date_from")}
                     </label>
-                    <Input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      max={dateTo || undefined}
+                    <DatePicker
+                      value={dateFrom || undefined}
+                      onChange={(v) => setDateFrom(v ?? "")}
+                      maxDate={
+                        dateTo ? new Date(dateTo + "T00:00:00") : undefined
+                      }
                     />
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-medium text-muted-foreground">
                       {t("activity_log.date_to")}
                     </label>
-                    <Input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      min={dateFrom || undefined}
+                    <DatePicker
+                      value={dateTo || undefined}
+                      onChange={(v) => setDateTo(v ?? "")}
+                      minDate={
+                        dateFrom ? new Date(dateFrom + "T00:00:00") : undefined
+                      }
                     />
                   </div>
                   {(dateFrom || dateTo) && (
@@ -283,9 +270,9 @@ export default function ActivityLogs() {
             <MultiSelectFilter
               icon={ListFilter}
               label={t("activity_log.filter_action_type")}
-              options={ACTION_TYPES.map((code) => ({
-                value: code,
-                label: enumLabel(enums?.action_type, code, lang),
+              options={(enums?.action_type ?? []).map((e) => ({
+                value: e.code,
+                label: enumLabel(enums?.action_type, e.code, lang),
               }))}
               selected={actionTypes}
               onChange={setActionTypes}
@@ -326,70 +313,11 @@ export default function ActivityLogs() {
                 total: total.toLocaleString(i18n.language),
               })}
             </div>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className={getColumnPinningHeaderCN(header)}
-                        style={getColumnPinningHeaderStyle(header)}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        {header.column.getCanResize() && (
-                          <div
-                            onDoubleClick={() => header.column.resetSize()}
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            className={cn(
-                              "absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-foreground/50 opacity-0 hover:opacity-50",
-                              header.column.getIsResizing() && "opacity-100",
-                            )}
-                          />
-                        )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      {isLoading
-                        ? t("common.loading")
-                        : t("activity_log.empty")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={getColumnPinningCellCN(cell.column)}
-                          style={getColumnPinningCellStyle(cell.column)}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              table={table}
+              isLoading={isLoading}
+              emptyMessage={t("activity_log.empty")}
+            />
             <PaginationBar
               page={pagination.pageIndex + 1}
               totalPages={totalPages}

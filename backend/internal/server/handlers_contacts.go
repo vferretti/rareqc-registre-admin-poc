@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -24,26 +25,26 @@ import (
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/contacts [post]
-func AddContactHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func AddContactHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 
 		var req types.CreateContactRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		if req.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot create self contact"})
+			handleBadRequest(c, "Cannot create self contact")
 			return
 		}
 
@@ -102,7 +103,7 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create contact"})
+			handleInternalError(c, "Failed to create contact")
 			return
 		}
 
@@ -125,26 +126,26 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /contacts/{contactId} [put]
-func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func UpdateContactHandler(contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contact, err := contactRepo.FindByID(c.Param("contactId"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Contact")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
+			handleInternalError(c, "Failed to fetch contact")
 			return
 		}
 
 		if contact.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot edit self contact directly"})
+			handleBadRequest(c, "Cannot edit self contact directly")
 			return
 		}
 
 		var req types.CreateContactRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
@@ -188,7 +189,7 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update contact"})
+			handleInternalError(c, "Failed to update contact")
 			return
 		}
 
@@ -208,40 +209,40 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /contacts/{contactId} [delete]
-func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func DeleteContactHandler(contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contact, err := contactRepo.FindByID(c.Param("contactId"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Contact")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
+			handleInternalError(c, "Failed to fetch contact")
 			return
 		}
 
 		if contact.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete self contact"})
+			handleBadRequest(c, "Cannot delete self contact")
 			return
 		}
 
 		referenced, err := contactRepo.IsReferencedByConsent(contact.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consent references"})
+			handleInternalError(c, "Failed to check consent references")
 			return
 		}
 		if referenced {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete contact: referenced as consent signer"})
+			handleBadRequest(c, "Cannot delete contact: referenced as consent signer")
 			return
 		}
 
 		commReferenced, err := contactRepo.IsReferencedByCommunication(contact.ID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check communication references"})
+			handleInternalError(c, "Failed to check communication references")
 			return
 		}
 		if commReferenced {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete contact: referenced in a communication"})
+			handleBadRequest(c, "Cannot delete contact: referenced in a communication")
 			return
 		}
 
@@ -263,7 +264,7 @@ func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRep
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete contact"})
+			handleInternalError(c, "Failed to delete contact")
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})

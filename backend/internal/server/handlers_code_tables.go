@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"registre-admin/internal/repository"
-	"registre-admin/internal/types"
+	_ "registre-admin/internal/types" // for swagger annotations
 )
 
 // CodeTableListResponse represents a single code table with its entries and referenced codes.
@@ -24,7 +24,7 @@ type CodeTableListResponse struct {
 // @Produce     json
 // @Success     200 {array} CodeTableListResponse
 // @Router      /code-tables [get]
-func ListCodeTablesHandler(repo *repository.CodeTableRepository) gin.HandlerFunc {
+func ListCodeTablesHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tables := repo.ListTables()
 		result := make([]CodeTableListResponse, 0, len(tables))
@@ -32,7 +32,7 @@ func ListCodeTablesHandler(repo *repository.CodeTableRepository) gin.HandlerFunc
 		for _, table := range tables {
 			entries, err := repo.List(table)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: fmt.Sprintf("Failed to list %s", table)})
+				handleInternalError(c, fmt.Sprintf("Failed to list %s", table))
 				return
 			}
 
@@ -73,22 +73,22 @@ func ListCodeTablesHandler(repo *repository.CodeTableRepository) gin.HandlerFunc
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /code-tables/{table}/entries [post]
-func CreateCodeEntryHandler(repo *repository.CodeTableRepository) gin.HandlerFunc {
+func CreateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		table := c.Param("table")
 
 		var entry repository.CodeEntry
 		if err := c.ShouldBindJSON(&entry); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		if entry.Code == "" || entry.NameEn == "" || entry.NameFr == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "code, name_en, and name_fr are required"})
+			handleBadRequest(c, "code, name_en, and name_fr are required")
 			return
 		}
 
 		if err := repo.Create(table, &entry); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 
@@ -110,23 +110,23 @@ func CreateCodeEntryHandler(repo *repository.CodeTableRepository) gin.HandlerFun
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /code-tables/{table}/entries/{code} [put]
-func UpdateCodeEntryHandler(repo *repository.CodeTableRepository) gin.HandlerFunc {
+func UpdateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		table := c.Param("table")
 		code := c.Param("code")
 
 		var entry repository.CodeEntry
 		if err := c.ShouldBindJSON(&entry); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		if entry.NameEn == "" || entry.NameFr == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "name_en and name_fr are required"})
+			handleBadRequest(c, "name_en and name_fr are required")
 			return
 		}
 
 		if err := repo.Update(table, code, &entry); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 
@@ -145,13 +145,13 @@ func UpdateCodeEntryHandler(repo *repository.CodeTableRepository) gin.HandlerFun
 // @Success     204
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /code-tables/{table}/entries/{code} [delete]
-func DeleteCodeEntryHandler(repo *repository.CodeTableRepository) gin.HandlerFunc {
+func DeleteCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		table := c.Param("table")
 		code := c.Param("code")
 
 		if err := repo.Delete(table, code); err != nil {
-			c.JSON(http.StatusConflict, types.ErrorResponse{Error: err.Error()})
+			handleConflict(c, err.Error())
 			return
 		}
 

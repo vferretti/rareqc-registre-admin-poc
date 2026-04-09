@@ -5,6 +5,11 @@ import (
 	"registre-admin/internal/types"
 )
 
+// GuidDAO defines the interface for GUID data access.
+type GuidDAO interface {
+	ResolveByGuid(ids []string) ([]int, []string)
+}
+
 // GuidRepository handles database operations for participant GUIDs.
 type GuidRepository struct {
 	db *gorm.DB

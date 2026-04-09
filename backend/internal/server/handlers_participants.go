@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,11 +25,11 @@ import (
 // @Success     200 {object} resolveIDsResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Router      /participants/resolve-ids [post]
-func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDRepo *repository.ExternalIDRepository, guidRepo *repository.GuidRepository) gin.HandlerFunc {
+func ResolveIDsHandler(participantRepo repository.ParticipantDAO, extIDRepo repository.ExternalIDDAO, guidRepo repository.GuidDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req resolveIDsRequest
 		if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 || req.Source == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "source and ids are required"})
+			handleBadRequest(c, "source and ids are required")
 			return
 		}
 
@@ -97,13 +98,13 @@ type resolveIDsResponse struct {
 // @Success     200 {object} types.PaginatedResponse[types.Participant]
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants [get]
-func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
+func ListParticipantsHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := parsePaginationParams(c, "last_name")
 
 		participants, total, totalPages, err := repo.List(params)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
+			handleInternalError(c, "Failed to fetch participants")
 			return
 		}
 
@@ -128,15 +129,15 @@ func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.Handler
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id} [get]
-func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
+func GetParticipantHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := repo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 		c.JSON(http.StatusOK, participant)
@@ -157,38 +158,38 @@ func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFu
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id} [put]
-func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 
 		var req types.UpdateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
+			handleBadRequest(c, "Invalid date_of_birth format")
 			return
 		}
 
 		dateOfDeath, err := parseDate(req.DateOfDeath)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			handleBadRequest(c, "Invalid date_of_death format")
 			return
 		}
 
 		if err := validateDates(dob, dateOfDeath); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			handleBadRequest(c, err.Error())
 			return
 		}
 
@@ -252,7 +253,7 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update participant"})
+			handleInternalError(c, "Failed to update participant")
 			return
 		}
 
@@ -273,27 +274,27 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants [post]
-func CreateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.CreateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
+			handleBadRequest(c, "Invalid date_of_birth format")
 			return
 		}
 
 		dateOfDeath, err := parseDate(req.DateOfDeath)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			handleBadRequest(c, "Invalid date_of_death format")
 			return
 		}
 
 		if err := validateDates(dob, dateOfDeath); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			handleBadRequest(c, err.Error())
 			return
 		}
 
@@ -393,7 +394,7 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create participant"})
+			handleInternalError(c, "Failed to create participant")
 			return
 		}
 
@@ -413,17 +414,17 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id} [delete]
-func DeleteParticipantHandler(participantRepo *repository.ParticipantRepository) gin.HandlerFunc {
+func DeleteParticipantHandler(participantRepo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
 		if _, err := participantRepo.FindByID(id); err != nil {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			handleNotFound(c, "Participant")
 			return
 		}
 
 		if err := participantRepo.Delete(id); err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete participant"})
+			handleInternalError(c, "Failed to delete participant")
 			return
 		}
 
