@@ -58,6 +58,7 @@ import { useCodeTables } from "@/hooks/useCodeTables";
 import { ExternalSystemCard } from "@/components/feature/external-system-card";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { CLAUSE_TYPES } from "@/lib/constants";
+import { DeleteParticipantSection } from "@/components/feature/delete-participant-section";
 import { enumLabel } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 
@@ -356,6 +357,26 @@ export default function Admin() {
                 systems={systems}
                 onMutate={mutateExternalSystems}
               />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Delete participant section */}
+          <AccordionItem value="delete-participant">
+            <AccordionTrigger>
+              <div className="flex items-center gap-3">
+                <Trash2 className="size-5 text-destructive" />
+                <div className="text-left">
+                  <div className="font-medium">
+                    {t("admin.delete_participant.title")}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {t("admin.delete_participant.description")}
+                  </div>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <DeleteParticipantSection />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

@@ -2,7 +2,7 @@
 export interface CommunicationResponse {
   id: number;
   participant_id: number;
-  contact_id?: number | null;
+  contact_id: number;
   contact_first_name?: string;
   contact_last_name?: string;
   contact_value?: string | null;
@@ -24,7 +24,7 @@ export interface CommunicationResponse {
 
 /** Payload for creating a communication. */
 export interface CreateCommunicationRequest {
-  contact_id?: number | null;
+  contact_id: number;
   contact_value?: string | null;
   method_code: string;
   subject_code: string;
@@ -35,7 +35,7 @@ export interface CreateCommunicationRequest {
 
 /** Payload for updating a communication. */
 export interface UpdateCommunicationRequest {
-  contact_id?: number | null;
+  contact_id: number;
   contact_value?: string | null;
   method_code: string;
   subject_code: string;

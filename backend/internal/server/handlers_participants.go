@@ -401,3 +401,32 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		c.JSON(http.StatusCreated, participant)
 	}
 }
+
+// DeleteParticipantHandler permanently deletes a participant and all related data (cascade).
+//
+// @Summary     Delete a participant
+// @Description Permanently deletes a participant and all associated data (contacts, consents, communications, activity logs, GUIDs, external IDs, cart items). This action is irreversible.
+// @Tags        participants
+// @Param       id path int true "Participant ID"
+// @Success     204
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id} [delete]
+func DeleteParticipantHandler(participantRepo *repository.ParticipantRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		if _, err := participantRepo.FindByID(id); err != nil {
+			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			return
+		}
+
+		if err := participantRepo.Delete(id); err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete participant"})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	}
+}

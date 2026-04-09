@@ -243,6 +243,7 @@
     "no_consents": "No consents recorded",
     "signed_by": "Signed by {{name}} ({{relationship}})",
     "cannot_delete_signer": "This contact cannot be deleted because they signed a consent",
+    "cannot_delete_contact_referenced": "This contact cannot be deleted because it is linked to a consent or communication",
     "add_consent": "+ Add consent",
     "add_consent_title": "Add consent",
     "edit_consent_title": "Edit consent",
@@ -407,6 +408,20 @@
       "cannot_delete": "This system is in use and cannot be deleted",
       "delete_title": "Delete system",
       "delete_confirm": "Are you sure you want to delete the system \"{{name}}\"?"
+    },
+    "delete_participant": {
+      "title": "Delete a participant",
+      "description": "Permanent and irreversible deletion of a participant and all their data",
+      "warning": "Deleting a participant is permanent and irreversible. All associated data will be deleted: contacts, consents, communications, activity history, external IDs and GUIDs.",
+      "search_label": "Participant ID",
+      "not_found": "Participant not found",
+      "delete_button": "Delete this participant",
+      "confirm_title": "Irreversible deletion",
+      "confirm_description": "You are about to permanently delete this participant and all their associated data:",
+      "confirm_irreversible": "This action is irreversible. All data will be permanently lost.",
+      "confirm_type_name": "Type \"{{name}}\" to confirm",
+      "confirm_delete": "Delete permanently",
+      "success": "The participant has been successfully deleted."
     }
   },
   "communications": {

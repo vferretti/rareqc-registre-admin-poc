@@ -63,6 +63,13 @@ func (r *ContactRepository) IsReferencedByConsent(contactID int) (bool, error) {
 	return count > 0, err
 }
 
+// IsReferencedByCommunication returns true if the contact is linked to any communication.
+func (r *ContactRepository) IsReferencedByCommunication(contactID int) (bool, error) {
+	var count int64
+	err := r.db.Table("communication").Where("contact_id = ?", contactID).Count(&count).Error
+	return count > 0, err
+}
+
 // CountNonSelfPrimary returns the count of non-self primary contacts for a participant.
 func (r *ContactRepository) CountNonSelfPrimary(tx *gorm.DB, participantID int) (int64, error) {
 	var count int64

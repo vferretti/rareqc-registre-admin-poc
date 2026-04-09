@@ -243,6 +243,7 @@
     "no_consents": "Aucun consentement enregistré",
     "signed_by": "Signé par {{name}} ({{relationship}})",
     "cannot_delete_signer": "Ce contact ne peut pas être supprimé car il est signataire d'un consentement",
+    "cannot_delete_contact_referenced": "Ce contact ne peut pas être supprimé car il est lié à un consentement ou une communication",
     "add_consent": "+ Ajouter un consentement",
     "add_consent_title": "Ajouter un consentement",
     "edit_consent_title": "Modifier le consentement",
@@ -407,6 +408,20 @@
       "cannot_delete": "Ce système est utilisé et ne peut pas être supprimé",
       "delete_title": "Supprimer le système",
       "delete_confirm": "Êtes-vous sûr de vouloir supprimer le système « {{name}} » ?"
+    },
+    "delete_participant": {
+      "title": "Supprimer un participant",
+      "description": "Suppression permanente et irréversible d'un participant et de toutes ses données",
+      "warning": "La suppression d'un participant est permanente et irréversible. Toutes les données associées seront supprimées : contacts, consentements, communications, historique d'activités, identifiants externes et GUIDs.",
+      "search_label": "ID du participant",
+      "not_found": "Participant introuvable",
+      "delete_button": "Supprimer ce participant",
+      "confirm_title": "Suppression irréversible",
+      "confirm_description": "Vous êtes sur le point de supprimer définitivement ce participant et toutes ses données associées :",
+      "confirm_irreversible": "Cette action est irréversible. Toutes les données seront définitivement perdues.",
+      "confirm_type_name": "Tapez « {{name}} » pour confirmer",
+      "confirm_delete": "Supprimer définitivement",
+      "success": "Le participant a été supprimé avec succès."
     }
   },
   "communications": {

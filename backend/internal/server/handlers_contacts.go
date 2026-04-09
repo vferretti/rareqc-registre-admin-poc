@@ -235,6 +235,16 @@ func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRep
 			return
 		}
 
+		commReferenced, err := contactRepo.IsReferencedByCommunication(contact.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check communication references"})
+			return
+		}
+		if commReferenced {
+			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete contact: referenced in a communication"})
+			return
+		}
+
 		author := getAuthor(c)
 
 		err = contactRepo.Transaction(func(tx *gorm.DB) error {

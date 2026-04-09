@@ -19,7 +19,7 @@ func NewCommunicationRepository(db *gorm.DB) *CommunicationRepository {
 type CommunicationResponse struct {
 	ID                int     `json:"id"`
 	ParticipantID     int     `json:"participant_id"`
-	ContactID         *int    `json:"contact_id,omitempty"`
+	ContactID         int     `json:"contact_id"`
 	ContactFirstName  string  `json:"contact_first_name,omitempty"`
 	ContactLastName   string  `json:"contact_last_name,omitempty"`
 	ContactValue      *string `json:"contact_value,omitempty"`
@@ -97,10 +97,8 @@ func (r *CommunicationRepository) ListByParticipant(participantID int) ([]Commun
 			CreatedAt:         c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			UpdatedAt:         c.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		}
-		if c.Contact != nil {
-			resp.ContactFirstName = c.Contact.FirstName
-			resp.ContactLastName = c.Contact.LastName
-		}
+		resp.ContactFirstName = c.Contact.FirstName
+		resp.ContactLastName = c.Contact.LastName
 		if c.OutcomeCode != nil {
 			if label, ok := outcomeLookup[*c.OutcomeCode]; ok {
 				resp.OutcomeNameFr = label.NameFr

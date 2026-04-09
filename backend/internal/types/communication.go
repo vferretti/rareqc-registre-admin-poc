@@ -42,9 +42,9 @@ func (EmailOutcome) TableName() string { return "email_outcome" }
 type Communication struct {
 	ID                int                  `json:"id" gorm:"primaryKey;autoIncrement"`
 	ParticipantID     int                  `json:"participant_id" gorm:"not null;index"`
-	Participant       Participant          `json:"-" gorm:"foreignKey:ParticipantID"`
-	ContactID         *int                 `json:"contact_id,omitempty"`
-	Contact           *Contact             `json:"contact,omitempty" gorm:"foreignKey:ContactID;constraint:OnDelete:SET NULL"`
+	Participant       Participant          `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
+	ContactID         int                  `json:"contact_id" gorm:"not null"`
+	Contact           Contact              `json:"-" gorm:"foreignKey:ContactID"`
 	ContactValue      *string              `json:"contact_value,omitempty" gorm:"type:text"`
 	MethodCode        string               `json:"method_code" gorm:"not null;type:text"`
 	Method            CommunicationMethod  `json:"-" gorm:"foreignKey:MethodCode;references:Code"`

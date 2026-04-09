@@ -12,7 +12,7 @@ import (
 
 // CreateCommunicationRequest represents the payload for creating a communication.
 type CreateCommunicationRequest struct {
-	ContactID         *int    `json:"contact_id"`
+	ContactID         int     `json:"contact_id" binding:"required"`
 	ContactValue      *string `json:"contact_value"`
 	MethodCode        string  `json:"method_code" binding:"required"`
 	SubjectCode       string  `json:"subject_code" binding:"required"`
@@ -23,7 +23,7 @@ type CreateCommunicationRequest struct {
 
 // UpdateCommunicationRequest represents the payload for updating a communication.
 type UpdateCommunicationRequest struct {
-	ContactID         *int    `json:"contact_id"`
+	ContactID         int     `json:"contact_id" binding:"required"`
 	ContactValue      *string `json:"contact_value"`
 	MethodCode        string  `json:"method_code" binding:"required"`
 	SubjectCode       string  `json:"subject_code" binding:"required"`

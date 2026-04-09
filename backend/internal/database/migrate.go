@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"log"
 
 	"registre-admin/internal/types"
@@ -138,6 +139,25 @@ func AutoMigrate(db *gorm.DB) error {
 	for _, idx := range searchIndexes {
 		if err := db.Exec(idx).Error; err != nil {
 			log.Printf("Warning: failed to create index: %v", err)
+		}
+	}
+
+	// Ensure ON DELETE CASCADE on all FK referencing participant
+	cascadeFKs := []struct{ table, constraint, fk string }{
+		{"contact", "fk_contact_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"consent", "fk_consent_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"consent", "fk_consent_signed_by", "FOREIGN KEY (signed_by_id) REFERENCES contact(id) ON DELETE SET NULL"},
+		{"communication", "fk_communication_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"communication", "fk_communication_contact", "FOREIGN KEY (contact_id) REFERENCES contact(id)"},
+		{"activity_log", "fk_activity_log_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"guid", "fk_guid_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"external_id", "fk_external_id_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+		{"cart_item", "fk_cart_item_participant", "FOREIGN KEY (participant_id) REFERENCES participant(id) ON DELETE CASCADE"},
+	}
+	for _, fk := range cascadeFKs {
+		db.Exec(fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT IF EXISTS %s", fk.table, fk.constraint))
+		if err := db.Exec(fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s", fk.table, fk.constraint, fk.fk)).Error; err != nil {
+			log.Printf("Warning: failed to add cascade FK %s: %v", fk.constraint, err)
 		}
 	}
 

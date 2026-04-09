@@ -50,7 +50,7 @@ export function CommunicationFormDialog({
   const isEdit = !!communication;
 
   const [methodCode, setMethodCode] = useState("email");
-  const [contactId, setContactId] = useState<string>(NONE_VALUE);
+  const [contactId, setContactId] = useState<string>("");
   const [subjectCode, setSubjectCode] = useState("");
   const [outcomeCode, setOutcomeCode] = useState<string>(NONE_VALUE);
   const [commDate, setCommDate] = useState<string>(
@@ -64,18 +64,14 @@ export function CommunicationFormDialog({
     if (!open) return;
     if (communication) {
       setMethodCode(communication.method_code);
-      setContactId(
-        communication.contact_id
-          ? String(communication.contact_id)
-          : NONE_VALUE,
-      );
+      setContactId(String(communication.contact_id));
       setSubjectCode(communication.subject_code);
       setOutcomeCode(communication.outcome_code ?? NONE_VALUE);
       setCommDate(communication.communication_date.slice(0, 10));
       setComment(communication.comment ?? "");
     } else {
       setMethodCode("email");
-      setContactId(NONE_VALUE);
+      setContactId("");
       setSubjectCode("");
       setOutcomeCode(NONE_VALUE);
       setCommDate(format(new Date(), "yyyy-MM-dd"));
@@ -104,20 +100,20 @@ export function CommunicationFormDialog({
 
   // Resolve the phone/email from the selected contact based on method
   const resolvedContactValue = useMemo(() => {
-    if (contactId === NONE_VALUE) return null;
+    if (!contactId) return null;
     const contact = contacts.find((c) => c.id === Number(contactId));
     if (!contact) return null;
     return methodCode === "email" ? contact.email : contact.phone;
   }, [contactId, methodCode, contacts]);
 
-  const canSubmit = methodCode && subjectCode && commDate;
+  const canSubmit = methodCode && subjectCode && commDate && contactId;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSaving(true);
     try {
       const payload = {
-        contact_id: contactId !== NONE_VALUE ? Number(contactId) : null,
+        contact_id: Number(contactId),
         contact_value: resolvedContactValue || null,
         method_code: methodCode,
         subject_code: subjectCode,
@@ -185,7 +181,6 @@ export function CommunicationFormDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE_VALUE}>—</SelectItem>
                 {contacts.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.first_name} {c.last_name}

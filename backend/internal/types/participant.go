@@ -17,8 +17,8 @@ type Participant struct {
 	CreatedAt       time.Time   `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt       time.Time   `json:"updated_at" gorm:"autoUpdateTime"`
 
-	Contacts []Contact `json:"contacts,omitempty" gorm:"foreignKey:ParticipantID"`
-	Guid     *Guid     `json:"guid,omitempty" gorm:"foreignKey:ParticipantID"`
+	Contacts []Contact `json:"contacts,omitempty" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
+	Guid     *Guid     `json:"guid,omitempty" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
 }
 
 func (Participant) TableName() string {

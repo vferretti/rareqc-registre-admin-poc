@@ -5,7 +5,7 @@ import "time"
 type Contact struct {
 	ID                int          `json:"id" gorm:"primaryKey;autoIncrement"`
 	ParticipantID     int          `json:"participant_id" gorm:"not null;index"`
-	Participant       Participant  `json:"-" gorm:"foreignKey:ParticipantID"`
+	Participant       Participant  `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
 	FirstName         string       `json:"first_name" gorm:"not null"`
 	LastName          string       `json:"last_name" gorm:"not null"`
 	RelationshipCode  string       `json:"relationship_code" gorm:"not null;type:text"`

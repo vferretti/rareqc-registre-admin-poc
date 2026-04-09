@@ -53,6 +53,7 @@ import { ParticipantActivityLog } from "@/components/feature/participant-activit
 import { ParticipantConsents } from "@/components/feature/participant-consents";
 import { ParticipantCommunications } from "@/components/feature/participant-communications";
 import { useConsents } from "@/hooks/useConsents";
+import { useCommunications } from "@/hooks/useCommunications";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
 import { enumLabel } from "@/lib/enum-label";
@@ -164,7 +165,7 @@ function ContactCard({
             <TooltipContent>
               {canDelete
                 ? t("common.delete")
-                : t("participant_detail.cannot_delete_signer")}
+                : t("participant_detail.cannot_delete_contact_referenced")}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -205,9 +206,11 @@ export default function ParticipantDetail() {
   const { consents } = useConsents(participant?.id);
   const { externalIds } = useExternalIds(participant?.id);
   const { copiedKey, copy } = useCopyFeedback();
-  const signerContactIds = new Set(
-    consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id),
-  );
+  const { communications } = useCommunications(participant?.id);
+  const protectedContactIds = new Set([
+    ...consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id!),
+    ...communications.filter((c) => c.contact_id).map((c) => c.contact_id!),
+  ]);
   const [editParticipantOpen, setEditParticipantOpen] = useState(false);
   const [editContactsOpen, setEditContactsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -539,7 +542,7 @@ export default function ParticipantDetail() {
                           lang={lang}
                           onEdit={() => setEditingContact(contact)}
                           onDelete={() => setDeletingContact(contact)}
-                          canDelete={!signerContactIds.has(contact.id)}
+                          canDelete={!protectedContactIds.has(contact.id)}
                         />
                       ))}
                     </div>

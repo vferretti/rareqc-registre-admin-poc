@@ -25,6 +25,11 @@ func (r *ParticipantRepository) FindByID(id string) (types.Participant, error) {
 	return p, err
 }
 
+// Delete permanently removes a participant. Related data is removed by ON DELETE CASCADE.
+func (r *ParticipantRepository) Delete(id string) error {
+	return r.db.Delete(&types.Participant{}, id).Error
+}
+
 // FindByIDs returns participants with contacts and GUIDs for a list of IDs, sorted by ID.
 func (r *ParticipantRepository) FindByIDs(ids []int) ([]types.Participant, error) {
 	var participants []types.Participant

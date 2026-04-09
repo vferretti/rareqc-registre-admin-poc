@@ -20,7 +20,7 @@ type ExternalID struct {
 	ExternalSystemID int            `json:"external_system_id" gorm:"not null;uniqueIndex:idx_external_system_participant"`
 	ExternalSystem   ExternalSystem `json:"-" gorm:"foreignKey:ExternalSystemID"`
 	ParticipantID    int            `json:"participant_id" gorm:"not null;uniqueIndex:idx_external_system_participant"`
-	Participant      Participant    `json:"-" gorm:"foreignKey:ParticipantID"`
+	Participant      Participant    `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
 	ExternalID       string         `json:"external_id" gorm:"not null;type:text;index"`
 	CreatedAt        time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt        time.Time      `json:"updated_at" gorm:"autoUpdateTime"`

@@ -25,12 +25,12 @@ type Consent struct {
 	ClauseID      int        `json:"clause_id" gorm:"not null;uniqueIndex:idx_consent_participant_clause"`
 	Clause        ConsentClause `json:"-" gorm:"foreignKey:ClauseID"`
 	ParticipantID int        `json:"participant_id" gorm:"not null;uniqueIndex:idx_consent_participant_clause"`
-	Participant   Participant `json:"-" gorm:"foreignKey:ParticipantID"`
+	Participant   Participant `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
 	Date          time.Time  `json:"date" gorm:"not null;type:date"`
 	StatusCode    string     `json:"status_code" gorm:"not null;type:text"`
 	Status        ConsentStatus `json:"-" gorm:"foreignKey:StatusCode;references:Code"`
 	SignedByID    *int       `json:"signed_by_id,omitempty" gorm:"index"`
-	SignedBy      *Contact   `json:"signed_by,omitempty" gorm:"foreignKey:SignedByID"`
+	SignedBy      *Contact   `json:"signed_by,omitempty" gorm:"foreignKey:SignedByID;constraint:OnDelete:SET NULL"`
 	DocumentID    *int       `json:"document_id,omitempty" gorm:"index"`
 	Document      *Document  `json:"-" gorm:"foreignKey:DocumentID"`
 	CreatedAt     time.Time  `json:"created_at" gorm:"autoCreateTime"`

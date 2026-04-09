@@ -52,6 +52,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo, guidRepo))
 		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
+		api.DELETE("/participants/:id", DeleteParticipantHandler(participantRepo))
 
 		api.POST("/participants/:id/contacts", AddContactHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/contacts/:contactId", UpdateContactHandler(contactRepo, activityRepo))

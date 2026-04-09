@@ -6,8 +6,9 @@ import "time"
 type CartItem struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
 	UserID        string    `gorm:"not null;uniqueIndex:idx_user_participant;type:text" json:"user_id"`
-	ParticipantID int       `gorm:"not null;uniqueIndex:idx_user_participant" json:"participant_id"`
-	CreatedAt     time.Time `json:"created_at"`
+	ParticipantID int         `gorm:"not null;uniqueIndex:idx_user_participant" json:"participant_id"`
+	Participant   Participant `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
+	CreatedAt     time.Time   `json:"created_at"`
 }
 
 func (CartItem) TableName() string { return "cart_item" }
