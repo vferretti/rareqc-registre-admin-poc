@@ -39,6 +39,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	extSysRepo := repository.NewExternalSystemRepository(db)
 	cartRepo := repository.NewCartRepository(db)
 	reportsRepo := repository.NewReportsRepository(db)
+	commRepo := repository.NewCommunicationRepository(db)
 
 	api := r.Group("/api")
 	{
@@ -64,6 +65,11 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.POST("/consent-templates", CreateConsentTemplateHandler(consentRepo))
 		api.PUT("/consent-templates/:id", UpdateConsentTemplateHandler(consentRepo))
 		api.DELETE("/consent-templates/:id", DeleteConsentTemplateHandler(consentRepo))
+
+		api.GET("/participants/:id/communications", ListParticipantCommunicationsHandler(commRepo))
+		api.POST("/participants/:id/communications", CreateParticipantCommunicationHandler(commRepo))
+		api.PUT("/communications/:communicationId", UpdateCommunicationHandler(commRepo))
+		api.DELETE("/communications/:communicationId", DeleteCommunicationHandler(commRepo))
 
 		api.POST("/documents", UploadDocumentHandler(docRepo))
 		api.GET("/documents/:id/file", DownloadDocumentHandler(docRepo))

@@ -25,6 +25,10 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.ConsentStatus{},
 		&types.ClauseType{},
 		&types.DocumentType{},
+		&types.CommunicationMethod{},
+		&types.CommunicationSubject{},
+		&types.PhoneOutcome{},
+		&types.EmailOutcome{},
 	); err != nil {
 		return err
 	}
@@ -88,6 +92,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&types.ExternalSystem{},
 		&types.ExternalID{},
 		&types.CartItem{},
+		&types.Communication{},
 	); err != nil {
 		return err
 	}
@@ -261,6 +266,44 @@ func seedReferenceData(db *gorm.DB) error {
 		{Code: "consent_signed", NameEn: "Signed consent form", NameFr: "Formulaire de consentement (signé)"},
 	}
 	if err := db.Clauses(upsert).Create(&documentTypeValues).Error; err != nil {
+		return err
+	}
+
+	communicationMethodValues := []types.CommunicationMethod{
+		{Code: "phone", NameEn: "Phone", NameFr: "Téléphone"},
+		{Code: "email", NameEn: "Email", NameFr: "Courriel"},
+	}
+	if err := db.Clauses(upsert).Create(&communicationMethodValues).Error; err != nil {
+		return err
+	}
+
+	communicationSubjectValues := []types.CommunicationSubject{
+		{Code: "consent_followup", NameEn: "Consent follow-up", NameFr: "Suivi de consentement"},
+		{Code: "contact_update", NameEn: "Contact information update", NameFr: "Mise à jour des coordonnées"},
+		{Code: "study_recruitment", NameEn: "Study recruitment", NameFr: "Recrutement à une étude"},
+		{Code: "data_clarification", NameEn: "Data clarification", NameFr: "Clarification de données"},
+		{Code: "other", NameEn: "Other", NameFr: "Autre"},
+	}
+	if err := db.Clauses(upsert).Create(&communicationSubjectValues).Error; err != nil {
+		return err
+	}
+
+	phoneOutcomeValues := []types.PhoneOutcome{
+		{Code: "answered", NameEn: "Answered", NameFr: "Répondu"},
+		{Code: "no_answer", NameEn: "No answer", NameFr: "Sans réponse"},
+		{Code: "voicemail", NameEn: "Voicemail left", NameFr: "Message vocal laissé"},
+		{Code: "wrong_number", NameEn: "Wrong number", NameFr: "Mauvais numéro"},
+	}
+	if err := db.Clauses(upsert).Create(&phoneOutcomeValues).Error; err != nil {
+		return err
+	}
+
+	emailOutcomeValues := []types.EmailOutcome{
+		{Code: "sent", NameEn: "Sent", NameFr: "Envoyé"},
+		{Code: "response", NameEn: "Response received", NameFr: "Réponse reçue"},
+		{Code: "bounced", NameEn: "Bounced", NameFr: "Retourné (échec)"},
+	}
+	if err := db.Clauses(upsert).Create(&emailOutcomeValues).Error; err != nil {
 		return err
 	}
 

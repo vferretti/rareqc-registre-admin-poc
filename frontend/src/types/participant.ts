@@ -60,6 +60,10 @@ export interface EnumsResponse {
   vital_status: EnumValue[];
   relationship: EnumValue[];
   action_type: EnumValue[];
+  communication_methods: EnumValue[];
+  communication_subjects: EnumValue[];
+  phone_outcomes: EnumValue[];
+  email_outcomes: EnumValue[];
 }
 
 /** Generic paginated API response wrapper. */

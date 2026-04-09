@@ -276,7 +276,22 @@
     "guid_birthplace_desc": "Basic + City of birth",
     "guid_not_available": "Not available",
     "guid_copied": "Copied!",
-    "document_signed": "Signed <strong>document</strong>"
+    "document_signed": "Signed <strong>document</strong>",
+    "section_communications": "Communications",
+    "add_communication": "+ Report a communication",
+    "edit_communication": "Edit communication",
+    "delete_communication": "Delete communication",
+    "no_communications": "No communications reported",
+    "communication_method": "Method",
+    "communication_subject": "Subject",
+    "communication_outcome": "Outcome",
+    "communication_date": "Date",
+    "communication_contact": "Contact used",
+    "communication_comment": "Comment",
+    "confirm_delete_communication": "Are you sure you want to delete this communication?",
+    "unknown_contact": "Unknown contact",
+    "view_communication": "View details",
+    "communication_author": "Reported by"
   },
   "enums": {
     "sex_at_birth": {
@@ -377,7 +392,11 @@
       "action_type_code": "Action type",
       "consent_status_code": "Consent status",
       "clause_type_code": "Clause type",
-      "document_type_code": "Document type"
+      "document_type_code": "Document type",
+      "communication_method": "Communication method",
+      "communication_subject": "Communication subject",
+      "phone_outcome": "Phone call outcome",
+      "email_outcome": "Email outcome"
     },
     "external_systems": {
       "title": "External systems",

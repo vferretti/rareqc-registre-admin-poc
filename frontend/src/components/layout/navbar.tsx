@@ -1,6 +1,16 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, Mail, History, Settings, ChevronDown, UserRound, LogOut, FileBarChart, ScrollText, ShoppingCart } from "lucide-react";
+import {
+  Users,
+  History,
+  Settings,
+  ChevronDown,
+  UserRound,
+  LogOut,
+  FileBarChart,
+  ScrollText,
+  ShoppingCart,
+} from "lucide-react";
 import { useCartContext } from "@/contexts/cart-context";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
@@ -27,7 +37,6 @@ export function Navbar() {
 
   const links = [
     { to: "/participants", label: t("nav.patients"), icon: Users },
-    { to: "/communications", label: t("nav.communications"), icon: Mail },
   ];
 
   const toggleLanguage = () => {
@@ -62,7 +71,9 @@ export function Navbar() {
           <DropdownMenuTrigger
             className={cn(
               "inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-navbar-muted transition-colors hover:bg-navbar-accent hover:text-navbar-active outline-none cursor-pointer",
-              (location.pathname === "/activity" || location.pathname === "/reports") && "text-navbar-active",
+              (location.pathname === "/activity" ||
+                location.pathname === "/reports") &&
+                "text-navbar-active",
             )}
           >
             <History className="size-4" />

@@ -1,7 +1,16 @@
 import { useCallback, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, Copy, Fingerprint, Pencil, ShoppingCart, Trash2, UserPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Fingerprint,
+  Pencil,
+  ShoppingCart,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { useTour } from "@/hooks/useTour";
 import { participantDetailTour } from "@/tours/participant-detail";
 import { useParticipant } from "@/hooks/useParticipant";
@@ -42,6 +51,7 @@ import { ParticipantFormDialog } from "@/components/feature/create-participant-d
 import { ContactFormDialog } from "@/components/feature/contact-form-dialog";
 import { ParticipantActivityLog } from "@/components/feature/participant-activity-log";
 import { ParticipantConsents } from "@/components/feature/participant-consents";
+import { ParticipantCommunications } from "@/components/feature/participant-communications";
 import { useConsents } from "@/hooks/useConsents";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
@@ -50,7 +60,16 @@ import { useCart } from "@/hooks/useCart";
 import type { Contact } from "@/types/participant";
 
 /** Rotating badge colors for external systems. */
-const EXT_BADGE_COLORS = ["cyan", "violet", "orange", "green", "fuchsia", "amber", "blue", "lime"] as const;
+const EXT_BADGE_COLORS = [
+  "cyan",
+  "violet",
+  "orange",
+  "green",
+  "fuchsia",
+  "amber",
+  "blue",
+  "lime",
+] as const;
 
 /** Hook that copies text to clipboard and returns a "just copied" state for feedback. */
 function useCopyFeedback(timeout = 1500) {
@@ -132,12 +151,16 @@ function ContactCard({
                   onClick={canDelete ? onDelete : undefined}
                   disabled={!canDelete}
                 >
-                  <Trash2 className={`size-4 ${canDelete ? "text-destructive" : ""}`} />
+                  <Trash2
+                    className={`size-4 ${canDelete ? "text-destructive" : ""}`}
+                  />
                 </Button>
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              {canDelete ? t("common.delete") : t("participant_detail.cannot_delete_signer")}
+              {canDelete
+                ? t("common.delete")
+                : t("participant_detail.cannot_delete_signer")}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -247,7 +270,9 @@ export default function ParticipantDetail() {
   const otherContacts =
     participant.contacts?.filter((c) => c.relationship_code !== "self") ?? [];
 
-  const isInCart = cartItems.some((item) => item.participant_id === participant.id);
+  const isInCart = cartItems.some(
+    (item) => item.participant_id === participant.id,
+  );
 
   const toggleCart = async () => {
     if (isInCart) {
@@ -261,372 +286,397 @@ export default function ParticipantDetail() {
 
   return (
     <TooltipProvider>
-    <>
-      <PageHeader
-        title={
-          <span className="flex items-center gap-3">
-            {participant.first_name} {participant.last_name}
-            <span data-tour="badges" className="flex items-center gap-2">
-            <Badge
-              variant="blue"
-              className="text-xs font-normal cursor-pointer select-none"
-              onClick={() => copy("id", String(participant.id))}
-            >
-              <span className="font-bold">ID</span>: {participant.id}
-              {copiedKey === "id" ? (
-                <Check className="ml-1 size-3" />
-              ) : (
-                <Copy className="ml-1 size-3 opacity-50" />
-              )}
-            </Badge>
-            {externalIds.map((ext, i) => (
-              <Tooltip key={ext.id}>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant={EXT_BADGE_COLORS[i % EXT_BADGE_COLORS.length]}
-                    className="text-xs font-normal cursor-pointer select-none"
-                    onClick={() => copy(`ext-${ext.id}`, ext.external_id)}
-                  >
-                    <span className="font-bold">{ext.system_name}</span>: {ext.external_id}
-                    {copiedKey === `ext-${ext.id}` ? (
-                      <Check className="ml-1 size-3" />
-                    ) : (
-                      <Copy className="ml-1 size-3 opacity-50" />
-                    )}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>{i18n.language === "en" ? ext.system_title_en : ext.system_title_fr}</TooltipContent>
-              </Tooltip>
-            ))}
-            </span>
-          </span>
-        }
-        actions={
-          <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/participants">
-              <ArrowLeft className="mr-1 size-4" />
-              {t("participant_detail.back")}
-            </Link>
-          </Button>
-          <TourButton />
-          </div>
-        }
-      />
-
-      <TourOverlay />
-
-      <div className="p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column — Identity + Contacts */}
-          <div className="space-y-6">
-            {/* Identity & coordinates card */}
-            <Card data-tour="identity">
-              <CardHeader>
-                <CardTitle>
-                  {t("participant_detail.section_identity")}
-                </CardTitle>
-                <CardAction data-tour="identity-actions">
-                  <Tooltip>
+      <>
+        <PageHeader
+          title={
+            <span className="flex items-center gap-3">
+              {participant.first_name} {participant.last_name}
+              <span data-tour="badges" className="flex items-center gap-2">
+                <Badge
+                  variant="blue"
+                  className="text-xs font-normal cursor-pointer select-none"
+                  onClick={() => copy("id", String(participant.id))}
+                >
+                  <span className="font-bold">ID</span>: {participant.id}
+                  {copiedKey === "id" ? (
+                    <Check className="ml-1 size-3" />
+                  ) : (
+                    <Copy className="ml-1 size-3 opacity-50" />
+                  )}
+                </Badge>
+                {externalIds.map((ext, i) => (
+                  <Tooltip key={ext.id}>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={toggleCart}
+                      <Badge
+                        variant={EXT_BADGE_COLORS[i % EXT_BADGE_COLORS.length]}
+                        className="text-xs font-normal cursor-pointer select-none"
+                        onClick={() => copy(`ext-${ext.id}`, ext.external_id)}
                       >
-                        <ShoppingCart className={`size-4 ${isInCart ? "text-primary fill-primary" : ""}`} />
-                      </Button>
+                        <span className="font-bold">{ext.system_name}</span>:{" "}
+                        {ext.external_id}
+                        {copiedKey === `ext-${ext.id}` ? (
+                          <Check className="ml-1 size-3" />
+                        ) : (
+                          <Copy className="ml-1 size-3 opacity-50" />
+                        )}
+                      </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {isInCart ? t("cart.remove") : t("cart.add")}
+                      {i18n.language === "en"
+                        ? ext.system_title_en
+                        : ext.system_title_fr}
                     </TooltipContent>
                   </Tooltip>
-                  {participant.guid && (
+                ))}
+              </span>
+            </span>
+          }
+          actions={
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/participants">
+                  <ArrowLeft className="mr-1 size-4" />
+                  {t("participant_detail.back")}
+                </Link>
+              </Button>
+              <TourButton />
+            </div>
+          }
+        />
+
+        <TourOverlay />
+
+        <div className="p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left column — Identity + Contacts */}
+            <div className="space-y-6">
+              {/* Identity & coordinates card */}
+              <Card data-tour="identity">
+                <CardHeader>
+                  <CardTitle>
+                    {t("participant_detail.section_identity")}
+                  </CardTitle>
+                  <CardAction data-tour="identity-actions">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => setGuidDialogOpen(true)}
+                          onClick={toggleCart}
                         >
-                          <Fingerprint className="size-4" />
+                          <ShoppingCart
+                            className={`size-4 ${isInCart ? "text-primary fill-primary" : ""}`}
+                          />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {t("participant_detail.view_guids")}
+                        {isInCart ? t("cart.remove") : t("cart.add")}
                       </TooltipContent>
                     </Tooltip>
-                  )}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setEditParticipantOpen(true)}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("common.edit")}</TooltipContent>
-                  </Tooltip>
-                </CardAction>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                  <Field label={t("participant_detail.last_name")}>
-                    {participant.last_name}
-                  </Field>
-                  <Field label={t("participant_detail.first_name")}>
-                    {participant.first_name}
-                  </Field>
-                  <Field label={t("participant_detail.date_of_birth")}>
-                    {formatDate(participant.date_of_birth)}
-                  </Field>
-                  <Field label={t("participant_detail.sex_at_birth")}>
-                    <Badge
-                      variant={
-                        SEX_BADGE[participant.sex_at_birth_code] ?? "secondary"
-                      }
-                    >
-                      {t(
-                        `enums.sex_at_birth.${participant.sex_at_birth_code}`,
-                        { defaultValue: participant.sex_at_birth_code },
-                      )}
-                    </Badge>
-                  </Field>
-                  <Field label={t("participant_detail.ramq")}>
-                    <span className="font-mono">
-                      {participant.ramq || "—"}
-                    </span>
-                  </Field>
-                  <Field label={t("participant_detail.city_of_birth")}>
-                    {participant.city_of_birth || "—"}
-                  </Field>
-                  <Field label={t("participant_detail.vital_status")}>
-                    <Badge
-                      variant={
-                        VITAL_STATUS_BADGE[participant.vital_status_code] ??
-                        "secondary"
-                      }
-                    >
-                      {t(
-                        `enums.vital_status.${participant.vital_status_code}`,
-                        { defaultValue: participant.vital_status_code },
-                      )}
-                    </Badge>
-                  </Field>
-                  {participant.vital_status_code === "deceased" && (
-                    <Field label={t("participant_detail.date_of_death")}>
-                      {formatDate(participant.date_of_death)}
+                    {participant.guid && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setGuidDialogOpen(true)}
+                          >
+                            <Fingerprint className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {t("participant_detail.view_guids")}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditParticipantOpen(true)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t("common.edit")}</TooltipContent>
+                    </Tooltip>
+                  </CardAction>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <Field label={t("participant_detail.last_name")}>
+                      {participant.last_name}
                     </Field>
-                  )}
-                </dl>
-
-                <hr className="border-border" />
-
-                <h3 className="text-sm font-semibold text-foreground">
-                  {t("participant_detail.section_coordinates")}
-                </h3>
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-                  <Field label={t("participant_detail.email")}>
-                    {selfContact?.email || "—"}
-                  </Field>
-                  <Field label={t("participant_detail.phone")}>
-                    {formatPhone(selfContact?.phone)}
-                  </Field>
-                  <Field label={t("participant_detail.street_address")}>
-                    {selfContact
-                      ? formatAddress(
-                          selfContact.apartment_number,
-                          selfContact.street_address,
-                          selfContact.city,
-                          selfContact.province,
-                          selfContact.code_postal,
-                        )
-                      : "—"}
-                  </Field>
-                  <Field label={t("participant_detail.preferred_language")}>
-                    {selfContact
-                      ? t(`enums.language.${selfContact.preferred_language}`, {
-                          defaultValue: selfContact.preferred_language,
-                        })
-                      : "—"}
-                  </Field>
-                </dl>
-              </CardContent>
-            </Card>
-
-            {/* Contacts card */}
-            <Card data-tour="contacts">
-              <CardHeader>
-                <CardTitle>
-                  {t("participant_detail.section_contacts")}
-                </CardTitle>
-                <CardAction>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setEditContactsOpen(true)}
+                    <Field label={t("participant_detail.first_name")}>
+                      {participant.first_name}
+                    </Field>
+                    <Field label={t("participant_detail.date_of_birth")}>
+                      {formatDate(participant.date_of_birth)}
+                    </Field>
+                    <Field label={t("participant_detail.sex_at_birth")}>
+                      <Badge
+                        variant={
+                          SEX_BADGE[participant.sex_at_birth_code] ??
+                          "secondary"
+                        }
                       >
-                        <UserPlus className="size-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("participant_detail.add_contacts")}</TooltipContent>
-                  </Tooltip>
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                {otherContacts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    {t("participant_detail.no_contacts")}
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {otherContacts.map((contact) => (
-                      <ContactCard
-                        key={contact.id}
-                        contact={contact}
-                        t={t}
-                        onEdit={() => setEditingContact(contact)}
-                        onDelete={() => setDeletingContact(contact)}
-                        canDelete={!signerContactIds.has(contact.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                        {t(
+                          `enums.sex_at_birth.${participant.sex_at_birth_code}`,
+                          { defaultValue: participant.sex_at_birth_code },
+                        )}
+                      </Badge>
+                    </Field>
+                    <Field label={t("participant_detail.ramq")}>
+                      <span className="font-mono">
+                        {participant.ramq || "—"}
+                      </span>
+                    </Field>
+                    <Field label={t("participant_detail.city_of_birth")}>
+                      {participant.city_of_birth || "—"}
+                    </Field>
+                    <Field label={t("participant_detail.vital_status")}>
+                      <Badge
+                        variant={
+                          VITAL_STATUS_BADGE[participant.vital_status_code] ??
+                          "secondary"
+                        }
+                      >
+                        {t(
+                          `enums.vital_status.${participant.vital_status_code}`,
+                          { defaultValue: participant.vital_status_code },
+                        )}
+                      </Badge>
+                    </Field>
+                    {participant.vital_status_code === "deceased" && (
+                      <Field label={t("participant_detail.date_of_death")}>
+                        {formatDate(participant.date_of_death)}
+                      </Field>
+                    )}
+                  </dl>
 
-          {/* Right column — Consents + Activity history */}
-          <div className="flex flex-col gap-6">
-            <div data-tour="consents">
-            <ParticipantConsents
-              participantId={participant.id}
-              contacts={participant.contacts ?? []}
-              consents={consents}
-              onConsentAdded={handleSuccess}
-            />
+                  <hr className="border-border" />
+
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {t("participant_detail.section_coordinates")}
+                  </h3>
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <Field label={t("participant_detail.email")}>
+                      {selfContact?.email || "—"}
+                    </Field>
+                    <Field label={t("participant_detail.phone")}>
+                      {formatPhone(selfContact?.phone)}
+                    </Field>
+                    <Field label={t("participant_detail.street_address")}>
+                      {selfContact
+                        ? formatAddress(
+                            selfContact.apartment_number,
+                            selfContact.street_address,
+                            selfContact.city,
+                            selfContact.province,
+                            selfContact.code_postal,
+                          )
+                        : "—"}
+                    </Field>
+                    <Field label={t("participant_detail.preferred_language")}>
+                      {selfContact
+                        ? t(
+                            `enums.language.${selfContact.preferred_language}`,
+                            {
+                              defaultValue: selfContact.preferred_language,
+                            },
+                          )
+                        : "—"}
+                    </Field>
+                  </dl>
+                </CardContent>
+              </Card>
+
+              {/* Contacts card */}
+              <Card data-tour="contacts">
+                <CardHeader>
+                  <CardTitle>
+                    {t("participant_detail.section_contacts")}
+                  </CardTitle>
+                  <CardAction>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditContactsOpen(true)}
+                        >
+                          <UserPlus className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t("participant_detail.add_contacts")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardAction>
+                </CardHeader>
+                <CardContent>
+                  {otherContacts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("participant_detail.no_contacts")}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {otherContacts.map((contact) => (
+                        <ContactCard
+                          key={contact.id}
+                          contact={contact}
+                          t={t}
+                          onEdit={() => setEditingContact(contact)}
+                          onDelete={() => setDeletingContact(contact)}
+                          canDelete={!signerContactIds.has(contact.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-            <div data-tour="activity">
-            <ParticipantActivityLog participantId={participant.id} />
+
+            {/* Right column — Consents + Activity history */}
+            <div className="flex flex-col gap-6">
+              <div data-tour="consents">
+                <ParticipantConsents
+                  participantId={participant.id}
+                  contacts={participant.contacts ?? []}
+                  consents={consents}
+                  onConsentAdded={handleSuccess}
+                />
+              </div>
+              <ParticipantCommunications
+                participantId={participant.id}
+                contacts={participant.contacts ?? []}
+              />
+              <div data-tour="activity">
+                <ParticipantActivityLog participantId={participant.id} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Edit participant dialog */}
-      <ParticipantFormDialog
-        open={editParticipantOpen}
-        onOpenChange={setEditParticipantOpen}
-        participant={participant}
-        onSuccess={handleSuccess}
-      />
+        {/* Edit participant dialog */}
+        <ParticipantFormDialog
+          open={editParticipantOpen}
+          onOpenChange={setEditParticipantOpen}
+          participant={participant}
+          onSuccess={handleSuccess}
+        />
 
-      {/* Add contact dialog */}
-      <ContactFormDialog
-        open={editContactsOpen}
-        onOpenChange={setEditContactsOpen}
-        participant={participant}
-        onSuccess={handleSuccess}
-      />
+        {/* Add contact dialog */}
+        <ContactFormDialog
+          open={editContactsOpen}
+          onOpenChange={setEditContactsOpen}
+          participant={participant}
+          onSuccess={handleSuccess}
+        />
 
-      {/* Edit single contact dialog */}
-      <ContactFormDialog
-        open={!!editingContact}
-        onOpenChange={(open) => { if (!open) setEditingContact(null); }}
-        participant={participant}
-        contact={editingContact}
-        onSuccess={() => { setEditingContact(null); handleSuccess(); }}
-      />
+        {/* Edit single contact dialog */}
+        <ContactFormDialog
+          open={!!editingContact}
+          onOpenChange={(open) => {
+            if (!open) setEditingContact(null);
+          }}
+          participant={participant}
+          contact={editingContact}
+          onSuccess={() => {
+            setEditingContact(null);
+            handleSuccess();
+          }}
+        />
 
-      {/* Delete contact confirmation */}
-      <AlertDialog
-        open={!!deletingContact}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeletingContact(null);
-            setDeleteError(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("participant_detail.delete_contact_title")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteError ? (
-                <span className="text-destructive">{deleteError}</span>
-              ) : (
-                t("participant_detail.confirm_delete_contact", {
-                  name: deletingContact
-                    ? `${deletingContact.first_name} ${deletingContact.last_name}`
-                    : "",
-                })
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            {!deleteError && (
-              <AlertDialogAction onClick={confirmDeleteContact}>
-                {t("common.delete")}
-              </AlertDialogAction>
-            )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* GUID dialog */}
-      <Dialog open={guidDialogOpen} onOpenChange={setGuidDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t("participant_detail.guid_title")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {[
-              { key: "guid_basic", value: participant.guid?.guid_basic },
-              { key: "guid_ramq", value: participant.guid?.guid_ramq },
-              { key: "guid_birthplace", value: participant.guid?.guid_birthplace },
-            ].map(({ key, value }) => (
-              <div key={key} className="space-y-1">
-                <div className="text-sm font-medium">
-                  {t(`participant_detail.${key}`)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {t(`participant_detail.${key}_desc`)}
-                </div>
-                {value ? (
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs font-mono bg-muted rounded px-2 py-1.5 break-all">
-                      {value}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => copyGuid(value)}
-                    >
-                      {copiedGuid === value ? (
-                        <Check className="size-4 text-green-600" />
-                      ) : (
-                        <Copy className="size-4" />
-                      )}
-                    </Button>
-                  </div>
+        {/* Delete contact confirmation */}
+        <AlertDialog
+          open={!!deletingContact}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeletingContact(null);
+              setDeleteError(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("participant_detail.delete_contact_title")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteError ? (
+                  <span className="text-destructive">{deleteError}</span>
                 ) : (
-                  <span className="text-sm text-muted-foreground italic">
-                    {t("participant_detail.guid_not_available")}
-                  </span>
+                  t("participant_detail.confirm_delete_contact", {
+                    name: deletingContact
+                      ? `${deletingContact.first_name} ${deletingContact.last_name}`
+                      : "",
+                  })
                 )}
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              {!deleteError && (
+                <AlertDialogAction onClick={confirmDeleteContact}>
+                  {t("common.delete")}
+                </AlertDialogAction>
+              )}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* GUID dialog */}
+        <Dialog open={guidDialogOpen} onOpenChange={setGuidDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{t("participant_detail.guid_title")}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {[
+                { key: "guid_basic", value: participant.guid?.guid_basic },
+                { key: "guid_ramq", value: participant.guid?.guid_ramq },
+                {
+                  key: "guid_birthplace",
+                  value: participant.guid?.guid_birthplace,
+                },
+              ].map(({ key, value }) => (
+                <div key={key} className="space-y-1">
+                  <div className="text-sm font-medium">
+                    {t(`participant_detail.${key}`)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t(`participant_detail.${key}_desc`)}
+                  </div>
+                  {value ? (
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs font-mono bg-muted rounded px-2 py-1.5 break-all">
+                        {value}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => copyGuid(value)}
+                      >
+                        {copiedGuid === value ? (
+                          <Check className="size-4 text-green-600" />
+                        ) : (
+                          <Copy className="size-4" />
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">
+                      {t("participant_detail.guid_not_available")}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     </TooltipProvider>
   );
 }

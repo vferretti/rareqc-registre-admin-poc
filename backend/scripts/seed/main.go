@@ -78,6 +78,7 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM communication")
 	db.Exec("DELETE FROM cart_item")
 	db.Exec("DELETE FROM external_id")
 	db.Exec("DELETE FROM consent")

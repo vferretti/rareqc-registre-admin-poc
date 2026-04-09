@@ -27,6 +27,10 @@ var registry = []codeTableMeta{
 	{Table: "relationship_code", FKTable: "contact", FKColumn: "relationship_code"},
 	{Table: "consent_status_code", FKTable: "consent", FKColumn: "status_code"},
 	{Table: "document_type_code", FKTable: "document", FKColumn: "type_code"},
+	{Table: "communication_method", FKTable: "communication", FKColumn: "method_code"},
+	{Table: "communication_subject", FKTable: "communication", FKColumn: "subject_code"},
+	{Table: "phone_outcome", FKTable: "communication", FKColumn: "outcome_code"},
+	{Table: "email_outcome", FKTable: "communication", FKColumn: "outcome_code"},
 }
 
 // CodeTableRepository handles CRUD operations on all code/reference tables.

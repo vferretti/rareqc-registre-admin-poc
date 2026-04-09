@@ -276,7 +276,22 @@
     "guid_birthplace_desc": "Base + Ville de naissance",
     "guid_not_available": "Non disponible",
     "guid_copied": "Copié!",
-    "document_signed": "Document <strong>signé</strong>"
+    "document_signed": "Document <strong>signé</strong>",
+    "section_communications": "Communications",
+    "add_communication": "+ Rapporter une communication",
+    "edit_communication": "Modifier la communication",
+    "delete_communication": "Supprimer la communication",
+    "no_communications": "Aucune communication rapportée",
+    "communication_method": "Moyen",
+    "communication_subject": "Sujet",
+    "communication_outcome": "Résultat",
+    "communication_date": "Date",
+    "communication_contact": "Contact utilisé",
+    "communication_comment": "Commentaire",
+    "confirm_delete_communication": "Êtes-vous certain de vouloir supprimer cette communication ?",
+    "unknown_contact": "Contact inconnu",
+    "view_communication": "Voir les détails",
+    "communication_author": "Rapporté par"
   },
   "enums": {
     "sex_at_birth": {
@@ -377,7 +392,11 @@
       "action_type_code": "Type d'action",
       "consent_status_code": "Statut de consentement",
       "clause_type_code": "Type de clause",
-      "document_type_code": "Type de document"
+      "document_type_code": "Type de document",
+      "communication_method": "Moyen de communication",
+      "communication_subject": "Sujet de communication",
+      "phone_outcome": "Résultat d'appel téléphonique",
+      "email_outcome": "Résultat de courriel"
     },
     "external_systems": {
       "title": "Systèmes externes",
