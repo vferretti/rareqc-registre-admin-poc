@@ -84,7 +84,7 @@ func (r *ConsentRepository) ExistsByClause(participantID, clauseID int) (bool, e
 func (r *ConsentRepository) ExistsByClauseType(participantID int, clauseTypeCode string) (bool, error) {
 	var count int64
 	err := r.db.Model(&types.Consent{}).
-		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Joins(joinConsentClause).
 		Where("consent.participant_id = ? AND consent_clause.clause_type_code = ?", participantID, clauseTypeCode).
 		Count(&count).Error
 	return count > 0, err
@@ -154,7 +154,7 @@ func (r *ConsentRepository) CreateTemplate(doc *types.Document, fileData []byte,
 func (r *ConsentRepository) HasConsentsForTemplate(templateDocID int) (bool, error) {
 	var count int64
 	err := r.db.Model(&types.Consent{}).
-		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Joins(joinConsentClause).
 		Where("consent_clause.template_document_id = ?", templateDocID).
 		Count(&count).Error
 	return count > 0, err
@@ -218,7 +218,7 @@ func (r *ConsentRepository) UpdateTemplate(templateDocID int, name string, fileD
 func (r *ConsentRepository) CascadeRegistryStatus(participantID int, statusCode string, date time.Time) ([]string, error) {
 	var consents []types.Consent
 	err := r.db.
-		Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
+		Joins(joinConsentClause).
 		Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
 			participantID, "registry", statusCode).
 		Find(&consents).Error

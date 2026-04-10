@@ -72,45 +72,26 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]Participa
 	query := r.db.Model(&types.Participant{})
 
 	if params.Search != "" {
-		term := searchTerm(params.Search)
-		pSQL, pN := participantSearchSQL("p")
-		cSQL, cN := contactSearchSQL("c")
-		query = query.Where(
-			`id IN (
-				SELECT p.id FROM participant p WHERE `+pSQL+`
-				UNION
-				SELECT c.participant_id FROM contact c WHERE `+cSQL+`
-				UNION
-				SELECT e.participant_id FROM external_id e WHERE LOWER(e.external_id) LIKE ?
-			)`,
-			repeatArg(term, pN+cN+1)...,
-		)
+		query = query.Scopes(WithListSearch(params.Search))
 	}
 
 	// Filter by consent clause type + status (AND between clause types, OR within statuses)
-	clauseFilters := []struct {
+	for _, cf := range []struct {
 		clauseType string
 		statuses   []string
 	}{
 		{"registry", params.ConsentRegistry},
 		{"recontact", params.ConsentRecontact},
 		{"external_linkage", params.ConsentExternalLinkage},
-	}
-	for _, cf := range clauseFilters {
+	} {
 		if len(cf.statuses) > 0 {
-			query = query.Where(
-				`id IN (SELECT c.participant_id FROM consent c JOIN consent_clause cc ON c.clause_id = cc.id WHERE cc.clause_type_code = ? AND c.status_code IN ?)`,
-				cf.clauseType, cf.statuses,
-			)
+			query = query.Scopes(WithConsentFilter(cf.clauseType, cf.statuses))
 		}
 	}
 
 	// Filter by external system names (OR: participant has an ID in any of the selected systems)
 	if len(params.ExternalSystems) > 0 {
-		query = query.Where(
-			`id IN (SELECT e.participant_id FROM external_id e JOIN external_system es ON e.external_system_id = es.id WHERE es.name IN ?)`,
-			params.ExternalSystems,
-		)
+		query = query.Scopes(WithExternalSystemFilter(params.ExternalSystems))
 	}
 
 	// Filter by explicit participant IDs (from bulk ID filter)

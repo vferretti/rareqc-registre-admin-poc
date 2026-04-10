@@ -1,6 +1,10 @@
 package repository
 
-import "strings"
+import (
+	"strings"
+
+	"gorm.io/gorm"
+)
 
 // searchTerm prepares a LIKE search term from user input.
 func searchTerm(input string) string {
@@ -59,6 +63,55 @@ func contactSearchSQL(alias string) (sql string, argCount int) {
 		sprintf(matchPhone, alias),
 	}
 	return strings.Join(clauses, " OR "), 5
+}
+
+// Reusable JOIN clauses.
+const (
+	joinConsentClause  = "JOIN consent_clause ON consent.clause_id = consent_clause.id"
+	joinExternalSystem = "JOIN external_system ON external_system.id = external_id.external_system_id"
+)
+
+// WithListSearch filters participants by a search term across participant fields, contacts, and external IDs.
+func WithListSearch(search string) func(*gorm.DB) *gorm.DB {
+	return func(tx *gorm.DB) *gorm.DB {
+		term := searchTerm(search)
+		pSQL, pN := participantSearchSQL("p")
+		cSQL, cN := contactSearchSQL("c")
+		return tx.Where(
+			`id IN (
+				SELECT p.id FROM participant p WHERE `+pSQL+`
+				UNION
+				SELECT c.participant_id FROM contact c WHERE `+cSQL+`
+				UNION
+				SELECT e.participant_id FROM external_id e WHERE LOWER(e.external_id) LIKE ?
+			)`,
+			repeatArg(term, pN+cN+1)...,
+		)
+	}
+}
+
+// WithConsentFilter filters participants who have a consent of the given clause type with one of the given statuses.
+func WithConsentFilter(clauseType string, statuses []string) func(*gorm.DB) *gorm.DB {
+	return func(tx *gorm.DB) *gorm.DB {
+		return tx.Where(
+			`id IN (SELECT c.participant_id FROM consent c
+				JOIN consent_clause cc ON c.clause_id = cc.id
+				WHERE cc.clause_type_code = ? AND c.status_code IN ?)`,
+			clauseType, statuses,
+		)
+	}
+}
+
+// WithExternalSystemFilter filters participants who have an external ID in one of the given systems.
+func WithExternalSystemFilter(systems []string) func(*gorm.DB) *gorm.DB {
+	return func(tx *gorm.DB) *gorm.DB {
+		return tx.Where(
+			`id IN (SELECT e.participant_id FROM external_id e
+				JOIN external_system es ON e.external_system_id = es.id
+				WHERE es.name IN ?)`,
+			systems,
+		)
+	}
 }
 
 // sprintf is a simple formatter that replaces %s with args.

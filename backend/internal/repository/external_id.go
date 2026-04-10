@@ -36,7 +36,7 @@ type ExternalIDResponse struct {
 // Also returns the list of external IDs that were not found.
 func (r *ExternalIDRepository) ResolveBySystem(systemName string, ids []string) ([]int, []string) {
 	var extIDs []types.ExternalID
-	r.db.Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+	r.db.Joins(joinExternalSystem).
 		Where("external_system.name = ? AND external_id.external_id IN ?", systemName, ids).
 		Find(&extIDs)
 
@@ -60,7 +60,7 @@ func (r *ExternalIDRepository) ResolveBySystem(systemName string, ids []string) 
 func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalIDResponse, error) {
 	var extIDs []types.ExternalID
 	err := r.db.Preload("ExternalSystem").
-		Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+		Joins(joinExternalSystem).
 		Where("participant_id = ?", participantID).
 		Order("external_system.name ASC").
 		Find(&extIDs).Error
@@ -93,7 +93,7 @@ type ExternalIDExportRow struct {
 func (r *ExternalIDRepository) ListByParticipantIDs(participantIDs []int) ([]ExternalIDExportRow, error) {
 	var extIDs []types.ExternalID
 	err := r.db.Preload("ExternalSystem").
-		Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+		Joins(joinExternalSystem).
 		Where("participant_id IN ?", participantIDs).
 		Order("participant_id ASC, external_system.name ASC").
 		Find(&extIDs).Error
