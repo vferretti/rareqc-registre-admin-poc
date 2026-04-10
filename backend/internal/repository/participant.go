@@ -2,7 +2,6 @@ package repository
 
 import (
 	"math"
-	"strings"
 
 	"gorm.io/gorm"
 	"registre-admin/internal/types"
@@ -73,21 +72,18 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]Participa
 	query := r.db.Model(&types.Participant{})
 
 	if params.Search != "" {
-		term := "%" + strings.ToLower(params.Search) + "%"
+		term := searchTerm(params.Search)
+		pSQL, pN := participantSearchSQL("p")
+		cSQL, cN := contactSearchSQL("c")
 		query = query.Where(
 			`id IN (
-				SELECT p.id FROM participant p
-				WHERE CAST(p.id AS TEXT) LIKE ? OR LOWER(immutable_unaccent(p.first_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(p.last_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(p.first_name || ' ' || p.last_name)) LIKE immutable_unaccent(?) OR REPLACE(LOWER(COALESCE(p.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '')
+				SELECT p.id FROM participant p WHERE `+pSQL+`
 				UNION
-				SELECT c.participant_id FROM contact c
-				WHERE LOWER(immutable_unaccent(c.first_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(c.last_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(c.first_name || ' ' || c.last_name)) LIKE immutable_unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
+				SELECT c.participant_id FROM contact c WHERE `+cSQL+`
 				UNION
-				SELECT e.participant_id FROM external_id e
-				WHERE LOWER(e.external_id) LIKE ?
+				SELECT e.participant_id FROM external_id e WHERE LOWER(e.external_id) LIKE ?
 			)`,
-			term, term, term, term, term,
-			term, term, term, term, term,
-			term,
+			repeatArg(term, pN+cN+1)...,
 		)
 	}
 

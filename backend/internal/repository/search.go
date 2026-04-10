@@ -33,17 +33,17 @@ type SearchSuggestion struct {
 
 // Search returns up to 10 suggestions matching a query across participants and contact.
 func (r *SearchRepository) Search(q string) []SearchSuggestion {
-	like := fmt.Sprintf("%%%s%%", strings.ToLower(q))
+	like := searchTerm(q)
 	var suggestions []SearchSuggestion
 
 	// Search by participant name, RAMQ, or self-contact phone/email
+	pSQL, pN := participantSearchSQL("participant")
+	cExtra := sprintf(matchEmail, "contact") + " OR " + sprintf(matchPhone, "contact")
 	var participants []types.Participant
 	r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
-		Where(
-			"CAST(participant.id AS TEXT) LIKE ? OR lower(immutable_unaccent(participant.first_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(participant.last_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(participant.first_name || ' ' || participant.last_name)) LIKE immutable_unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
-			like, like, like, like, like, like, like,
-		).Limit(10).Find(&participants)
+		Where(pSQL+" OR "+cExtra, repeatArg(like, pN+2)...).
+		Limit(10).Find(&participants)
 
 	// Deduplicate across all search sources
 	seen := make(map[int]bool)
@@ -81,11 +81,11 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	}
 
 	// Search by contact name, email, or phone (non-self contacts)
+	cSQL, cN := contactSearchSQL("contact")
 	var contacts []types.Contact
-	r.db.Preload("Participant").Where(
-		"relationship_code != 'self' AND (lower(immutable_unaccent(first_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(last_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(first_name || ' ' || last_name)) LIKE immutable_unaccent(?) OR lower(email) LIKE ? OR phone LIKE ?)",
-		like, like, like, like, like,
-	).Limit(10).Find(&contacts)
+	r.db.Preload("Participant").
+		Where("relationship_code != 'self' AND ("+cSQL+")", repeatArg(like, cN)...).
+		Limit(10).Find(&contacts)
 
 	for _, ct := range contacts {
 		if seen[ct.ParticipantID] {
