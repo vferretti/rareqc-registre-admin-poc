@@ -17,6 +17,15 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+	// Create IMMUTABLE wrapper for unaccent (required for use in index expressions)
+	if err := db.Exec(`
+		CREATE OR REPLACE FUNCTION immutable_unaccent(text) RETURNS text AS $$
+			SELECT unaccent('unaccent', $1)
+		$$ LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+	`).Error; err != nil {
+		return err
+	}
+
 	// Migrate reference tables first (they are FK targets)
 	if err := db.AutoMigrate(
 		&types.SexAtBirth{},
@@ -89,11 +98,11 @@ func AutoMigrate(db *gorm.DB) error {
 
 	// GIN trigram indexes for search (LIKE '%...%' with unaccent)
 	searchIndexes := []string{
-		"CREATE INDEX IF NOT EXISTS idx_participant_first_name_trgm ON participant USING gin (lower(unaccent(first_name)) gin_trgm_ops)",
-		"CREATE INDEX IF NOT EXISTS idx_participant_last_name_trgm ON participant USING gin (lower(unaccent(last_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_participant_first_name_trgm ON participant USING gin (lower(immutable_unaccent(first_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_participant_last_name_trgm ON participant USING gin (lower(immutable_unaccent(last_name)) gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_participant_ramq_trgm ON participant USING gin (lower(coalesce(ramq, '')) gin_trgm_ops)",
-		"CREATE INDEX IF NOT EXISTS idx_contact_first_name_trgm ON contact USING gin (lower(unaccent(first_name)) gin_trgm_ops)",
-		"CREATE INDEX IF NOT EXISTS idx_contact_last_name_trgm ON contact USING gin (lower(unaccent(last_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_first_name_trgm ON contact USING gin (lower(immutable_unaccent(first_name)) gin_trgm_ops)",
+		"CREATE INDEX IF NOT EXISTS idx_contact_last_name_trgm ON contact USING gin (lower(immutable_unaccent(last_name)) gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_contact_email_trgm ON contact USING gin (lower(email) gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_contact_phone_trgm ON contact USING gin (phone gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_guid_basic ON guid (guid_basic)",

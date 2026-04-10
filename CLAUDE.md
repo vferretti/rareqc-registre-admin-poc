@@ -153,4 +153,3 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 
 ### Frontend
 - [ ] **F12** Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal
-- [ ] Bug: lignes du Panier plus hautes que dans la table Participants (même `DataTable`, mêmes styles computed — font-size 14px, line-height 20px, padding 8px). Le contenu fait 21px dans Participants vs 32px dans le Panier, sur TOUTES les colonnes. Piste : la table Participants a `columnResizeMode` actif qui force TanStack à mettre des `style={{ width }}` inline sur le `<table>` et les cellules — ça pourrait contraindre la hauteur. Tester en ajoutant `columnResizeMode: "onChange"` au `useReactTable` du Panier. Déjà tenté mais pas retesté après le refactoring DataTable.

@@ -488,6 +488,7 @@
     "date_to": "End date",
     "filter_action_type": "Action type",
     "all_actions": "All actions",
+    "export": "Export to Excel",
     "empty": "No activity recorded",
     "participant_section_title": "History",
     "show_more": "Show more",

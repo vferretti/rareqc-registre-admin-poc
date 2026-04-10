@@ -41,7 +41,7 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
 		Where(
-			"CAST(participant.id AS TEXT) LIKE ? OR unaccent(lower(participant.first_name)) LIKE unaccent(?) OR unaccent(lower(participant.last_name)) LIKE unaccent(?) OR unaccent(lower(participant.first_name || ' ' || participant.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
+			"CAST(participant.id AS TEXT) LIKE ? OR lower(immutable_unaccent(participant.first_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(participant.last_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(participant.first_name || ' ' || participant.last_name)) LIKE immutable_unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
 			like, like, like, like, like, like, like,
 		).Limit(10).Find(&participants)
 
@@ -83,7 +83,7 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	// Search by contact name, email, or phone (non-self contacts)
 	var contacts []types.Contact
 	r.db.Preload("Participant").Where(
-		"relationship_code != 'self' AND (unaccent(lower(first_name)) LIKE unaccent(?) OR unaccent(lower(last_name)) LIKE unaccent(?) OR unaccent(lower(first_name || ' ' || last_name)) LIKE unaccent(?) OR lower(email) LIKE ? OR phone LIKE ?)",
+		"relationship_code != 'self' AND (lower(immutable_unaccent(first_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(last_name)) LIKE immutable_unaccent(?) OR lower(immutable_unaccent(first_name || ' ' || last_name)) LIKE immutable_unaccent(?) OR lower(email) LIKE ? OR phone LIKE ?)",
 		like, like, like, like, like,
 	).Limit(10).Find(&contacts)
 

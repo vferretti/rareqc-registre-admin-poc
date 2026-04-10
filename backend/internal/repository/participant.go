@@ -77,10 +77,10 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]Participa
 		query = query.Where(
 			`id IN (
 				SELECT p.id FROM participant p
-				WHERE CAST(p.id AS TEXT) LIKE ? OR LOWER(unaccent(p.first_name)) LIKE unaccent(?) OR LOWER(unaccent(p.last_name)) LIKE unaccent(?) OR LOWER(unaccent(p.first_name || ' ' || p.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(p.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '')
+				WHERE CAST(p.id AS TEXT) LIKE ? OR LOWER(immutable_unaccent(p.first_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(p.last_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(p.first_name || ' ' || p.last_name)) LIKE immutable_unaccent(?) OR REPLACE(LOWER(COALESCE(p.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '')
 				UNION
 				SELECT c.participant_id FROM contact c
-				WHERE LOWER(unaccent(c.first_name)) LIKE unaccent(?) OR LOWER(unaccent(c.last_name)) LIKE unaccent(?) OR LOWER(unaccent(c.first_name || ' ' || c.last_name)) LIKE unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
+				WHERE LOWER(immutable_unaccent(c.first_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(c.last_name)) LIKE immutable_unaccent(?) OR LOWER(immutable_unaccent(c.first_name || ' ' || c.last_name)) LIKE immutable_unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
 				UNION
 				SELECT e.participant_id FROM external_id e
 				WHERE LOWER(e.external_id) LIKE ?

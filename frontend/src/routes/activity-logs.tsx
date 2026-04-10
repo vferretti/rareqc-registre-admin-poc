@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import ExcelJS from "exceljs";
 import { translateDetails } from "@/lib/translate-details";
 import {
   type ColumnDef,
@@ -59,6 +60,7 @@ export default function ActivityLogs() {
     right: [],
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const [isExporting, setIsExporting] = useState(false);
   const [search, setSearch] = useState("");
   const [actionTypes, setActionTypes] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
@@ -80,6 +82,17 @@ export default function ActivityLogs() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
+
+  const columnLabels = useMemo(
+    () => ({
+      created_at: t("activity_log.columns.date"),
+      author: t("activity_log.columns.author"),
+      action_type_code: t("activity_log.columns.action"),
+      participant_name: t("activity_log.columns.participant"),
+      details: t("activity_log.columns.details"),
+    }),
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<ActivityLog>[]>(
     () => [
@@ -198,6 +211,43 @@ export default function ActivityLogs() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet(t("activity_log.title"));
+      ws.addRow([
+        t("activity_log.columns.date"),
+        t("activity_log.columns.author"),
+        t("activity_log.columns.action"),
+        t("activity_log.columns.participant"),
+        t("activity_log.columns.details"),
+      ]);
+      for (const log of logs) {
+        ws.addRow([
+          log.created_at ? new Date(log.created_at).toLocaleString(lang) : "",
+          log.author ?? "",
+          enumLabel(enums?.action_type, log.action_type_code, lang),
+          log.participant_name ?? "",
+          log.details ? translateDetails(log.details, enums, lang) : "",
+        ]);
+      }
+      ws.getRow(1).font = { bold: true };
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `activity_log_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -297,26 +347,19 @@ export default function ActivityLogs() {
             <p className="text-destructive mb-4">{t("common.error")}</p>
           )}
           <div className={cn("transition-opacity", isLoading && "opacity-50")}>
-            <div className="text-sm text-muted-foreground mb-1">
-              {t("pagination.results", {
-                from:
-                  total > 0
-                    ? (
-                        pagination.pageIndex * pagination.pageSize +
-                        1
-                      ).toLocaleString(i18n.language)
-                    : "0",
-                to: Math.min(
-                  (pagination.pageIndex + 1) * pagination.pageSize,
-                  total,
-                ).toLocaleString(i18n.language),
-                total: total.toLocaleString(i18n.language),
-              })}
-            </div>
             <DataTable
               table={table}
               isLoading={isLoading}
               emptyMessage={t("activity_log.empty")}
+              columnLabels={columnLabels}
+              enableFullscreen
+              enableExport
+              onExport={handleExport}
+              exportDisabled={isExporting || total === 0}
+              exportTitle={t("activity_log.export")}
+              total={total}
+              pageIndex={pagination.pageIndex}
+              pageSize={pagination.pageSize}
             />
             <PaginationBar
               page={pagination.pageIndex + 1}

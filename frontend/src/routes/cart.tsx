@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Download, FileSpreadsheet, ShoppingCart, Trash2 } from "lucide-react";
+import { FileSpreadsheet, ShoppingCart, Trash2 } from "lucide-react";
 import ExcelJS from "exceljs";
 import {
   type ColumnDef,
@@ -52,6 +52,18 @@ export default function Cart() {
         String(item.participant_id).includes(q),
     );
   }, [items, search]);
+
+  const columnLabels = useMemo(
+    () => ({
+      participant_id: t("cart.columns.id"),
+      last_name: t("cart.columns.last_name"),
+      first_name: t("cart.columns.first_name"),
+      date_of_birth: t("cart.columns.date_of_birth"),
+      sex_at_birth_code: t("cart.columns.sex_at_birth"),
+      ramq: t("cart.columns.ramq"),
+    }),
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<CartItem>[]>(
     () => [
@@ -164,23 +176,35 @@ export default function Cart() {
       {
         id: "actions",
         size: 60,
+        header: () => (
+          <button
+            type="button"
+            className="flex items-center justify-center w-full cursor-pointer"
+            onClick={() => clearCart()}
+          >
+            <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
+          </button>
+        ),
         cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="icon-sm"
+          <button
+            type="button"
+            className="flex items-center justify-center w-full cursor-pointer"
             onClick={() => removeParticipants([row.original.participant_id])}
           >
             <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
-          </Button>
+          </button>
         ),
       },
     ],
-    [t, removeParticipants],
+    [t, removeParticipants, clearCart],
   );
 
   const table = useReactTable({
     data: filteredItems,
     columns,
+    columnResizeMode: "onChange",
+    columnResizeDirection: "ltr",
+    enableColumnResizing: true,
     state: { sorting, pagination },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
@@ -253,13 +277,22 @@ export default function Cart() {
               value={search}
               onChange={setSearch}
               placeholder={t("cart.search_placeholder")}
-              className="mb-4 max-w-2xl"
+              className="mb-6 max-w-2xl"
             />
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-sm text-muted-foreground">
-                {t("cart.item_count", { count: items.length })}
-              </span>
-              <div className="flex gap-2">
+            <DataTable
+              table={table}
+              isLoading={isLoading}
+              emptyMessage={t("common.noResults")}
+              columnLabels={columnLabels}
+              enableFullscreen
+              enableExport
+              onExport={handleExport}
+              exportDisabled={items.length === 0}
+              exportTitle={t("cart.export")}
+              total={filteredItems.length}
+              pageIndex={pagination.pageIndex}
+              pageSize={pagination.pageSize}
+              toolbarActions={
                 <Button
                   variant="outline"
                   size="sm"
@@ -269,30 +302,7 @@ export default function Cart() {
                   <FileSpreadsheet className="size-4 mr-1" />
                   {t("cart.excel_report")}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExport}
-                  disabled={items.length === 0}
-                >
-                  <Download className="size-4 mr-1" />
-                  {t("cart.export")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => clearCart()}
-                  disabled={items.length === 0}
-                >
-                  <Trash2 className="size-4 mr-1" />
-                  {t("cart.clear")}
-                </Button>
-              </div>
-            </div>
-            <DataTable
-              table={table}
-              isLoading={isLoading}
-              emptyMessage={t("common.noResults")}
+              }
             />
             <PaginationBar
               page={pagination.pageIndex + 1}
