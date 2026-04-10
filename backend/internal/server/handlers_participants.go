@@ -95,7 +95,7 @@ type resolveIDsResponse struct {
 // @Param       sort_field query string false "Sort field"             default(last_name)
 // @Param       sort_order query string false "Sort order (asc/desc)" default(asc)
 // @Param       search     query string false "Search term (name, RAMQ, etc.)"
-// @Success     200 {object} types.PaginatedResponse[types.Participant]
+// @Success     200 {object} types.PaginatedResponse[repository.ParticipantListItem]
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants [get]
 func ListParticipantsHandler(repo repository.ParticipantDAO) gin.HandlerFunc {

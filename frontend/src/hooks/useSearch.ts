@@ -1,13 +1,8 @@
 import useSWR from "swr";
 import api from "@/lib/api";
+import type { SearchSuggestion } from "../../api/api";
 
-/** A single search suggestion returned by the API. */
-export interface SearchSuggestion {
-  participant_id: number;
-  participant_name: string;
-  match_field: string;
-  match_value: string;
-}
+export type { SearchSuggestion };
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 

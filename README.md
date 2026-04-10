@@ -205,7 +205,9 @@ backend/
 │   │   ├── handlers_reports.go        # Statistiques agrégées
 │   │   └── activity.go                # Helper getAuthor
 │   └── types/                         # Modèles GORM + DTOs
-├── scripts/seed/                      # Données de test (200 participants)
+├── scripts/
+│   ├── openapi/generate.go            # Génère la spec Swagger + nettoie les préfixes
+│   └── seed/                          # Données de test (200 participants)
 └── Dockerfile                         # Multi-stage build (api + seed)
 ```
 
@@ -372,9 +374,23 @@ cd frontend && npm run lint
 # Formater le code frontend
 cd frontend && npm run format
 
-# Régénérer la documentation Swagger
-cd backend && swag init -g cmd/api/main.go --parseDependency --parseInternal
+# Régénérer la spec Swagger + client TypeScript (tout-en-un)
+make generate
+
+# Ou séparément :
+make doc                         # Swagger seulement (backend/docs/)
+make generate-client-typescript  # Client TypeScript seulement (frontend/api/)
 ```
+
+### Client API généré
+
+Le frontend utilise un client TypeScript auto-généré depuis la spec Swagger (même pipeline que radiant-portal) :
+
+```
+Annotations Go (swag) → swagger.yaml → openapi-generator (typescript-axios) → frontend/api/
+```
+
+Après tout changement à l'API backend (nouveaux endpoints, types modifiés), exécuter `make generate` pour mettre à jour le client frontend. Les types manuels dans `src/types/` sont des barrels de ré-export depuis le client généré.
 
 ## Variables d'environnement
 

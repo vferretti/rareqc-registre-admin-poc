@@ -15,6 +15,18 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ConsentTemplateResponse is a consent template document with a flag indicating if it has signed consents.
+type ConsentTemplateResponse struct {
+	types.Document
+	HasConsents bool `json:"has_consents"`
+}
+
+// ConsentTemplateUpdateResponse is returned after updating a consent template.
+type ConsentTemplateUpdateResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 // ListParticipantConsentsHandler returns all consents for a participant.
 //
 // @Summary     List consents for a participant
@@ -22,7 +34,7 @@ import (
 // @Tags        consents
 // @Produce     json
 // @Param       id path int true "Participant ID"
-// @Success     200 {array}  types.Consent
+// @Success     200 {array}  repository.ConsentResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/consents [get]
@@ -78,14 +90,10 @@ func ListConsentClausesHandler(consentRepo repository.ConsentDAO) gin.HandlerFun
 // @Description Returns all consent template documents
 // @Tags        consents
 // @Produce     json
-// @Success     200 {array}  types.Document
+// @Success     200 {array}  ConsentTemplateResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consent-templates [get]
 func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
-	type templateResponse struct {
-		types.Document
-		HasConsents bool `json:"has_consents"`
-	}
 	return func(c *gin.Context) {
 		templates, err := consentRepo.ListConsentTemplates()
 		if err != nil {
@@ -94,9 +102,9 @@ func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerF
 		}
 		// Batch load which templates have consents (one query instead of N)
 		withConsents, _ := consentRepo.TemplateIDsWithConsents()
-		results := make([]templateResponse, len(templates))
+		results := make([]ConsentTemplateResponse, len(templates))
 		for i, tpl := range templates {
-			results[i] = templateResponse{Document: tpl, HasConsents: withConsents[tpl.ID]}
+			results[i] = ConsentTemplateResponse{Document: tpl, HasConsents: withConsents[tpl.ID]}
 		}
 		c.JSON(http.StatusOK, results)
 	}
@@ -449,7 +457,7 @@ func DeleteConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 // @Param       name    formData string true  "Template display name"
 // @Param       clauses formData string true  "JSON array of clauses"
 // @Param       file    formData file   false "PDF file (optional)"
-// @Success     200 {object} types.Document
+// @Success     200 {object} ConsentTemplateUpdateResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
@@ -525,6 +533,6 @@ func UpdateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"id": id, "name": name})
+		c.JSON(http.StatusOK, ConsentTemplateUpdateResponse{ID: id, Name: name})
 	}
 }

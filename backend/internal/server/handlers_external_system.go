@@ -76,7 +76,7 @@ func CreateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerF
 // @Produce     json
 // @Param       id   path int true "External system ID"
 // @Param       body body ExternalSystemRequest true "Updated external system"
-// @Success     200
+// @Success     200 {object} object{status=string}
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Router      /external-systems/{id} [put]
