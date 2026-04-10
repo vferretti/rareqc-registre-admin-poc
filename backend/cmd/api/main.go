@@ -21,8 +21,8 @@ func main() {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 
-	if err := database.AutoMigrate(pgDB); err != nil {
-		log.Fatalf("failed to auto-migrate: %v", err)
+	if err := database.Migrate(); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
 	}
 
 	r := server.SetupRouter(pgDB)

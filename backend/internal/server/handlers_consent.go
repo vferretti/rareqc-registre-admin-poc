@@ -92,10 +92,11 @@ func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerF
 			handleInternalError(c, "Failed to fetch templates")
 			return
 		}
+		// Batch load which templates have consents (one query instead of N)
+		withConsents, _ := consentRepo.TemplateIDsWithConsents()
 		results := make([]templateResponse, len(templates))
 		for i, tpl := range templates {
-			has, _ := consentRepo.HasConsentsForTemplate(tpl.ID)
-			results[i] = templateResponse{Document: tpl, HasConsents: has}
+			results[i] = templateResponse{Document: tpl, HasConsents: withConsents[tpl.ID]}
 		}
 		c.JSON(http.StatusOK, results)
 	}
@@ -261,25 +262,31 @@ func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo reposi
 				// Business rule: if registry consent is withdrawn or expired, cascade to all other clauses
 				clauseType, _ := consentRepo.ClauseTypeForClause(consent.ClauseID)
 				if clauseType == "registry" && (req.StatusCode == "withdrawn" || req.StatusCode == "expired") {
-					// Cascade: update all non-registry consents for this participant
+					// Cascade: find all non-registry consents (with Clause preloaded)
 					var consents []types.Consent
 					if err := tx.
+						Preload("Clause").
 						Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
 						Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
 							consent.ParticipantID, "registry", req.StatusCode).
 						Find(&consents).Error; err != nil {
 						return err
 					}
-					for _, cs := range consents {
-						cs.StatusCode = req.StatusCode
-						cs.Date = date
-						if err := tx.Save(&cs).Error; err != nil {
+					if len(consents) > 0 {
+						// Batch update all cascaded consents in one query
+						ids := make([]int, len(consents))
+						for i, cs := range consents {
+							ids[i] = cs.ID
+						}
+						if err := tx.Model(&types.Consent{}).Where("id IN ?", ids).
+							Updates(map[string]interface{}{"status_code": req.StatusCode, "date": date}).Error; err != nil {
 							return err
 						}
-						var clause types.ConsentClause
-						tx.Select("clause_type_code").First(&clause, cs.ClauseID)
-						d := fmt.Sprintf("%s — %s → %s (registre %s)", clause.ClauseTypeCode, oldStatus, req.StatusCode, req.StatusCode)
-						_ = activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &d)
+						// Record activity for each cascaded consent
+						for _, cs := range consents {
+							d := fmt.Sprintf("%s — %s → %s (registre %s)", cs.Clause.ClauseTypeCode, oldStatus, req.StatusCode, req.StatusCode)
+							_ = activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &d)
+						}
 					}
 				}
 			}

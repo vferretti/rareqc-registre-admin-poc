@@ -14,7 +14,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - Layers: `database` → `repository` (DAO interfaces) → `server` (Gin handlers) → `types`
 - Handler files: `handlers_<domain>.go` (e.g., `handlers_patients.go`)
 - GORM models go in `internal/types/`
-- Migrations: GORM AutoMigrate in `internal/database/migrate.go`
+- Migrations: `golang-migrate` with versioned SQL files in `backend/migrations/`
 - Swagger annotations on handler functions, generated via `swag init`
 - Table names are **singular** in PostgreSQL (e.g., `participant`, `contact`, `consent`)
 - Business constants (sex_at_birth, vital_status, relationship, etc.) come from PostgreSQL reference tables, not hardcoded in frontend. Exception: provinces can stay in the frontend.
@@ -141,15 +141,15 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 ### Backend
 - [ ] **B1** Auth JWT (Keycloak) — remplacer `fakeUserID` et `X-Author`
 - [ ] **B2** CORS — env var au lieu de `*`
-- [ ] **B3** Connection pool PostgreSQL (`MaxOpenConns`, `MaxIdleConns`)
+- [x] **B3** ~~Connection pool PostgreSQL (`MaxOpenConns`, `MaxIdleConns`)~~
 - [ ] **B4** Graceful shutdown (`http.Server` + `signal.Notify`)
 - [ ] **B5** Config par env vars (port, DB creds, SSL) — refuser de démarrer si manquant
-- [ ] **B7** Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)
-- [ ] **B13** Health check qui ping la DB
+- [x] **B7** ~~Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)~~
+- [x] **B13** ~~Health check qui ping la DB~~
 - [ ] **B14** Tests unitaires (DAO interfaces déjà en place)
 - [ ] **B15** Validation d'entrée (binding tags required, formats)
-- [ ] **B16** Corriger les N+1 queries (templates, code tables, external systems)
+- [x] **B16** ~~Corriger les N+1 queries (templates, code tables, external systems)~~
 - [ ] **B17** Logging structuré
 
 ### Frontend
-- [ ] **F12** Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal
+- [x] **F12** ~~Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal~~

@@ -20,6 +20,7 @@ type ConsentDAO interface {
 	ListConsentTemplates() ([]types.Document, error)
 	CreateTemplate(doc *types.Document, fileData []byte, clauses []types.ConsentClause) error
 	HasConsentsForTemplate(templateDocID int) (bool, error)
+	TemplateIDsWithConsents() (map[int]bool, error)
 	DeleteTemplate(templateDocID int) error
 	UpdateTemplate(templateDocID int, name string, fileData []byte, clauses []types.ConsentClause) error
 	CascadeRegistryStatus(participantID int, statusCode string, date time.Time) ([]string, error)
@@ -160,6 +161,20 @@ func (r *ConsentRepository) HasConsentsForTemplate(templateDocID int) (bool, err
 	return count > 0, err
 }
 
+// TemplateIDsWithConsents returns a set of template document IDs that have at least one consent.
+func (r *ConsentRepository) TemplateIDsWithConsents() (map[int]bool, error) {
+	var ids []int
+	err := r.db.Model(&types.Consent{}).
+		Joins(joinConsentClause).
+		Distinct("consent_clause.template_document_id").
+		Pluck("consent_clause.template_document_id", &ids).Error
+	result := make(map[int]bool, len(ids))
+	for _, id := range ids {
+		result[id] = true
+	}
+	return result, err
+}
+
 // DeleteTemplate deletes a consent template, its clauses, and the document file.
 func (r *ConsentRepository) DeleteTemplate(templateDocID int) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
@@ -218,6 +233,7 @@ func (r *ConsentRepository) UpdateTemplate(templateDocID int, name string, fileD
 func (r *ConsentRepository) CascadeRegistryStatus(participantID int, statusCode string, date time.Time) ([]string, error) {
 	var consents []types.Consent
 	err := r.db.
+		Preload("Clause").
 		Joins(joinConsentClause).
 		Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
 			participantID, "registry", statusCode).
@@ -225,19 +241,23 @@ func (r *ConsentRepository) CascadeRegistryStatus(participantID int, statusCode 
 	if err != nil {
 		return nil, err
 	}
-
-	var updated []string
-	for _, c := range consents {
-		c.StatusCode = statusCode
-		c.Date = date
-		if err := r.db.Save(&c).Error; err != nil {
-			return nil, err
-		}
-		var clause types.ConsentClause
-		r.db.Select("clause_type_code").First(&clause, c.ClauseID)
-		updated = append(updated, clause.ClauseTypeCode)
+	if len(consents) == 0 {
+		return nil, nil
 	}
-	return updated, nil
+
+	// Batch update all consents in one query
+	ids := make([]int, len(consents))
+	clauseTypes := make([]string, len(consents))
+	for i, c := range consents {
+		ids[i] = c.ID
+		clauseTypes[i] = c.Clause.ClauseTypeCode
+	}
+	if err := r.db.Model(&types.Consent{}).Where("id IN ?", ids).
+		Updates(map[string]interface{}{"status_code": statusCode, "date": date}).Error; err != nil {
+		return nil, err
+	}
+
+	return clauseTypes, nil
 }
 
 // ListByParticipant returns all consents for a participant with clause and signer details.

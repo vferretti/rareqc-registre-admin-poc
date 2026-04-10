@@ -36,17 +36,10 @@ func ListCodeTablesHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 				return
 			}
 
-			// Determine which codes are referenced
-			referenced := make([]string, 0)
-			for _, e := range entries {
-				used, err := repo.IsReferenced(table, e.Code)
-				if err != nil {
-					// Skip if FK table doesn't exist yet (e.g. pending migration)
-					break
-				}
-				if used {
-					referenced = append(referenced, e.Code)
-				}
+			// Determine which codes are referenced (one query per table)
+			referenced, _ := repo.ListReferencedCodes(table)
+			if referenced == nil {
+				referenced = []string{}
 			}
 
 			result = append(result, CodeTableListResponse{

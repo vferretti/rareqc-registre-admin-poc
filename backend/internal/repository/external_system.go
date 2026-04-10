@@ -32,21 +32,26 @@ type ExternalSystemResponse struct {
 }
 
 // List returns all external systems ordered by name, with their reference status.
+// Uses a single query to determine which systems are referenced.
 func (r *ExternalSystemRepository) List() ([]ExternalSystemResponse, error) {
 	var systems []types.ExternalSystem
 	if err := r.db.Order("name").Find(&systems).Error; err != nil {
 		return nil, err
 	}
 
+	// Batch load all referenced system IDs in one query
+	var referencedIDs []int
+	r.db.Model(&types.ExternalID{}).Distinct("external_system_id").Pluck("external_system_id", &referencedIDs)
+	refSet := make(map[int]bool, len(referencedIDs))
+	for _, id := range referencedIDs {
+		refSet[id] = true
+	}
+
 	result := make([]ExternalSystemResponse, len(systems))
 	for i, s := range systems {
-		referenced, err := r.isReferenced(s.ID)
-		if err != nil {
-			return nil, err
-		}
 		result[i] = ExternalSystemResponse{
 			ExternalSystem: s,
-			IsReferenced:   referenced,
+			IsReferenced:   refSet[s.ID],
 		}
 	}
 	return result, nil

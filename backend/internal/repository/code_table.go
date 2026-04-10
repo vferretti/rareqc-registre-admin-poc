@@ -56,6 +56,7 @@ type CodeTableDAO interface {
 	Update(table, code string, entry *CodeEntry) error
 	Delete(table, code string) error
 	IsReferenced(table, code string) (bool, error)
+	ListReferencedCodes(table string) ([]string, error)
 	LoadAllEnums() (EnumsData, error)
 }
 
@@ -165,6 +166,20 @@ func (r *CodeTableRepository) IsReferenced(table, code string) (bool, error) {
 	var count int64
 	err = r.db.Table(meta.FKTable).Where(fmt.Sprintf("%s = ?", meta.FKColumn), code).Count(&count).Error
 	return count > 0, err
+}
+
+// ListReferencedCodes returns all codes in a reference table that are used in its FK domain table.
+func (r *CodeTableRepository) ListReferencedCodes(table string) ([]string, error) {
+	meta, err := findMeta(table)
+	if err != nil {
+		return nil, err
+	}
+	var codes []string
+	err = r.db.Table(meta.FKTable).
+		Distinct(meta.FKColumn).
+		Where(fmt.Sprintf("%s IS NOT NULL", meta.FKColumn)).
+		Pluck(meta.FKColumn, &codes).Error
+	return codes, err
 }
 
 // LoadAllEnums returns all reference data ordered by code.
