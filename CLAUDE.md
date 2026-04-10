@@ -147,7 +147,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [x] **B7** ~~Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)~~
 - [x] **B13** ~~Health check qui ping la DB~~
 - [ ] **B14** Tests unitaires (DAO interfaces déjà en place)
-- [ ] **B15** Validation d'entrée (binding tags required, formats)
+- [x] **B15** ~~Validation d'entrée (binding tags required, formats, upload 10 MB)~~
 - [x] **B16** ~~Corriger les N+1 queries (templates, code tables, external systems)~~
 - [ ] **B17** Logging structuré
 

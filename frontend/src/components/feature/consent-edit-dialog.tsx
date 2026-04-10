@@ -58,9 +58,13 @@ export function ConsentEditDialog({
   const [date, setDate] = useState("");
   const [signedById, setSignedById] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [existingDocId, setExistingDocId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  /** Maximum file size: 10 MB. */
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
   const selfContact = contacts.find((c) => c.relationship_code === "self");
   const nonSelfContacts = contacts.filter(
@@ -82,6 +86,7 @@ export function ConsentEditDialog({
   const handleOpenChange = (value: boolean) => {
     if (!value) {
       setFile(null);
+      setFileError(null);
       setSubmitError(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -245,6 +250,7 @@ export function ConsentEditDialog({
                   size="icon-sm"
                   onClick={() => {
                     setFile(null);
+                    setFileError(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
                   className="text-muted-foreground hover:text-destructive"
@@ -257,9 +263,21 @@ export function ConsentEditDialog({
                 type="file"
                 accept=".pdf,.doc,.docx"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const selected = e.target.files?.[0] ?? null;
+                  if (selected && selected.size > MAX_FILE_SIZE) {
+                    setFileError(t("validation.file_too_large"));
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    return;
+                  }
+                  setFileError(null);
+                  setFile(selected);
+                }}
               />
             </div>
+            {fileError && (
+              <p className="text-sm text-destructive">{fileError}</p>
+            )}
           </div>
 
           {submitError && (

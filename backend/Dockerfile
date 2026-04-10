@@ -11,6 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o bin/seed ./scripts/seed/
 FROM alpine:latest AS production
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/bin/main /main
+COPY --from=builder /app/migrations /migrations
 ENTRYPOINT ["/main"]
 
 FROM alpine:latest AS seed

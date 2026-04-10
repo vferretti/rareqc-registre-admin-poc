@@ -303,9 +303,9 @@ func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo reposi
 
 // CreateConsentTemplateClause represents a clause in the create-template request.
 type CreateConsentTemplateClause struct {
-	ClauseFr       string `json:"clause_fr"`
-	ClauseEn       string `json:"clause_en"`
-	ClauseTypeCode string `json:"clause_type_code"`
+	ClauseFr       string `json:"clause_fr" binding:"required"`
+	ClauseEn       string `json:"clause_en" binding:"required"`
+	ClauseTypeCode string `json:"clause_type_code" binding:"required"`
 }
 
 // CreateConsentTemplateHandler creates a consent template document with its clauses.
@@ -346,6 +346,12 @@ func CreateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
 			handleBadRequest(c, "file is required")
+			return
+		}
+
+		const maxUploadSize = 10 << 20 // 10 MB
+		if fileHeader.Size > maxUploadSize {
+			handleBadRequest(c, "File size exceeds 10 MB limit")
 			return
 		}
 
@@ -487,6 +493,11 @@ func UpdateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 		// Optional file replacement
 		var fileBytes []byte
 		if fileHeader, err := c.FormFile("file"); err == nil {
+			const maxUploadSize = 10 << 20 // 10 MB
+			if fileHeader.Size > maxUploadSize {
+				handleBadRequest(c, "File size exceeds 10 MB limit")
+				return
+			}
 			file, err := fileHeader.Open()
 			if err != nil {
 				handleInternalError(c, "Failed to read file")

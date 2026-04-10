@@ -498,7 +498,9 @@
   },
   "validation": {
     "required": "This field is required",
-    "ramq_format": "Invalid RAMQ format (e.g. TREG 8501 0112)"
+    "ramq_format": "Invalid RAMQ format (e.g. TREG 8501 0112)",
+    "email_format": "Invalid email format",
+    "file_too_large": "File exceeds the maximum size of 10 MB"
   },
   "pagination": {
     "results": "{{from}} – {{to}} of {{total}}",

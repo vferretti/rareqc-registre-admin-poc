@@ -44,6 +44,12 @@ func UploadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 			return
 		}
 
+		const maxUploadSize = 10 << 20 // 10 MB
+		if fileHeader.Size > maxUploadSize {
+			handleBadRequest(c, "File size exceeds 10 MB limit")
+			return
+		}
+
 		file, err := fileHeader.Open()
 		if err != nil {
 			handleInternalError(c, "Failed to read file")
