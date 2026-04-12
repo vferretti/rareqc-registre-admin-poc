@@ -24,12 +24,12 @@ func NewExternalIDRepository(db *gorm.DB) *ExternalIDRepository {
 
 // ExternalIDResponse represents an external ID with the system name for API responses.
 type ExternalIDResponse struct {
-	ID               int    `json:"id"`
-	ExternalSystemID int    `json:"external_system_id"`
-	SystemName       string `json:"system_name"`
-	SystemTitleFr    string `json:"system_title_fr"`
-	SystemTitleEn    string `json:"system_title_en"`
-	ExternalID       string `json:"external_id"`
+	ID               int    `json:"id" validate:"required"`
+	ExternalSystemID int    `json:"external_system_id" validate:"required"`
+	SystemName       string `json:"system_name" validate:"required"`
+	SystemTitleFr    string `json:"system_title_fr" validate:"required"`
+	SystemTitleEn    string `json:"system_title_en" validate:"required"`
+	ExternalID       string `json:"external_id" validate:"required"`
 }
 
 // ResolveBySystem returns participant IDs for a list of external IDs in a given system.
@@ -84,9 +84,9 @@ func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalI
 
 // ExternalIDExportRow is a lightweight row for bulk export (includes participant_id).
 type ExternalIDExportRow struct {
-	ParticipantID int    `json:"participant_id"`
-	SystemName    string `json:"system_name"`
-	ExternalID    string `json:"external_id"`
+	ParticipantID int    `json:"participant_id" validate:"required"`
+	SystemName    string `json:"system_name" validate:"required"`
+	ExternalID    string `json:"external_id" validate:"required"`
 }
 
 // ListByParticipantIDs returns external IDs for multiple participants.

@@ -11,9 +11,9 @@ import (
 
 // CodeTableListResponse represents a single code table with its entries and referenced codes.
 type CodeTableListResponse struct {
-	Table          string                   `json:"table"`
-	Entries        []repository.CodeEntry   `json:"entries"`
-	ReferencedCodes []string                `json:"referenced_codes"`
+	Table           string                 `json:"table" validate:"required"`
+	Entries         []repository.CodeEntry `json:"entries" validate:"required"`
+	ReferencedCodes []string               `json:"referenced_codes" validate:"required"`
 }
 
 // ListCodeTablesHandler returns all code tables with their entries.

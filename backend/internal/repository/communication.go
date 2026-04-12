@@ -27,25 +27,25 @@ func NewCommunicationRepository(db *gorm.DB) *CommunicationRepository {
 
 // CommunicationResponse represents a communication with flattened fields for API responses.
 type CommunicationResponse struct {
-	ID                int     `json:"id"`
-	ParticipantID     int     `json:"participant_id"`
-	ContactID         int     `json:"contact_id"`
+	ID                int     `json:"id" validate:"required"`
+	ParticipantID     int     `json:"participant_id" validate:"required"`
+	ContactID         int     `json:"contact_id" validate:"required"`
 	ContactFirstName  string  `json:"contact_first_name,omitempty"`
 	ContactLastName   string  `json:"contact_last_name,omitempty"`
 	ContactValue      *string `json:"contact_value,omitempty"`
-	MethodCode        string  `json:"method_code"`
-	MethodNameFr      string  `json:"method_name_fr"`
-	MethodNameEn      string  `json:"method_name_en"`
-	SubjectCode       string  `json:"subject_code"`
-	SubjectNameFr     string  `json:"subject_name_fr"`
-	SubjectNameEn     string  `json:"subject_name_en"`
+	MethodCode        string  `json:"method_code" validate:"required"`
+	MethodNameFr      string  `json:"method_name_fr" validate:"required"`
+	MethodNameEn      string  `json:"method_name_en" validate:"required"`
+	SubjectCode       string  `json:"subject_code" validate:"required"`
+	SubjectNameFr     string  `json:"subject_name_fr" validate:"required"`
+	SubjectNameEn     string  `json:"subject_name_en" validate:"required"`
 	OutcomeCode       *string `json:"outcome_code,omitempty"`
 	OutcomeNameFr     string  `json:"outcome_name_fr,omitempty"`
 	OutcomeNameEn     string  `json:"outcome_name_en,omitempty"`
-	CommunicationDate string  `json:"communication_date"`
-	Author            string  `json:"author"`
+	CommunicationDate string  `json:"communication_date" validate:"required"`
+	Author            string  `json:"author" validate:"required"`
 	Comment           *string `json:"comment,omitempty"`
-	CreatedAt         string  `json:"created_at"`
+	CreatedAt         string  `json:"created_at" validate:"required"`
 	UpdatedAt         string  `json:"updated_at"`
 }
 

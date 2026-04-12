@@ -27,14 +27,14 @@ func NewCartRepository(db *gorm.DB) *CartRepository {
 
 // CartItemResponse represents a cart item with participant data for API responses.
 type CartItemResponse struct {
-	ID             int     `json:"id"`
-	ParticipantID  int     `json:"participant_id"`
-	FirstName      string  `json:"first_name"`
-	LastName       string  `json:"last_name"`
+	ID             int     `json:"id" validate:"required"`
+	ParticipantID  int     `json:"participant_id" validate:"required"`
+	FirstName      string  `json:"first_name" validate:"required"`
+	LastName       string  `json:"last_name" validate:"required"`
 	RAMQ           *string `json:"ramq"`
-	DateOfBirth    string  `json:"date_of_birth"`
-	SexAtBirthCode string  `json:"sex_at_birth_code"`
-	CreatedAt      string  `json:"created_at"`
+	DateOfBirth    string  `json:"date_of_birth" validate:"required"`
+	SexAtBirthCode string  `json:"sex_at_birth_code" validate:"required"`
+	CreatedAt      string  `json:"created_at" validate:"required"`
 }
 
 // ListItems returns all cart items for a user with participant data joined.

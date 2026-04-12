@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* tslint:disable */
 /* eslint-disable */
 /**
@@ -41,199 +42,202 @@ import {
 } from "./base";
 
 export interface ActionType {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface ActivityLogResponse {
-  action_type_code?: string;
-  author?: string;
-  created_at?: string;
+  action_type_code: string;
+  author: string;
+  created_at: string;
   details?: string;
-  id?: number;
+  id: number;
   participant_id?: number;
+  /**
+   * optional: only present when participant exists
+   */
   participant_name?: string;
 }
 export interface AddCartRequest {
   participant_ids: Array<number>;
 }
 export interface AgeRangeCount {
-  count?: number;
-  range?: string;
+  count: number;
+  range: string;
 }
 export interface CartCountResponse {
-  count?: number;
+  count: number;
 }
 export interface CartExportDataResponse {
-  consents?: Array<ConsentExportRow>;
-  external_ids?: Array<ExternalIDExportRow>;
-  participants?: Array<Participant>;
+  consents: Array<ConsentExportRow>;
+  external_ids: Array<ExternalIDExportRow>;
+  participants: Array<Participant>;
 }
 export interface CartItemResponse {
-  created_at?: string;
-  date_of_birth?: string;
-  first_name?: string;
-  id?: number;
-  last_name?: string;
-  participant_id?: number;
+  created_at: string;
+  date_of_birth: string;
+  first_name: string;
+  id: number;
+  last_name: string;
+  participant_id: number;
   ramq?: string;
-  sex_at_birth_code?: string;
+  sex_at_birth_code: string;
 }
 export interface CartListResponse {
-  count?: number;
-  items?: Array<CartItemResponse>;
+  count: number;
+  items: Array<CartItemResponse>;
 }
 export interface CartMutationResponse {
-  count?: number;
-  success?: boolean;
+  count: number;
+  success: boolean;
 }
 export interface CityCount {
-  city?: string;
-  count?: number;
+  city: string;
+  count: number;
 }
 export interface ClauseType {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface CodeEntry {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface CodeTableListResponse {
-  entries?: Array<CodeEntry>;
-  referenced_codes?: Array<string>;
-  table?: string;
+  entries: Array<CodeEntry>;
+  referenced_codes: Array<string>;
+  table: string;
 }
 export interface Communication {
-  author?: string;
+  author: string;
   comment?: string;
-  communication_date?: string;
-  contact_id?: number;
+  communication_date: string;
+  contact_id: number;
   contact_value?: string;
-  created_at?: string;
-  id?: number;
-  method_code?: string;
+  created_at: string;
+  id: number;
+  method_code: string;
   outcome_code?: string;
-  participant_id?: number;
-  subject_code?: string;
-  updated_at?: string;
+  participant_id: number;
+  subject_code: string;
+  updated_at: string;
 }
 export interface CommunicationMethod {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface CommunicationResponse {
-  author?: string;
+  author: string;
   comment?: string;
-  communication_date?: string;
+  communication_date: string;
   contact_first_name?: string;
-  contact_id?: number;
+  contact_id: number;
   contact_last_name?: string;
   contact_value?: string;
-  created_at?: string;
-  id?: number;
-  method_code?: string;
-  method_name_en?: string;
-  method_name_fr?: string;
+  created_at: string;
+  id: number;
+  method_code: string;
+  method_name_en: string;
+  method_name_fr: string;
   outcome_code?: string;
   outcome_name_en?: string;
   outcome_name_fr?: string;
-  participant_id?: number;
-  subject_code?: string;
-  subject_name_en?: string;
-  subject_name_fr?: string;
+  participant_id: number;
+  subject_code: string;
+  subject_name_en: string;
+  subject_name_fr: string;
   updated_at?: string;
 }
 export interface CommunicationSubject {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface Consent {
-  clause_id?: number;
-  created_at?: string;
-  date?: string;
+  clause_id: number;
+  created_at: string;
+  date: string;
   document_id?: number;
-  id?: number;
-  participant_id?: number;
+  id: number;
+  participant_id: number;
   signed_by?: Contact;
   signed_by_id?: number;
-  status_code?: string;
-  updated_at?: string;
+  status_code: string;
+  updated_at: string;
 }
 export interface ConsentClause {
-  clause_en?: string;
-  clause_fr?: string;
-  clause_type_code?: string;
+  clause_en: string;
+  clause_fr: string;
+  clause_type_code: string;
   consents?: Array<Consent>;
-  created_at?: string;
-  id?: number;
-  template_document_id?: number;
-  updated_at?: string;
+  created_at: string;
+  id: number;
+  template_document_id: number;
+  updated_at: string;
 }
 export interface ConsentExportRow {
-  clause_type_code?: string;
-  date?: string;
-  participant_id?: number;
-  status_code?: string;
+  clause_type_code: string;
+  date: string;
+  participant_id: number;
+  status_code: string;
 }
 export interface ConsentResponse {
-  clause_en?: string;
-  clause_fr?: string;
-  clause_type_code?: string;
-  date?: string;
+  clause_en: string;
+  clause_fr: string;
+  clause_type_code: string;
+  date: string;
   document_id?: number;
   document_mime?: string;
   document_name?: string;
-  id?: number;
+  id: number;
   signed_by_id?: number;
   signed_by_name?: string;
   signed_by_relationship?: string;
-  status_code?: string;
+  status_code: string;
   template_name?: string;
 }
 export interface ConsentStatus {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface ConsentTemplateResponse {
-  created_at?: string;
-  file_name?: string;
-  file_size?: number;
-  has_consents?: boolean;
-  id?: number;
-  mime_type?: string;
-  name?: string;
-  storage_type?: string;
+  created_at: string;
+  file_name: string;
+  file_size: number;
+  has_consents: boolean;
+  id: number;
+  mime_type: string;
+  name: string;
+  storage_type: string;
   storage_url?: string;
-  type_code?: string;
-  updated_at?: string;
+  type_code: string;
+  updated_at: string;
 }
 export interface ConsentTemplateUpdateResponse {
-  id?: number;
-  name?: string;
+  id: number;
+  name: string;
 }
 export interface Contact {
-  apartment_number?: string;
-  city?: string;
-  code_postal?: string;
-  created_at?: string;
-  email?: string;
-  first_name?: string;
-  id?: number;
-  is_primary?: boolean;
-  last_name?: string;
-  participant_id?: number;
-  phone?: string;
-  preferred_language?: string;
-  province?: string;
-  relationship_code?: string;
-  street_address?: string;
-  updated_at?: string;
+  apartment_number: string;
+  city: string;
+  code_postal: string;
+  created_at: string;
+  email: string;
+  first_name: string;
+  id: number;
+  is_primary: boolean;
+  last_name: string;
+  participant_id: number;
+  phone: string;
+  preferred_language: string;
+  province: string;
+  relationship_code: string;
+  street_address: string;
+  updated_at: string;
 }
 export interface ContactsContactIdDelete200Response {
   message?: string;
@@ -314,62 +318,62 @@ export type CreateParticipantRequestPreferredLanguageEnum =
   (typeof CreateParticipantRequestPreferredLanguageEnum)[keyof typeof CreateParticipantRequestPreferredLanguageEnum];
 
 export interface Document {
-  created_at?: string;
-  file_name?: string;
-  file_size?: number;
-  id?: number;
-  mime_type?: string;
-  name?: string;
-  storage_type?: string;
+  created_at: string;
+  file_name: string;
+  file_size: number;
+  id: number;
+  mime_type: string;
+  name: string;
+  storage_type: string;
   storage_url?: string;
-  type_code?: string;
-  updated_at?: string;
+  type_code: string;
+  updated_at: string;
 }
 export interface EmailOutcome {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface EnumsData {
-  action_type?: Array<ActionType>;
-  clause_type?: Array<ClauseType>;
-  communication_methods?: Array<CommunicationMethod>;
-  communication_subjects?: Array<CommunicationSubject>;
-  consent_status?: Array<ConsentStatus>;
-  email_outcomes?: Array<EmailOutcome>;
-  phone_outcomes?: Array<PhoneOutcome>;
-  relationship?: Array<Relationship>;
-  sex_at_birth?: Array<SexAtBirth>;
-  vital_status?: Array<VitalStatus>;
+  action_type: Array<ActionType>;
+  clause_type: Array<ClauseType>;
+  communication_methods: Array<CommunicationMethod>;
+  communication_subjects: Array<CommunicationSubject>;
+  consent_status: Array<ConsentStatus>;
+  email_outcomes: Array<EmailOutcome>;
+  phone_outcomes: Array<PhoneOutcome>;
+  relationship: Array<Relationship>;
+  sex_at_birth: Array<SexAtBirth>;
+  vital_status: Array<VitalStatus>;
 }
 export interface ErrorResponse {
-  error?: string;
+  error: string;
   message?: string;
 }
 export interface ExternalIDExportRow {
-  external_id?: string;
-  participant_id?: number;
-  system_name?: string;
+  external_id: string;
+  participant_id: number;
+  system_name: string;
 }
 export interface ExternalIDResponse {
-  external_id?: string;
-  external_system_id?: number;
-  id?: number;
-  system_name?: string;
-  system_title_en?: string;
-  system_title_fr?: string;
+  external_id: string;
+  external_system_id: number;
+  id: number;
+  system_name: string;
+  system_title_en: string;
+  system_title_fr: string;
 }
 export interface ExternalSystem {
-  created_at?: string;
-  id?: number;
-  name?: string;
-  title_en?: string;
-  title_fr?: string;
-  updated_at?: string;
+  created_at: string;
+  id: number;
+  name: string;
+  title_en: string;
+  title_fr: string;
+  updated_at: string;
 }
 export interface ExternalSystemCount {
-  count?: number;
-  name?: string;
+  count: number;
+  name: string;
 }
 export interface ExternalSystemRequest {
   name: string;
@@ -377,52 +381,52 @@ export interface ExternalSystemRequest {
   title_fr: string;
 }
 export interface ExternalSystemResponse {
-  created_at?: string;
-  id?: number;
-  is_referenced?: boolean;
-  name?: string;
-  title_en?: string;
-  title_fr?: string;
-  updated_at?: string;
+  created_at: string;
+  id: number;
+  is_referenced: boolean;
+  name: string;
+  title_en: string;
+  title_fr: string;
+  updated_at: string;
 }
 export interface ExternalSystemsIdPut200Response {
   status?: string;
 }
 export interface Guid {
-  guid_basic?: string;
+  guid_basic: string;
   guid_birthplace?: string;
   guid_ramq?: string;
-  id?: number;
-  participant_id?: number;
+  id: number;
+  participant_id: number;
 }
 export interface PaginatedResponseActivityLogResponse {
-  data?: Array<ActivityLogResponse>;
-  page_index?: number;
-  page_size?: number;
-  total?: number;
-  total_pages?: number;
+  data: Array<ActivityLogResponse>;
+  page_index: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
 }
 export interface PaginatedResponseParticipantListItem {
-  data?: Array<ParticipantListItem>;
-  page_index?: number;
-  page_size?: number;
-  total?: number;
-  total_pages?: number;
+  data: Array<ParticipantListItem>;
+  page_index: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
 }
 export interface Participant {
   city_of_birth?: string;
   contacts?: Array<Contact>;
-  created_at?: string;
-  date_of_birth?: string;
+  created_at: string;
+  date_of_birth: string;
   date_of_death?: string;
-  first_name?: string;
+  first_name: string;
   guid?: Guid;
-  id?: number;
-  last_name?: string;
+  id: number;
+  last_name: string;
   ramq?: string;
-  sex_at_birth_code?: string;
-  updated_at?: string;
-  vital_status_code?: string;
+  sex_at_birth_code: string;
+  updated_at: string;
+  vital_status_code: string;
 }
 export interface ParticipantListItem {
   city_of_birth?: string;
@@ -430,67 +434,67 @@ export interface ParticipantListItem {
   consent_recontact?: string;
   consent_registry?: string;
   contacts?: Array<Contact>;
-  created_at?: string;
-  date_of_birth?: string;
+  created_at: string;
+  date_of_birth: string;
   date_of_death?: string;
-  first_name?: string;
+  first_name: string;
   guid?: Guid;
-  id?: number;
-  last_name?: string;
+  id: number;
+  last_name: string;
   ramq?: string;
-  sex_at_birth_code?: string;
-  updated_at?: string;
-  vital_status_code?: string;
+  sex_at_birth_code: string;
+  updated_at: string;
+  vital_status_code: string;
 }
 export interface PhoneOutcome {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface QuarterCount {
-  count?: number;
-  quarter?: string;
+  count: number;
+  quarter: string;
 }
 export interface Relationship {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface RemoveCartRequest {
   participant_ids: Array<number>;
 }
 export interface ReportsSummary {
-  age_distribution?: Array<AgeRangeCount>;
-  average_age?: number;
-  city_distribution?: Array<CityCount>;
-  consent_ext_linkage?: number;
-  consent_recontact?: number;
-  consent_registry?: number;
-  deceased_count?: number;
-  external_systems?: Array<ExternalSystemCount>;
-  female_count?: number;
-  growth_by_quarter?: Array<QuarterCount>;
-  male_count?: number;
-  total_participants?: number;
+  age_distribution: Array<AgeRangeCount>;
+  average_age: number;
+  city_distribution: Array<CityCount>;
+  consent_ext_linkage: number;
+  consent_recontact: number;
+  consent_registry: number;
+  deceased_count: number;
+  external_systems: Array<ExternalSystemCount>;
+  female_count: number;
+  growth_by_quarter: Array<QuarterCount>;
+  male_count: number;
+  total_participants: number;
 }
 export interface ResolveIDsRequest {
   ids?: Array<string>;
   source?: string;
 }
 export interface ResolveIDsResponse {
-  not_found?: Array<string>;
-  resolved_ids?: Array<number>;
+  not_found: Array<string>;
+  resolved_ids: Array<number>;
 }
 export interface SearchSuggestion {
-  match_field?: string;
-  match_value?: string;
-  participant_id?: number;
-  participant_name?: string;
+  match_field: string;
+  match_value: string;
+  participant_id: number;
+  participant_name: string;
 }
 export interface SexAtBirth {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 export interface UpdateCommunicationRequest {
   comment?: string;
@@ -538,9 +542,9 @@ export type UpdateParticipantRequestPreferredLanguageEnum =
   (typeof UpdateParticipantRequestPreferredLanguageEnum)[keyof typeof UpdateParticipantRequestPreferredLanguageEnum];
 
 export interface VitalStatus {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 
 /**
@@ -5867,7 +5871,7 @@ export const SearchApiAxiosParamCreator = function (
 ) {
   return {
     /**
-     * Returns search suggestions matching a query across participants and contacts. Requires at least 2 characters.
+     * Returns up to 10 search suggestions matching a query across participants and contacts. Requires at least 2 characters.
      * @summary Global search
      * @param {string} q Search query (min 2 characters)
      * @param {*} [options] Override http request option.
@@ -5925,7 +5929,7 @@ export const SearchApiFp = function (configuration?: Configuration) {
   const localVarAxiosParamCreator = SearchApiAxiosParamCreator(configuration);
   return {
     /**
-     * Returns search suggestions matching a query across participants and contacts. Requires at least 2 characters.
+     * Returns up to 10 search suggestions matching a query across participants and contacts. Requires at least 2 characters.
      * @summary Global search
      * @param {string} q Search query (min 2 characters)
      * @param {*} [options] Override http request option.
@@ -5971,7 +5975,7 @@ export const SearchApiFactory = function (
   const localVarFp = SearchApiFp(configuration);
   return {
     /**
-     * Returns search suggestions matching a query across participants and contacts. Requires at least 2 characters.
+     * Returns up to 10 search suggestions matching a query across participants and contacts. Requires at least 2 characters.
      * @summary Global search
      * @param {string} q Search query (min 2 characters)
      * @param {*} [options] Override http request option.
@@ -5993,7 +5997,7 @@ export const SearchApiFactory = function (
  */
 export class SearchApi extends BaseAPI {
   /**
-   * Returns search suggestions matching a query across participants and contacts. Requires at least 2 characters.
+   * Returns up to 10 search suggestions matching a query across participants and contacts. Requires at least 2 characters.
    * @summary Global search
    * @param {string} q Search query (min 2 characters)
    * @param {*} [options] Override http request option.

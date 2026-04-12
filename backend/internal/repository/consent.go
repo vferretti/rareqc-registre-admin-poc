@@ -40,12 +40,12 @@ func NewConsentRepository(db *gorm.DB) *ConsentRepository {
 
 // ConsentResponse represents a consent with its clause and signer details for API responses.
 type ConsentResponse struct {
-	ID             int    `json:"id"`
-	ClauseTypeCode string `json:"clause_type_code"`
-	ClauseFr       string `json:"clause_fr"`
-	ClauseEn       string `json:"clause_en"`
-	StatusCode     string `json:"status_code"`
-	Date           string `json:"date"`
+	ID             int    `json:"id" validate:"required"`
+	ClauseTypeCode string `json:"clause_type_code" validate:"required"`
+	ClauseFr       string `json:"clause_fr" validate:"required"`
+	ClauseEn       string `json:"clause_en" validate:"required"`
+	StatusCode     string `json:"status_code" validate:"required"`
+	Date           string `json:"date" validate:"required"`
 	SignedByID     *int   `json:"signed_by_id,omitempty"`
 	SignedByName   string `json:"signed_by_name,omitempty"`
 	Relationship   string `json:"signed_by_relationship,omitempty"`
@@ -304,10 +304,10 @@ func (r *ConsentRepository) ListByParticipant(participantID int) ([]ConsentRespo
 
 // ConsentExportRow is a lightweight consent row for bulk export (includes participant_id).
 type ConsentExportRow struct {
-	ParticipantID  int    `json:"participant_id"`
-	ClauseTypeCode string `json:"clause_type_code"`
-	StatusCode     string `json:"status_code"`
-	Date           string `json:"date"`
+	ParticipantID  int    `json:"participant_id" validate:"required"`
+	ClauseTypeCode string `json:"clause_type_code" validate:"required"`
+	StatusCode     string `json:"status_code" validate:"required"`
+	Date           string `json:"date" validate:"required"`
 }
 
 // ListByParticipantIDs returns consent summary rows for multiple participants.

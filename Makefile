@@ -10,6 +10,9 @@ generate-client-typescript:
 		-g typescript-axios \
 		-o ./frontend/api
 	@rm -rf ./frontend/api/docs ./frontend/api/git_push.sh ./frontend/api/.gitignore ./frontend/api/.npmignore
+	@for f in ./frontend/api/api.ts ./frontend/api/base.ts ./frontend/api/common.ts; do \
+		sed -i '1s|^|// @ts-nocheck\n|' "$$f"; \
+	done
 	@echo "✅ Generated TypeScript API client in ./frontend/api"
 
 generate: doc generate-client-typescript

@@ -20,13 +20,13 @@ import (
 // ConsentTemplateResponse is a consent template document with a flag indicating if it has signed consents.
 type ConsentTemplateResponse struct {
 	types.Document
-	HasConsents bool `json:"has_consents"`
+	HasConsents bool `json:"has_consents" validate:"required"`
 }
 
 // ConsentTemplateUpdateResponse is returned after updating a consent template.
 type ConsentTemplateUpdateResponse struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   int    `json:"id" validate:"required"`
+	Name string `json:"name" validate:"required"`
 }
 
 // ListParticipantConsentsHandler returns all consents for a participant.

@@ -1,8 +1,7 @@
 import ExcelJS from "exceljs";
 import api from "@/lib/api";
 import { enumLabel } from "@/lib/enum-label";
-import type { EnumsResponse } from "@/types/participant";
-import type { Participant } from "@/types/participant";
+import type { EnumsResponse, ParticipantListItem } from "@/types/participant";
 
 type TFunc = (key: string, opts?: Record<string, unknown>) => string;
 
@@ -51,7 +50,7 @@ export async function exportParticipantsExcel(
     urlParams.set("participant_ids", params.bulkIds.join(","));
 
   const { data } = await api.get(`/participants?${urlParams.toString()}`);
-  const rows: Participant[] = data.data;
+  const rows: ParticipantListItem[] = data.data;
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(t("participants.title"));

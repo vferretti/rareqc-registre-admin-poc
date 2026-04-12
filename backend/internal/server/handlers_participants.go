@@ -84,8 +84,8 @@ type resolveIDsRequest struct {
 }
 
 type resolveIDsResponse struct {
-	ResolvedIDs []int    `json:"resolved_ids"`
-	NotFound    []string `json:"not_found"`
+	ResolvedIDs []int    `json:"resolved_ids" validate:"required"`
+	NotFound    []string `json:"not_found" validate:"required"`
 }
 
 // ListParticipantsHandler returns a paginated, sortable, searchable list of participants.

@@ -25,10 +25,10 @@ func NewSearchRepository(db *gorm.DB) *SearchRepository {
 
 // SearchSuggestion represents a single search result with the participant and what matched.
 type SearchSuggestion struct {
-	ParticipantID   int    `json:"participant_id"`
-	ParticipantName string `json:"participant_name"`
-	MatchField      string `json:"match_field"`
-	MatchValue      string `json:"match_value"`
+	ParticipantID   int    `json:"participant_id" validate:"required"`
+	ParticipantName string `json:"participant_name" validate:"required"`
+	MatchField      string `json:"match_field" validate:"required"`
+	MatchValue      string `json:"match_value" validate:"required"`
 }
 
 // Search returns up to 10 suggestions matching a query across participants and contact.

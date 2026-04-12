@@ -28,7 +28,7 @@ func NewExternalSystemRepository(db *gorm.DB) *ExternalSystemRepository {
 // ExternalSystemResponse represents an external system with its reference status.
 type ExternalSystemResponse struct {
 	types.ExternalSystem
-	IsReferenced bool `json:"is_referenced"`
+	IsReferenced bool `json:"is_referenced" validate:"required"`
 }
 
 // List returns all external systems ordered by name, with their reference status.

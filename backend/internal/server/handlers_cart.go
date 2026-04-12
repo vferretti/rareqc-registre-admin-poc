@@ -12,9 +12,9 @@ const fakeUserID = "fake-user-1"
 
 // cartExportDataResponse contains all data needed for the multi-sheet Excel report.
 type cartExportDataResponse struct {
-	Participants []types.Participant                `json:"participants"`
-	Consents     []repository.ConsentExportRow      `json:"consents"`
-	ExternalIDs  []repository.ExternalIDExportRow   `json:"external_ids"`
+	Participants []types.Participant              `json:"participants" validate:"required"`
+	Consents     []repository.ConsentExportRow    `json:"consents" validate:"required"`
+	ExternalIDs  []repository.ExternalIDExportRow `json:"external_ids" validate:"required"`
 }
 
 // CartExportDataHandler returns all data for the cart participants (for Excel report generation).
@@ -87,17 +87,17 @@ type removeCartRequest struct {
 }
 
 type cartListResponse struct {
-	Items []repository.CartItemResponse `json:"items"`
-	Count int                           `json:"count"`
+	Items []repository.CartItemResponse `json:"items" validate:"required"`
+	Count int                           `json:"count" validate:"required"`
 }
 
 type cartCountResponse struct {
-	Count int64 `json:"count"`
+	Count int64 `json:"count" validate:"required"`
 }
 
 type cartMutationResponse struct {
-	Success bool  `json:"success"`
-	Count   int64 `json:"count"`
+	Success bool  `json:"success" validate:"required"`
+	Count   int64 `json:"count" validate:"required"`
 }
 
 // ListCartItemsHandler returns all items in the user's cart with participant data.

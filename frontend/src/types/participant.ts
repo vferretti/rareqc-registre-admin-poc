@@ -15,9 +15,9 @@ export type {
 
 /** A reference table entry (enum) — matches the shape of all generated enum types. */
 export interface EnumValue {
-  code?: string;
-  name_en?: string;
-  name_fr?: string;
+  code: string;
+  name_en: string;
+  name_fr: string;
 }
 
 /** Generic paginated API response wrapper (not in generated spec — swag produces concrete types). */

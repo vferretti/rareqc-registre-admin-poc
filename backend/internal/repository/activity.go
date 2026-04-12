@@ -38,7 +38,7 @@ func (r *ActivityRepository) Record(tx *gorm.DB, actionTypeCode string, particip
 // ActivityLogResponse extends ActivityLog with the participant's full name for display.
 type ActivityLogResponse struct {
 	types.ActivityLog
-	ParticipantName *string `json:"participant_name,omitempty"`
+	ParticipantName *string `json:"participant_name,omitempty"` // optional: only present when participant exists
 }
 
 // ListParams holds query parameters for listing activity logs.

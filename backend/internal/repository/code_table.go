@@ -9,9 +9,9 @@ import (
 
 // CodeEntry represents a single row in any code/reference table.
 type CodeEntry struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 // codeTableMeta describes a reference table and where its codes are used.
@@ -36,16 +36,16 @@ var registry = []codeTableMeta{
 
 // EnumsData holds all reference data for the GET /enums endpoint.
 type EnumsData struct {
-	SexAtBirth            []types.SexAtBirth            `json:"sex_at_birth"`
-	VitalStatus           []types.VitalStatus           `json:"vital_status"`
-	Relationship          []types.Relationship          `json:"relationship"`
-	ActionType            []types.ActionType            `json:"action_type"`
-	ConsentStatus         []types.ConsentStatus         `json:"consent_status"`
-	ClauseType            []types.ClauseType            `json:"clause_type"`
-	CommunicationMethods  []types.CommunicationMethod   `json:"communication_methods"`
-	CommunicationSubjects []types.CommunicationSubject  `json:"communication_subjects"`
-	PhoneOutcomes         []types.PhoneOutcome           `json:"phone_outcomes"`
-	EmailOutcomes         []types.EmailOutcome           `json:"email_outcomes"`
+	SexAtBirth            []types.SexAtBirth           `json:"sex_at_birth" validate:"required"`
+	VitalStatus           []types.VitalStatus          `json:"vital_status" validate:"required"`
+	Relationship          []types.Relationship         `json:"relationship" validate:"required"`
+	ActionType            []types.ActionType           `json:"action_type" validate:"required"`
+	ConsentStatus         []types.ConsentStatus        `json:"consent_status" validate:"required"`
+	ClauseType            []types.ClauseType           `json:"clause_type" validate:"required"`
+	CommunicationMethods  []types.CommunicationMethod  `json:"communication_methods" validate:"required"`
+	CommunicationSubjects []types.CommunicationSubject `json:"communication_subjects" validate:"required"`
+	PhoneOutcomes         []types.PhoneOutcome         `json:"phone_outcomes" validate:"required"`
+	EmailOutcomes         []types.EmailOutcome         `json:"email_outcomes" validate:"required"`
 }
 
 // CodeTableDAO defines the interface for code table data access.
