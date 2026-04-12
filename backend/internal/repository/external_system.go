@@ -41,7 +41,9 @@ func (r *ExternalSystemRepository) List() ([]ExternalSystemResponse, error) {
 
 	// Batch load all referenced system IDs in one query
 	var referencedIDs []int
-	r.db.Model(&types.ExternalID{}).Distinct("external_system_id").Pluck("external_system_id", &referencedIDs)
+	if err := r.db.Model(&types.ExternalID{}).Distinct("external_system_id").Pluck("external_system_id", &referencedIDs).Error; err != nil {
+		return nil, err
+	}
 	refSet := make(map[int]bool, len(referencedIDs))
 	for _, id := range referencedIDs {
 		refSet[id] = true

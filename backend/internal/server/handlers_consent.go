@@ -7,10 +7,12 @@ import (
 	"mime"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
@@ -101,7 +103,11 @@ func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerF
 			return
 		}
 		// Batch load which templates have consents (one query instead of N)
-		withConsents, _ := consentRepo.TemplateIDsWithConsents()
+		withConsents, err := consentRepo.TemplateIDsWithConsents()
+		if err != nil {
+			handleInternalError(c, "Failed to fetch consent status")
+			return
+		}
 		results := make([]ConsentTemplateResponse, len(templates))
 		for i, tpl := range templates {
 			results[i] = ConsentTemplateResponse{Document: tpl, HasConsents: withConsents[tpl.ID]}
@@ -135,7 +141,7 @@ type CreateConsentRequest struct {
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/consents [post]
-func CreateParticipantConsentHandler(consentRepo repository.ConsentDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
+func CreateParticipantConsentHandler(consentRepo repository.ConsentDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
@@ -147,6 +153,19 @@ func CreateParticipantConsentHandler(consentRepo repository.ConsentDAO, activity
 		if err := c.ShouldBindJSON(&req); err != nil {
 			handleBadRequest(c, "Invalid request body")
 			return
+		}
+
+		// Validate signer belongs to this participant
+		if req.SignedByID != nil {
+			signer, err := contactRepo.FindByID(strconv.Itoa(*req.SignedByID))
+			if err != nil {
+				handleBadRequest(c, "Invalid signed_by_id: contact not found")
+				return
+			}
+			if signer.ParticipantID != participantID {
+				handleBadRequest(c, "Signer must be a contact of this participant")
+				return
+			}
 		}
 
 		// Check for duplicate: same participant + same clause type (across templates)
@@ -222,7 +241,7 @@ type UpdateConsentRequest struct {
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /consents/{consentId} [put]
-func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
+func UpdateConsentHandler(consentRepo repository.ConsentDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var consentID int
 		if _, err := fmt.Sscanf(c.Param("consentId"), "%d", &consentID); err != nil {
@@ -240,6 +259,19 @@ func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo reposi
 		if err := c.ShouldBindJSON(&req); err != nil {
 			handleBadRequest(c, "Invalid request body")
 			return
+		}
+
+		// Validate signer belongs to this participant
+		if req.SignedByID != nil {
+			signer, err := contactRepo.FindByID(strconv.Itoa(*req.SignedByID))
+			if err != nil {
+				handleBadRequest(c, "Invalid signed_by_id: contact not found")
+				return
+			}
+			if signer.ParticipantID != consent.ParticipantID {
+				handleBadRequest(c, "Signer must be a contact of this participant")
+				return
+			}
 		}
 
 		date, err := time.Parse("2006-01-02", req.Date)
@@ -268,11 +300,15 @@ func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo reposi
 				}
 
 				// Business rule: if registry consent is withdrawn or expired, cascade to all other clauses
-				clauseType, _ := consentRepo.ClauseTypeForClause(consent.ClauseID)
+				clauseType, err := consentRepo.ClauseTypeForClause(consent.ClauseID)
+				if err != nil {
+					return err
+				}
 				if clauseType == "registry" && (req.StatusCode == "withdrawn" || req.StatusCode == "expired") {
-					// Cascade: find all non-registry consents (with Clause preloaded)
+					// Cascade: find all non-registry consents with row-level lock
 					var consents []types.Consent
 					if err := tx.
+						Clauses(clause.Locking{Strength: "UPDATE"}).
 						Preload("Clause").
 						Joins("JOIN consent_clause ON consent.clause_id = consent_clause.id").
 						Where("consent.participant_id = ? AND consent_clause.clause_type_code != ? AND consent.status_code != ?",
@@ -293,7 +329,9 @@ func UpdateConsentHandler(consentRepo repository.ConsentDAO, activityRepo reposi
 						// Record activity for each cascaded consent
 						for _, cs := range consents {
 							d := fmt.Sprintf("%s — %s → %s (registre %s)", cs.Clause.ClauseTypeCode, oldStatus, req.StatusCode, req.StatusCode)
-							_ = activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &d)
+							if err := activityRepo.Record(tx, "consent_edited", &consent.ParticipantID, author, &d); err != nil {
+								return err
+							}
 						}
 					}
 				}

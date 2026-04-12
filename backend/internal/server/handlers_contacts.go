@@ -91,10 +91,14 @@ func AddContactHandler(participantRepo repository.ParticipantDAO, contactRepo re
 			// If no non-self contact is primary and new one isn't either, self stays primary
 			// If new one is primary, self was already cleared above
 			if !req.IsPrimary {
-				// Ensure self is primary if nobody else is
-				count, _ := contactRepo.CountNonSelfPrimary(tx, participant.ID)
+				count, err := contactRepo.CountNonSelfPrimary(tx, participant.ID)
+				if err != nil {
+					return err
+				}
 				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, participant.ID, true)
+					if err := contactRepo.SetSelfPrimary(tx, participant.ID, true); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -107,7 +111,10 @@ func AddContactHandler(participantRepo repository.ParticipantDAO, contactRepo re
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusCreated, participant)
 	}
 }
@@ -178,9 +185,14 @@ func UpdateContactHandler(contactRepo repository.ContactDAO, activityRepo reposi
 
 			// Ensure at least one contact is primary
 			if !req.IsPrimary {
-				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				count, err := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if err != nil {
+					return err
+				}
 				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
+					if err := contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -254,12 +266,17 @@ func DeleteContactHandler(contactRepo repository.ContactDAO, activityRepo reposi
 				return err
 			}
 			if wasPrimary {
-				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				count, err := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if err != nil {
+					return err
+				}
 				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
+					if err := contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true); err != nil {
+						return err
+					}
 				}
 			}
-			details := fmt.Sprintf("%s %s", contact.FirstName, contact.LastName)
+			details := fmt.Sprintf("%s %s (%s)", contact.FirstName, contact.LastName, contact.RelationshipCode)
 			return activityRepo.Record(tx, "contact_deleted", &contact.ParticipantID, author, &details)
 		})
 

@@ -8,9 +8,9 @@ const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches all external systems. */
 export function useExternalSystems() {
-  const { data, isLoading, mutate } = useSWR<ExternalSystemResponse[]>(
+  const { data, error, isLoading, mutate } = useSWR<ExternalSystemResponse[]>(
     "/external-systems",
     fetcher,
   );
-  return { systems: data ?? [], isLoading, mutate };
+  return { systems: data ?? [], error, isLoading, mutate };
 }

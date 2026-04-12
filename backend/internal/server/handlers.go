@@ -59,8 +59,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		api.DELETE("/contacts/:contactId", DeleteContactHandler(contactRepo, activityRepo))
 
 		api.GET("/participants/:id/consents", ListParticipantConsentsHandler(consentRepo))
-		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, activityRepo))
-		api.PUT("/consents/:consentId", UpdateConsentHandler(consentRepo, activityRepo))
+		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, contactRepo, activityRepo))
+		api.PUT("/consents/:consentId", UpdateConsentHandler(consentRepo, contactRepo, activityRepo))
 		api.GET("/consent-clauses", ListConsentClausesHandler(consentRepo))
 		api.GET("/consent-templates", ListConsentTemplatesHandler(consentRepo))
 		api.POST("/consent-templates", CreateConsentTemplateHandler(consentRepo))

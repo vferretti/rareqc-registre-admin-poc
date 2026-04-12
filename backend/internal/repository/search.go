@@ -10,7 +10,7 @@ import (
 
 // SearchDAO defines the interface for search data access.
 type SearchDAO interface {
-	Search(q string) []SearchSuggestion
+	Search(q string) ([]SearchSuggestion, error)
 }
 
 // SearchRepository handles search queries across participants and contact.
@@ -32,7 +32,7 @@ type SearchSuggestion struct {
 }
 
 // Search returns up to 10 suggestions matching a query across participants and contact.
-func (r *SearchRepository) Search(q string) []SearchSuggestion {
+func (r *SearchRepository) Search(q string) ([]SearchSuggestion, error) {
 	like := searchTerm(q)
 	var suggestions []SearchSuggestion
 
@@ -40,10 +40,12 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	pSQL, pN := participantSearchSQL("participant")
 	cExtra := sprintf(matchEmail, "contact") + " OR " + sprintf(matchPhone, "contact")
 	var participants []types.Participant
-	r.db.Preload("Contacts", "relationship_code = 'self'").
+	if err := r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
 		Where(pSQL+" OR "+cExtra, repeatArg(like, pN+2)...).
-		Limit(10).Find(&participants)
+		Limit(10).Find(&participants).Error; err != nil {
+		return nil, err
+	}
 
 	// Deduplicate across all search sources
 	seen := make(map[int]bool)
@@ -62,9 +64,11 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 
 	// Search by external ID
 	var extIDs []types.ExternalID
-	r.db.Preload("Participant").Preload("ExternalSystem").
+	if err := r.db.Preload("Participant").Preload("ExternalSystem").
 		Where("lower(external_id) LIKE ?", like).
-		Limit(10).Find(&extIDs)
+		Limit(10).Find(&extIDs).Error; err != nil {
+		return nil, err
+	}
 
 	for _, e := range extIDs {
 		if seen[e.ParticipantID] {
@@ -83,9 +87,11 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	// Search by contact name, email, or phone (non-self contacts)
 	cSQL, cN := contactSearchSQL("contact")
 	var contacts []types.Contact
-	r.db.Preload("Participant").
+	if err := r.db.Preload("Participant").
 		Where("relationship_code != 'self' AND ("+cSQL+")", repeatArg(like, cN)...).
-		Limit(10).Find(&contacts)
+		Limit(10).Find(&contacts).Error; err != nil {
+		return nil, err
+	}
 
 	for _, ct := range contacts {
 		if seen[ct.ParticipantID] {
@@ -106,7 +112,7 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	if len(suggestions) > 10 {
 		suggestions = suggestions[:10]
 	}
-	return suggestions
+	return suggestions, nil
 }
 
 // detectParticipantMatch determines which field matched (id > name > ramq > email > phone).

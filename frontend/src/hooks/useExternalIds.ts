@@ -8,9 +8,9 @@ const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches external IDs for a participant. */
 export function useExternalIds(participantId?: number) {
-  const { data, isLoading } = useSWR<ExternalIDResponse[]>(
+  const { data, error, isLoading } = useSWR<ExternalIDResponse[]>(
     participantId ? `/participants/${participantId}/external-ids` : null,
     fetcher,
   );
-  return { externalIds: data ?? [], isLoading };
+  return { externalIds: data ?? [], error, isLoading };
 }

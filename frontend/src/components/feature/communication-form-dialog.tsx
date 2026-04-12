@@ -58,6 +58,7 @@ export function CommunicationFormDialog({
   );
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Reset form when dialog opens or communication changes
   useEffect(() => {
@@ -111,6 +112,7 @@ export function CommunicationFormDialog({
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSaving(true);
+    setSubmitError(null);
     try {
       const payload = {
         contact_id: Number(contactId),
@@ -133,7 +135,7 @@ export function CommunicationFormDialog({
       onOpenChange(false);
       onSuccess();
     } catch {
-      // Error handling is minimal — toast could be added later
+      setSubmitError(t("common.error"));
     } finally {
       setSaving(false);
     }
@@ -253,6 +255,9 @@ export function CommunicationFormDialog({
           </div>
         </div>
 
+        {submitError && (
+          <p className="text-sm text-destructive">{submitError}</p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}

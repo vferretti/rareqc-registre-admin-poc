@@ -11,6 +11,9 @@ export function useConsentClauses(templateDocumentId?: number) {
   const url = templateDocumentId
     ? `/consent-clauses?template_document_id=${templateDocumentId}`
     : "/consent-clauses";
-  const { data, isLoading, mutate } = useSWR<ConsentClause[]>(url, fetcher);
-  return { clauses: data ?? [], isLoading, mutate };
+  const { data, error, isLoading, mutate } = useSWR<ConsentClause[]>(
+    url,
+    fetcher,
+  );
+  return { clauses: data ?? [], error, isLoading, mutate };
 }

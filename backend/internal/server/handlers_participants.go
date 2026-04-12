@@ -46,7 +46,11 @@ func ResolveIDsHandler(participantRepo repository.ParticipantDAO, extIDRepo repo
 					notFound = append(notFound, raw)
 					continue
 				}
-				exists, _ := participantRepo.Exists(id)
+				exists, err := participantRepo.Exists(id)
+				if err != nil {
+					handleInternalError(c, "Failed to resolve IDs")
+					return
+				}
 				if exists && !seen[id] {
 					resolvedIDs = append(resolvedIDs, id)
 					seen[id] = true
@@ -193,13 +197,14 @@ func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 			return
 		}
 
-		ramq := toStringPtr(req.RAMQ)
+		ramq := toStringPtr(normalizeRAMQ(req.RAMQ))
 		author := getAuthor(c)
 
 		// Snapshot old state for activity comparison
 		oldChanged := participantFieldsChanged(participant, req, dob, ramq, dateOfDeath)
 		oldSelfSnapshot := snapshotSelfContact(participant.Contacts)
 		oldSelfChanged := selfContactChanged(oldSelfSnapshot, req)
+		needGuidRecompute := guidFieldsChanged(participant, req, dob, ramq)
 
 		err = participantRepo.Transaction(func(tx *gorm.DB) error {
 			// Update participant fields
@@ -215,13 +220,15 @@ func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 				return err
 			}
 
-			// Recompute GUIDs
-			g := guid.Compute(&participant)
-			if err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "participant_id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"guid_basic", "guid_ramq", "guid_birthplace"}),
-			}).Create(g).Error; err != nil {
-				return err
+			// Recompute GUIDs only if identity fields changed
+			if needGuidRecompute {
+				g := guid.Compute(&participant)
+				if err := tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "participant_id"}},
+					DoUpdates: clause.AssignmentColumns([]string{"guid_basic", "guid_ramq", "guid_birthplace"}),
+				}).Create(g).Error; err != nil {
+					return err
+				}
 			}
 
 			// Update self contact coordinates
@@ -257,7 +264,10 @@ func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusOK, participant)
 	}
 }
@@ -303,7 +313,7 @@ func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 			LastName:        req.LastName,
 			DateOfBirth:     dob,
 			CityOfBirth:     toStringPtr(req.CityOfBirth),
-			RAMQ:            toStringPtr(req.RAMQ),
+			RAMQ:            toStringPtr(normalizeRAMQ(req.RAMQ)),
 			SexAtBirthCode:  req.SexAtBirthCode,
 			VitalStatusCode: req.VitalStatusCode,
 			DateOfDeath:     dateOfDeath,
@@ -398,7 +408,10 @@ func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusCreated, participant)
 	}
 }

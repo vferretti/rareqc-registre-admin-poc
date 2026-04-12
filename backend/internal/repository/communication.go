@@ -56,19 +56,23 @@ type outcomeLabel struct {
 }
 
 // buildOutcomeLookup loads both phone and email outcome tables into a single map.
-func (r *CommunicationRepository) buildOutcomeLookup() map[string]outcomeLabel {
+func (r *CommunicationRepository) buildOutcomeLookup() (map[string]outcomeLabel, error) {
 	lookup := make(map[string]outcomeLabel)
 	var phone []types.PhoneOutcome
-	r.db.Find(&phone)
+	if err := r.db.Find(&phone).Error; err != nil {
+		return nil, err
+	}
 	for _, o := range phone {
 		lookup[o.Code] = outcomeLabel{NameFr: o.NameFr, NameEn: o.NameEn}
 	}
 	var email []types.EmailOutcome
-	r.db.Find(&email)
+	if err := r.db.Find(&email).Error; err != nil {
+		return nil, err
+	}
 	for _, o := range email {
 		lookup[o.Code] = outcomeLabel{NameFr: o.NameFr, NameEn: o.NameEn}
 	}
-	return lookup
+	return lookup, nil
 }
 
 // ListByParticipant returns all communications for a participant, sorted by date desc.
@@ -85,7 +89,10 @@ func (r *CommunicationRepository) ListByParticipant(participantID int) ([]Commun
 		return nil, err
 	}
 
-	outcomeLookup := r.buildOutcomeLookup()
+	outcomeLookup, err := r.buildOutcomeLookup()
+	if err != nil {
+		return nil, err
+	}
 
 	responses := make([]CommunicationResponse, len(comms))
 	for i, c := range comms {

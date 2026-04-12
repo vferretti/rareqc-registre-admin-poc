@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"registre-admin/internal/repository"
@@ -72,7 +73,9 @@ func UploadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 			}
 		}
 
-		fileName := fileHeader.Filename
+		// Sanitize filename: strip directory components and quotes
+		fileName := filepath.Base(fileHeader.Filename)
+		fileName = strings.ReplaceAll(fileName, "\"", "")
 		if name == "" {
 			name = fileName
 		}
@@ -131,7 +134,8 @@ func DownloadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 			return
 		}
 
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", doc.FileName))
+		safeName := strings.ReplaceAll(filepath.Base(doc.FileName), "\"", "")
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", safeName))
 		c.Data(http.StatusOK, doc.MimeType, fileBytes)
 	}
 }

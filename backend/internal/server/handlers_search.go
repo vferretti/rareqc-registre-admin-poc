@@ -11,7 +11,7 @@ import (
 // SearchHandler returns suggestions matching a query across participants and contacts.
 //
 // @Summary     Global search
-// @Description Returns search suggestions matching a query across participants and contacts. Requires at least 2 characters.
+// @Description Returns up to 10 search suggestions matching a query across participants and contacts. Requires at least 2 characters.
 // @Tags        search
 // @Produce     json
 // @Param       q query string true "Search query (min 2 characters)"
@@ -24,6 +24,11 @@ func SearchHandler(repo repository.SearchDAO) gin.HandlerFunc {
 			c.JSON(http.StatusOK, []repository.SearchSuggestion{})
 			return
 		}
-		c.JSON(http.StatusOK, repo.Search(q))
+		results, err := repo.Search(q)
+		if err != nil {
+			handleInternalError(c, "Failed to search")
+			return
+		}
+		c.JSON(http.StatusOK, results)
 	}
 }

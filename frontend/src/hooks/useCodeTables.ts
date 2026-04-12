@@ -9,9 +9,9 @@ const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches all code/reference tables with their entries. */
 export function useCodeTables() {
-  const { data, isLoading, mutate } = useSWR<CodeTableListResponse[]>(
+  const { data, error, isLoading, mutate } = useSWR<CodeTableListResponse[]>(
     "/code-tables",
     fetcher,
   );
-  return { codeTables: data ?? [], isLoading, mutate };
+  return { codeTables: data ?? [], error, isLoading, mutate };
 }

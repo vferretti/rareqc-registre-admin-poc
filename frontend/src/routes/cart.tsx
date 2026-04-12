@@ -35,6 +35,7 @@ export default function Cart() {
   const { items, isLoading, removeParticipants, clearCart } = useCartContext();
   const [search, setSearch] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -252,11 +253,12 @@ export default function Cart() {
 
   const handleReportExport = async () => {
     setIsExporting(true);
+    setExportError(null);
     try {
       const { data } = await api.post<CartExportData>("/cart/export-data");
       await generateCartExcelReport(data, enums, lang, t);
-    } catch (err) {
-      console.error("Failed to export report:", err);
+    } catch {
+      setExportError(t("common.error"));
     } finally {
       setIsExporting(false);
     }
@@ -304,6 +306,9 @@ export default function Cart() {
                 </Button>
               }
             />
+            {exportError && (
+              <p className="text-sm text-destructive px-2">{exportError}</p>
+            )}
             <PaginationBar
               page={pagination.pageIndex + 1}
               totalPages={Math.ceil(filteredItems.length / pagination.pageSize)}

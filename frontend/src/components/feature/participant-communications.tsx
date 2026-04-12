@@ -54,6 +54,7 @@ export function ParticipantCommunications({
   const [viewing, setViewing] = useState<CommunicationResponse | null>(null);
   const [editing, setEditing] = useState<CommunicationResponse | null>(null);
   const [deleting, setDeleting] = useState<CommunicationResponse | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const lang = i18n.language === "en" ? "en" : "fr";
 
@@ -63,12 +64,13 @@ export function ParticipantCommunications({
 
   const confirmDelete = async () => {
     if (!deleting) return;
+    setDeleteError(null);
     try {
       await api.delete(`/communications/${deleting.id}`);
       mutate();
       setDeleting(null);
-    } catch (err) {
-      console.error("Failed to delete communication:", err);
+    } catch {
+      setDeleteError(t("common.error"));
     }
   };
 
@@ -342,6 +344,9 @@ export function ParticipantCommunications({
               {t("participant_detail.confirm_delete_communication")}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <p className="text-sm text-destructive">{deleteError}</p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>

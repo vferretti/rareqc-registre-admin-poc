@@ -86,7 +86,8 @@ function downloadPng(container: HTMLDivElement | null, fileName: string) {
     const canvas = document.createElement("canvas");
     canvas.width = canvasW;
     canvas.height = canvasH;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     // White background
     ctx.fillStyle = "#ffffff";

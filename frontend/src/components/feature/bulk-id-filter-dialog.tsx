@@ -106,7 +106,7 @@ export function BulkIdFilterDialog({
   };
 
   const copyNotFound = () => {
-    navigator.clipboard.writeText(notFoundIds.join("\n"));
+    navigator.clipboard.writeText(notFoundIds.join("\n")).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

@@ -118,7 +118,7 @@ export default function ParticipantDetail() {
   };
 
   const copyGuid = (value: string) => {
-    navigator.clipboard.writeText(value);
+    navigator.clipboard.writeText(value).catch(() => {});
     setCopiedGuid(value);
     setTimeout(() => setCopiedGuid(null), 2000);
   };

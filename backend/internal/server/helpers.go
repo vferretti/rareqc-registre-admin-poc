@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"registre-admin/internal/types"
@@ -83,6 +84,29 @@ func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequ
 		old.StreetAddress != req.StreetAddress || old.City != req.City ||
 		old.Province != req.Province || old.CodePostal != req.CodePostal ||
 		old.PreferredLanguage != req.PreferredLanguage
+}
+
+// normalizeRAMQ strips spaces and uppercases a RAMQ number for consistent storage.
+func normalizeRAMQ(ramq string) string {
+	return strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(ramq), " ", ""))
+}
+
+// guidFieldsChanged returns true if any GUID-relevant field differs between old participant and incoming request.
+func guidFieldsChanged(p types.Participant, req types.UpdateParticipantRequest, dob time.Time, ramq *string) bool {
+	if p.FirstName != req.FirstName || p.LastName != req.LastName {
+		return true
+	}
+	if !p.DateOfBirth.Equal(dob) {
+		return true
+	}
+	if (p.RAMQ == nil) != (ramq == nil) || (p.RAMQ != nil && ramq != nil && *p.RAMQ != *ramq) {
+		return true
+	}
+	cityOfBirth := toStringPtr(req.CityOfBirth)
+	if (p.CityOfBirth == nil) != (cityOfBirth == nil) || (p.CityOfBirth != nil && cityOfBirth != nil && *p.CityOfBirth != *cityOfBirth) {
+		return true
+	}
+	return false
 }
 
 // validateDates checks that date of birth is not in the future and date of death is after date of birth.
