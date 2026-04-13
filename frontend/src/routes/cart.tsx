@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { FileSpreadsheet, ShoppingCart, Trash2 } from "lucide-react";
+import {
+  FileSpreadsheet,
+  MessageCircle,
+  ShoppingCart,
+  Trash2,
+} from "lucide-react";
 import ExcelJS from "exceljs";
 import {
   type ColumnDef,
@@ -20,10 +25,20 @@ import { TextCell, DateCell, BadgeCell } from "@/components/base/table/cells";
 import { InputSearch } from "@/components/base/input-search";
 import { PageHeader } from "@/components/base/page/page-header";
 import { Button } from "@/components/base/ui/button";
-import { useCartContext } from "@/contexts/cart-context";
+import { useCartContext } from "@/contexts/use-cart-context";
 import { SEX_BADGE } from "@/lib/badge-variants";
 import { enumLabel } from "@/lib/enum-label";
 import { generateCartExcelReport } from "@/lib/cart-excel-report";
+import { CommunicationFormDialog } from "@/components/feature/communication-form-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/base/ui/alert-dialog";
 import { useEnums } from "@/hooks/useEnums";
 import api from "@/lib/api";
 import type { CartItem, CartExportData } from "@/types/cart";
@@ -36,6 +51,8 @@ export default function Cart() {
   const [search, setSearch] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [communicationOpen, setCommunicationOpen] = useState(false);
+  const [skippedCount, setSkippedCount] = useState<number | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -197,7 +214,7 @@ export default function Cart() {
         ),
       },
     ],
-    [t, removeParticipants, clearCart],
+    [t, removeParticipants, clearCart, enums?.sex_at_birth, lang],
   );
 
   const table = useReactTable({
@@ -295,15 +312,26 @@ export default function Cart() {
               pageIndex={pagination.pageIndex}
               pageSize={pagination.pageSize}
               toolbarActions={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReportExport}
-                  disabled={items.length === 0 || isExporting}
-                >
-                  <FileSpreadsheet className="size-4 mr-1" />
-                  {t("cart.excel_report")}
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCommunicationOpen(true)}
+                    disabled={items.length === 0}
+                  >
+                    <MessageCircle className="size-4 mr-1" />
+                    {t("cart.communication")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReportExport}
+                    disabled={items.length === 0 || isExporting}
+                  >
+                    <FileSpreadsheet className="size-4 mr-1" />
+                    {t("cart.excel_report")}
+                  </Button>
+                </>
               }
             />
             {exportError && (
@@ -324,6 +352,41 @@ export default function Cart() {
           </div>
         )}
       </div>
+
+      <CommunicationFormDialog
+        open={communicationOpen}
+        onOpenChange={setCommunicationOpen}
+        bulk
+        participantCount={items.length}
+        onSuccess={(result) => {
+          if (result && result.skipped.length > 0) {
+            setSkippedCount(result.skipped.length);
+          }
+        }}
+      />
+
+      <AlertDialog
+        open={skippedCount !== null}
+        onOpenChange={(o) => {
+          if (!o) setSkippedCount(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("cart.bulk_communication_skipped_title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("cart.bulk_communication_skipped", {
+                count: skippedCount ?? 0,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>{t("common.close")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

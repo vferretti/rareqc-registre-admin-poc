@@ -12,14 +12,21 @@ interface TableFullscreenButtonProps {
   onClick: (value: boolean) => void;
 }
 
-export function TableFullscreenButton({ active, onClick }: TableFullscreenButtonProps) {
+export function TableFullscreenButton({
+  active,
+  onClick,
+}: TableFullscreenButtonProps) {
   const { t } = useTranslation();
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button size="sm" variant="ghost" onClick={() => onClick(!active)}>
-          {active ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+          {active ? (
+            <Minimize className="size-4" />
+          ) : (
+            <Maximize className="size-4" />
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>

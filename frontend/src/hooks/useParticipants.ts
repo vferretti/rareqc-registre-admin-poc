@@ -37,11 +37,16 @@ export function useParticipants({
     sort_order: sortOrder,
   });
   if (search) params.set("search", search);
-  if (consentRegistry?.length) params.set("consent_registry", consentRegistry.join(","));
-  if (consentRecontact?.length) params.set("consent_recontact", consentRecontact.join(","));
-  if (consentExternalLinkage?.length) params.set("consent_external_linkage", consentExternalLinkage.join(","));
-  if (externalSystems?.length) params.set("external_system", externalSystems.join(","));
-  if (participantIds !== undefined) params.set("participant_ids", participantIds.join(","));
+  if (consentRegistry?.length)
+    params.set("consent_registry", consentRegistry.join(","));
+  if (consentRecontact?.length)
+    params.set("consent_recontact", consentRecontact.join(","));
+  if (consentExternalLinkage?.length)
+    params.set("consent_external_linkage", consentExternalLinkage.join(","));
+  if (externalSystems?.length)
+    params.set("external_system", externalSystems.join(","));
+  if (participantIds !== undefined)
+    params.set("participant_ids", participantIds.join(","));
 
   const { data, error, isLoading, mutate } = useSWR<
     PaginatedResponse<Participant>

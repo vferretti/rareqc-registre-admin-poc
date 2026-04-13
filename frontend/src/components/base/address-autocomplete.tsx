@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 
 export interface ParsedAddress {
@@ -37,8 +37,22 @@ export function AddressInput({
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // Stable, unique field name/id to defeat browser autofill heuristics — must
+  // not change between renders, so we use useId() rather than Math.random().
+  const autofillBypassId = `_aqres_${useId()}`;
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
   const justSelectedRef = useRef(false);
+
+  // Clear suggestions synchronously when input becomes too short (syncing
+  // state with derived input pattern, preferred over setState in useEffect):
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
+    if (!value.trim() || value.length < 3) setSuggestions([]);
+  }
 
   // Fetch suggestions on value change (only when focused)
   useEffect(() => {
@@ -48,10 +62,7 @@ export function AddressInput({
       return;
     }
     clearTimeout(debounceRef.current);
-    if (!value.trim() || value.length < 3) {
-      setSuggestions([]);
-      return;
-    }
+    if (!value.trim() || value.length < 3) return;
     debounceRef.current = setTimeout(async () => {
       try {
         const params = new URLSearchParams({
@@ -77,7 +88,10 @@ export function AddressInput({
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node))
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      )
         setOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -137,8 +151,8 @@ export function AddressInput({
         disabled={disabled}
         placeholder={placeholder}
         autoComplete="new-password"
-        name={`_aqres_${Math.random()}`}
-        id={`_aqres_${Math.random()}`}
+        name={autofillBypassId}
+        id={autofillBypassId}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open && suggestions.length > 0}

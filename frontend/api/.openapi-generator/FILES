@@ -10,6 +10,8 @@ docs/ActivityLogResponse.md
 docs/AddCartRequest.md
 docs/AdminApi.md
 docs/AgeRangeCount.md
+docs/BulkCommunicationRequest.md
+docs/BulkCommunicationResponse.md
 docs/CartApi.md
 docs/CartCountResponse.md
 docs/CartExportDataResponse.md

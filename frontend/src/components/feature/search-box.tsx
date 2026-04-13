@@ -18,23 +18,29 @@ export function SearchBox() {
   const debouncedQuery = useDebouncedValue(query, 250);
   const { suggestions, isLoading } = useSearch(debouncedQuery);
 
+  // Reset active index when suggestions change (sync state-with-derived-input
+  // pattern: https://react.dev/reference/react/useState#storing-information-from-previous-renders).
+  const [prevSuggestions, setPrevSuggestions] = useState(suggestions);
+  if (prevSuggestions !== suggestions) {
+    setPrevSuggestions(suggestions);
+    setActiveIndex(-1);
+  }
+
   const showDropdown = open && query.trim().length >= 2;
 
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  // Reset active index when suggestions change
-  useEffect(() => {
-    setActiveIndex(-1);
-  }, [suggestions]);
 
   const selectSuggestion = (participantId: number) => {
     setOpen(false);

@@ -100,6 +100,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			cart.DELETE("/items", RemoveCartItemsHandler(cartRepo))
 			cart.DELETE("", ClearCartHandler(cartRepo))
 			cart.POST("/export-data", CartExportDataHandler(cartRepo, participantRepo, consentRepo, extIDRepo))
+			cart.POST("/communications", CreateCartCommunicationsHandler(cartRepo, commRepo))
 		}
 	}
 

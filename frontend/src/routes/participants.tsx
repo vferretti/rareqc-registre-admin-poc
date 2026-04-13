@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Link as LinkIcon, ListFilter, Plus, X } from "lucide-react";
-import { useCartContext } from "@/contexts/cart-context";
+import { useCartContext } from "@/contexts/use-cart-context";
 import {
   type SortingState,
   type PaginationState,

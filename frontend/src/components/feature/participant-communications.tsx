@@ -216,6 +216,7 @@ export function ParticipantCommunications({
         onOpenChange={setDialogOpen}
         participantId={participantId}
         contacts={contacts}
+        participantCount={1}
         onSuccess={handleSuccess}
       />
 
@@ -228,6 +229,7 @@ export function ParticipantCommunications({
         participantId={participantId}
         contacts={contacts}
         communication={editing}
+        participantCount={1}
         onSuccess={() => {
           setEditing(null);
           handleSuccess();

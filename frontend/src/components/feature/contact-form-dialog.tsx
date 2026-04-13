@@ -86,7 +86,9 @@ function contactToFormValues(c: Contact): ContactFormValues {
 
 /** Returns the self contact's coordinates for "same coordinates" feature. */
 function getParticipantCoordinates(participant: Participant) {
-  const self = participant.contacts?.find((c) => c.relationship_code === "self");
+  const self = participant.contacts?.find(
+    (c) => c.relationship_code === "self",
+  );
   return {
     email: self?.email ?? "",
     phone: self?.phone ?? "",
@@ -97,7 +99,6 @@ function getParticipantCoordinates(participant: Participant) {
     code_postal: self?.code_postal ?? "",
   };
 }
-
 
 // Schema for the multi-contact form wrapper
 const contactsFormSchema = (t: Parameters<typeof contactSchema>[0]) =>
@@ -154,7 +155,10 @@ export function ContactFormDialog({
     const contacts = form.getValues("contacts");
     const isAlreadyPrimary = contacts[index]?.is_primary;
     contacts.forEach((_, i) => {
-      form.setValue(`contacts.${i}.is_primary`, !isAlreadyPrimary && i === index);
+      form.setValue(
+        `contacts.${i}.is_primary`,
+        !isAlreadyPrimary && i === index,
+      );
     });
   };
 
@@ -167,7 +171,10 @@ export function ContactFormDialog({
       } else {
         // Create each new contact
         for (const contactData of data.contacts) {
-          await api.post(`/participants/${participant.id}/contacts`, contactData);
+          await api.post(
+            `/participants/${participant.id}/contacts`,
+            contactData,
+          );
         }
       }
       form.reset({ contacts: [{ ...EMPTY_CONTACT }] });
@@ -211,7 +218,9 @@ export function ContactFormDialog({
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground">
-                      {t("create_participant.contact_ordinal", { number: index + 1 })}
+                      {t("create_participant.contact_ordinal", {
+                        number: index + 1,
+                      })}
                     </p>
                     {fields.length > 1 && (
                       <Button
@@ -233,8 +242,12 @@ export function ContactFormDialog({
                       name={`contacts.${index}.first_name`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("create_participant.first_name")}</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormLabel>
+                            {t("create_participant.first_name")}
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -244,8 +257,12 @@ export function ContactFormDialog({
                       name={`contacts.${index}.last_name`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("create_participant.last_name")}</FormLabel>
-                          <FormControl><Input {...field} /></FormControl>
+                          <FormLabel>
+                            {t("create_participant.last_name")}
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -258,17 +275,26 @@ export function ContactFormDialog({
                       name={`contacts.${index}.relationship_code`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("create_participant.relationship")}</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
+                          <FormLabel>
+                            {t("create_participant.relationship")}
+                          </FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
                             <FormControl>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {enums?.relationship.filter((e) => e.code !== "self").map((e) => (
-                                <SelectItem key={e.code} value={e.code}>
-                                  {e[lang]}
-                                </SelectItem>
-                              ))}
+                              {enums?.relationship
+                                .filter((e) => e.code !== "self")
+                                .map((e) => (
+                                  <SelectItem key={e.code} value={e.code}>
+                                    {e[lang]}
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         </FormItem>
@@ -280,10 +306,17 @@ export function ContactFormDialog({
                       name={`contacts.${index}.preferred_language`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("create_participant.preferred_language")}</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
+                          <FormLabel>
+                            {t("create_participant.preferred_language")}
+                          </FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
                             <FormControl>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {LANGUAGE_OPTIONS.map((code) => (
@@ -304,7 +337,10 @@ export function ContactFormDialog({
                       checked={form.watch(`contacts.${index}.is_primary`)}
                       onCheckedChange={() => togglePrimaryContact(index)}
                     />
-                    <Label htmlFor={`contact-${index}-is-primary`} className="font-normal">
+                    <Label
+                      htmlFor={`contact-${index}-is-primary`}
+                      className="font-normal"
+                    >
                       {t("create_participant.is_primary")}
                     </Label>
                   </div>
@@ -321,19 +357,43 @@ export function ContactFormDialog({
                       checked={sameCoordinates}
                       onCheckedChange={(checked) => {
                         const isSame = checked === true;
-                        form.setValue(`contacts.${index}.same_coordinates`, isSame);
+                        form.setValue(
+                          `contacts.${index}.same_coordinates`,
+                          isSame,
+                        );
                         if (isSame) {
-                          form.setValue(`contacts.${index}.email`, coords.email);
-                          form.setValue(`contacts.${index}.phone`, coords.phone);
-                          form.setValue(`contacts.${index}.apartment_number`, coords.apartment_number);
-                          form.setValue(`contacts.${index}.street_address`, coords.street_address);
+                          form.setValue(
+                            `contacts.${index}.email`,
+                            coords.email,
+                          );
+                          form.setValue(
+                            `contacts.${index}.phone`,
+                            coords.phone,
+                          );
+                          form.setValue(
+                            `contacts.${index}.apartment_number`,
+                            coords.apartment_number,
+                          );
+                          form.setValue(
+                            `contacts.${index}.street_address`,
+                            coords.street_address,
+                          );
                           form.setValue(`contacts.${index}.city`, coords.city);
-                          form.setValue(`contacts.${index}.province`, coords.province);
-                          form.setValue(`contacts.${index}.code_postal`, coords.code_postal);
+                          form.setValue(
+                            `contacts.${index}.province`,
+                            coords.province,
+                          );
+                          form.setValue(
+                            `contacts.${index}.code_postal`,
+                            coords.code_postal,
+                          );
                         }
                       }}
                     />
-                    <Label htmlFor={`contact-${index}-same-coordinates`} className="font-normal">
+                    <Label
+                      htmlFor={`contact-${index}-same-coordinates`}
+                      className="font-normal"
+                    >
                       {t("create_participant.same_coordinates")}
                     </Label>
                   </div>
@@ -346,9 +406,15 @@ export function ContactFormDialog({
                         name={`contacts.${index}.email`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.email")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.email")}
+                            </FormLabel>
                             <FormControl>
-                              <Input type="email" {...field} disabled={sameCoordinates} />
+                              <Input
+                                type="email"
+                                {...field}
+                                disabled={sameCoordinates}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
@@ -359,9 +425,15 @@ export function ContactFormDialog({
                         name={`contacts.${index}.phone`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.phone")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.phone")}
+                            </FormLabel>
                             <FormControl>
-                              <Input type="tel" {...field} disabled={sameCoordinates} />
+                              <Input
+                                type="tel"
+                                {...field}
+                                disabled={sameCoordinates}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
@@ -374,17 +446,31 @@ export function ContactFormDialog({
                         name={`contacts.${index}.street_address`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.street_address")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.street_address")}
+                            </FormLabel>
                             <FormControl>
                               <AddressInput
                                 value={field.value}
                                 onChange={field.onChange}
                                 disabled={sameCoordinates}
                                 onAddressSelect={(addr) => {
-                                  form.setValue(`contacts.${index}.apartment_number`, addr.apartment_number);
-                                  form.setValue(`contacts.${index}.city`, addr.city);
-                                  form.setValue(`contacts.${index}.province`, addr.province || "QC");
-                                  form.setValue(`contacts.${index}.code_postal`, addr.code_postal);
+                                  form.setValue(
+                                    `contacts.${index}.apartment_number`,
+                                    addr.apartment_number,
+                                  );
+                                  form.setValue(
+                                    `contacts.${index}.city`,
+                                    addr.city,
+                                  );
+                                  form.setValue(
+                                    `contacts.${index}.province`,
+                                    addr.province || "QC",
+                                  );
+                                  form.setValue(
+                                    `contacts.${index}.code_postal`,
+                                    addr.code_postal,
+                                  );
                                 }}
                               />
                             </FormControl>
@@ -397,7 +483,9 @@ export function ContactFormDialog({
                         name={`contacts.${index}.apartment_number`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.apartment_number")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.apartment_number")}
+                            </FormLabel>
                             <FormControl>
                               <Input {...field} disabled={sameCoordinates} />
                             </FormControl>
@@ -412,7 +500,9 @@ export function ContactFormDialog({
                         name={`contacts.${index}.city`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.city")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.city")}
+                            </FormLabel>
                             <FormControl>
                               <Input {...field} disabled={sameCoordinates} />
                             </FormControl>
@@ -425,10 +515,18 @@ export function ContactFormDialog({
                         name={`contacts.${index}.province`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.province")}</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange} disabled={sameCoordinates}>
+                            <FormLabel>
+                              {t("create_participant.province")}
+                            </FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={sameCoordinates}
+                            >
                               <FormControl>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {PROVINCE_OPTIONS.map((code) => (
@@ -449,7 +547,9 @@ export function ContactFormDialog({
                         name={`contacts.${index}.code_postal`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("create_participant.code_postal")}</FormLabel>
+                            <FormLabel>
+                              {t("create_participant.code_postal")}
+                            </FormLabel>
                             <FormControl>
                               <Input {...field} disabled={sameCoordinates} />
                             </FormControl>

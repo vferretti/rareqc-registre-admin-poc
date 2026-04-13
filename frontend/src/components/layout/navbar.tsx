@@ -11,7 +11,7 @@ import {
   ScrollText,
   ShoppingCart,
 } from "lucide-react";
-import { useCartContext } from "@/contexts/cart-context";
+import { useCartContext } from "@/contexts/use-cart-context";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
 import {

@@ -33,9 +33,10 @@ export function ParticipantActivityLog({
     participantId,
   });
 
-  const title = total > 0
-    ? `${t("activity_log.participant_section_title")} (${t("activity_log.activity_count", { count: total })})`
-    : t("activity_log.participant_section_title");
+  const title =
+    total > 0
+      ? `${t("activity_log.participant_section_title")} (${t("activity_log.activity_count", { count: total })})`
+      : t("activity_log.participant_section_title");
 
   return (
     <Card>
@@ -46,7 +47,9 @@ export function ParticipantActivityLog({
         {error ? (
           <p className="text-destructive text-sm">{t("common.error")}</p>
         ) : !isLoading && logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("activity_log.empty")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("activity_log.empty")}
+          </p>
         ) : (
           <div className={cn("transition-opacity", isLoading && "opacity-50")}>
             <div className="space-y-0">

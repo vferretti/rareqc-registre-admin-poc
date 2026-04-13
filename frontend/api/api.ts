@@ -65,6 +65,17 @@ export interface AgeRangeCount {
   count: number;
   range: string;
 }
+export interface BulkCommunicationRequest {
+  comment?: string;
+  communication_date: string;
+  method_code: string;
+  outcome_code?: string;
+  subject_code: string;
+}
+export interface BulkCommunicationResponse {
+  created: number;
+  skipped: Array<number>;
+}
 export interface CartCountResponse {
   count: number;
 }
@@ -1929,6 +1940,57 @@ export const CartApiAxiosParamCreator = function (
 ) {
   return {
     /**
+     * Records a communication (phone or email attempt) for each participant currently in the user\'s cart, using their primary contact
+     * @summary Create a communication for every cart participant
+     * @param {BulkCommunicationRequest} body Communication data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    cartCommunicationsPost: async (
+      body: BulkCommunicationRequest,
+      options: RawAxiosRequestConfig = {},
+    ): Promise<RequestArgs> => {
+      // verify required parameter 'body' is not null or undefined
+      assertParamExists("cartCommunicationsPost", "body", body);
+      const localVarPath = `/cart/communications`;
+      // use dummy base URL string because the URL constructor only accepts absolute URLs.
+      const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+      let baseOptions;
+      if (configuration) {
+        baseOptions = configuration.baseOptions;
+      }
+
+      const localVarRequestOptions = {
+        method: "POST",
+        ...baseOptions,
+        ...options,
+      };
+      const localVarHeaderParameter = {} as any;
+      const localVarQueryParameter = {} as any;
+
+      localVarHeaderParameter["Content-Type"] = "application/json";
+      localVarHeaderParameter["Accept"] = "application/json";
+
+      setSearchParams(localVarUrlObj, localVarQueryParameter);
+      let headersFromBaseOptions =
+        baseOptions && baseOptions.headers ? baseOptions.headers : {};
+      localVarRequestOptions.headers = {
+        ...localVarHeaderParameter,
+        ...headersFromBaseOptions,
+        ...options.headers,
+      };
+      localVarRequestOptions.data = serializeDataIfNeeded(
+        body,
+        localVarRequestOptions,
+        configuration,
+      );
+
+      return {
+        url: toPathString(localVarUrlObj),
+        options: localVarRequestOptions,
+      };
+    },
+    /**
      * Returns the number of items in the user\'s cart
      * @summary Get cart count
      * @param {*} [options] Override http request option.
@@ -2204,6 +2266,37 @@ export const CartApiFp = function (configuration?: Configuration) {
   const localVarAxiosParamCreator = CartApiAxiosParamCreator(configuration);
   return {
     /**
+     * Records a communication (phone or email attempt) for each participant currently in the user\'s cart, using their primary contact
+     * @summary Create a communication for every cart participant
+     * @param {BulkCommunicationRequest} body Communication data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    async cartCommunicationsPost(
+      body: BulkCommunicationRequest,
+      options?: RawAxiosRequestConfig,
+    ): Promise<
+      (
+        axios?: AxiosInstance,
+        basePath?: string,
+      ) => AxiosPromise<BulkCommunicationResponse>
+    > {
+      const localVarAxiosArgs =
+        await localVarAxiosParamCreator.cartCommunicationsPost(body, options);
+      const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+      const localVarOperationServerBasePath =
+        operationServerMap["CartApi.cartCommunicationsPost"]?.[
+          localVarOperationServerIndex
+        ]?.url;
+      return (axios, basePath) =>
+        createRequestFunction(
+          localVarAxiosArgs,
+          globalAxios,
+          BASE_PATH,
+          configuration,
+        )(axios, localVarOperationServerBasePath || basePath);
+    },
+    /**
      * Returns the number of items in the user\'s cart
      * @summary Get cart count
      * @param {*} [options] Override http request option.
@@ -2398,6 +2491,21 @@ export const CartApiFactory = function (
   const localVarFp = CartApiFp(configuration);
   return {
     /**
+     * Records a communication (phone or email attempt) for each participant currently in the user\'s cart, using their primary contact
+     * @summary Create a communication for every cart participant
+     * @param {BulkCommunicationRequest} body Communication data
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    cartCommunicationsPost(
+      body: BulkCommunicationRequest,
+      options?: RawAxiosRequestConfig,
+    ): AxiosPromise<BulkCommunicationResponse> {
+      return localVarFp
+        .cartCommunicationsPost(body, options)
+        .then((request) => request(axios, basePath));
+    },
+    /**
      * Returns the number of items in the user\'s cart
      * @summary Get cart count
      * @param {*} [options] Override http request option.
@@ -2486,6 +2594,22 @@ export const CartApiFactory = function (
  * CartApi - object-oriented interface
  */
 export class CartApi extends BaseAPI {
+  /**
+   * Records a communication (phone or email attempt) for each participant currently in the user\'s cart, using their primary contact
+   * @summary Create a communication for every cart participant
+   * @param {BulkCommunicationRequest} body Communication data
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  public cartCommunicationsPost(
+    body: BulkCommunicationRequest,
+    options?: RawAxiosRequestConfig,
+  ) {
+    return CartApiFp(this.configuration)
+      .cartCommunicationsPost(body, options)
+      .then((request) => request(this.axios, this.basePath));
+  }
+
   /**
    * Returns the number of items in the user\'s cart
    * @summary Get cart count

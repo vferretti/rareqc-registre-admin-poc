@@ -2,8 +2,10 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
@@ -194,6 +196,147 @@ func RemoveCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 		count, _ := repo.CountItems(fakeUserID)
 		c.JSON(http.StatusOK, cartMutationResponse{Success: true, Count: count})
 	}
+}
+
+// BulkCommunicationRequest represents the payload for creating a communication on every cart participant.
+type BulkCommunicationRequest struct {
+	MethodCode        string  `json:"method_code" binding:"required"`
+	SubjectCode       string  `json:"subject_code" binding:"required"`
+	OutcomeCode       *string `json:"outcome_code"`
+	CommunicationDate string  `json:"communication_date" binding:"required"`
+	Comment           *string `json:"comment"`
+}
+
+// bulkCommunicationResponse summarizes the result of a bulk-create operation.
+type bulkCommunicationResponse struct {
+	Created int   `json:"created" validate:"required"`
+	Skipped []int `json:"skipped" validate:"required"`
+}
+
+// CreateCartCommunicationsHandler creates one communication record per participant in the user's cart.
+//
+// For each participant, the handler resolves the contact to use as follows:
+//  1. The non-self contact flagged as primary (if any), then
+//  2. The "self" contact (always present for any participant).
+//
+// Participants without any contact are reported in the response's "skipped" array.
+//
+// @Summary     Create a communication for every cart participant
+// @Description Records a communication (phone or email attempt) for each participant currently in the user's cart, using their primary contact
+// @Tags        cart
+// @Accept      json
+// @Produce     json
+// @Param       body body BulkCommunicationRequest true "Communication data"
+// @Success     201 {object} bulkCommunicationResponse
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /cart/communications [post]
+func CreateCartCommunicationsHandler(
+	cartRepo repository.CartDAO,
+	commRepo repository.CommunicationDAO,
+) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req BulkCommunicationRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			handleBadRequest(c, "Invalid request body")
+			return
+		}
+
+		commDate, err := time.Parse("2006-01-02", req.CommunicationDate)
+		if err != nil {
+			handleBadRequest(c, "Invalid date format (expected YYYY-MM-DD)")
+			return
+		}
+
+		items, err := cartRepo.ListItems(fakeUserID)
+		if err != nil {
+			handleInternalError(c, "Failed to fetch cart")
+			return
+		}
+		if len(items) == 0 {
+			handleBadRequest(c, "Cart is empty")
+			return
+		}
+
+		participantIDs := make([]int, len(items))
+		for i, item := range items {
+			participantIDs[i] = item.ParticipantID
+		}
+
+		// Pre-load every contact of every cart participant in a single query, then index
+		// them by participant ID so we can pick the right one without an extra round trip.
+		var contacts []types.Contact
+		if err := commRepo.DB().
+			Where("participant_id IN ?", participantIDs).
+			Find(&contacts).Error; err != nil {
+			handleInternalError(c, "Failed to fetch contacts")
+			return
+		}
+		byParticipant := make(map[int][]types.Contact, len(participantIDs))
+		for _, ct := range contacts {
+			byParticipant[ct.ParticipantID] = append(byParticipant[ct.ParticipantID], ct)
+		}
+
+		author := getAuthor(c)
+		created := 0
+		skipped := []int{}
+
+		err = commRepo.DB().Transaction(func(tx *gorm.DB) error {
+			for _, pid := range participantIDs {
+				contact := pickPrimaryContact(byParticipant[pid])
+				if contact == nil {
+					skipped = append(skipped, pid)
+					continue
+				}
+				var contactValue *string
+				if req.MethodCode == "email" && contact.Email != "" {
+					v := contact.Email
+					contactValue = &v
+				} else if req.MethodCode == "phone" && contact.Phone != "" {
+					v := contact.Phone
+					contactValue = &v
+				}
+				comm := types.Communication{
+					ParticipantID:     pid,
+					ContactID:         contact.ID,
+					ContactValue:      contactValue,
+					MethodCode:        req.MethodCode,
+					SubjectCode:       req.SubjectCode,
+					OutcomeCode:       req.OutcomeCode,
+					CommunicationDate: commDate,
+					Author:            author,
+					Comment:           req.Comment,
+				}
+				if err := tx.Create(&comm).Error; err != nil {
+					return err
+				}
+				created++
+			}
+			return nil
+		})
+		if err != nil {
+			handleInternalError(c, "Failed to create communications")
+			return
+		}
+
+		c.JSON(http.StatusCreated, bulkCommunicationResponse{Created: created, Skipped: skipped})
+	}
+}
+
+// pickPrimaryContact returns the contact best suited to receive a bulk communication:
+// the non-self primary contact if one exists, otherwise the "self" contact.
+func pickPrimaryContact(contacts []types.Contact) *types.Contact {
+	var self *types.Contact
+	for i := range contacts {
+		c := &contacts[i]
+		if c.RelationshipCode != "self" && c.IsPrimary {
+			return c
+		}
+		if c.RelationshipCode == "self" {
+			self = c
+		}
+	}
+	return self
 }
 
 // ClearCartHandler empties the user's cart.
