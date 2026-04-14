@@ -123,7 +123,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 | Service    | Port |
 |------------|------|
 | Frontend   | 5173 (dev) / 3000 (docker) |
-| API        | 8080 (dev) / 8081 (docker) |
+| API        | 8080 (dev) / 8082 (docker) |
 | PostgreSQL | 5440 |
 
 ## Docker notes

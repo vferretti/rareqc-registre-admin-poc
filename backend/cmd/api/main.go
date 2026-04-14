@@ -13,7 +13,6 @@ import (
 // @version         1.0
 // @description     REST API pour le registre québécois de patients atteints de maladies rares — administration.
 
-// @host      localhost:8080
 // @BasePath  /api
 func main() {
 	pgDB, err := database.NewPostgresDB()
