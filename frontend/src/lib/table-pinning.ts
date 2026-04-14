@@ -23,7 +23,7 @@ export function getColumnPinningHeaderStyle<T>(
   header: Header<T, unknown>,
 ): React.CSSProperties {
   const isPinned = header.column.getIsPinned();
-  if (!isPinned) return { width: header.getSize() };
+  if (!isPinned) return { minWidth: header.getSize() };
   return {
     left: isPinned === "left" ? `${header.getStart("left")}px` : undefined,
     right:
@@ -36,7 +36,7 @@ export function getColumnPinningCellStyle<T>(
   column: Column<T, unknown>,
 ): React.CSSProperties {
   const isPinned = column.getIsPinned();
-  if (!isPinned) return { width: column.getSize() };
+  if (!isPinned) return { minWidth: column.getSize() };
   return {
     left: isPinned === "left" ? `${column.getStart("left")}px` : undefined,
     right: isPinned === "right" ? `${column.getAfter("right")}px` : undefined,

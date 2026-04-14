@@ -6,6 +6,8 @@ export type { SearchSuggestion };
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
+const EMPTY: SearchSuggestion[] = [];
+
 /** Fetches search suggestions for a query (min 2 characters). */
 export function useSearch(query: string) {
   const trimmed = query.trim();
@@ -16,7 +18,7 @@ export function useSearch(query: string) {
   );
 
   return {
-    suggestions: data ?? [],
+    suggestions: data ?? EMPTY,
     error,
     isLoading,
   };
