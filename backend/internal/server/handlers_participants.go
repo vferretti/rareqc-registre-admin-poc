@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,99 +14,6 @@ import (
 	"registre-admin/internal/types"
 )
 
-// --- Shared helpers ---
-
-// parseDate parses a "YYYY-MM-DD" string into a *time.Time. Returns nil for empty strings.
-func parseDate(dateStr string) (*time.Time, error) {
-	if dateStr == "" {
-		return nil, nil
-	}
-	d, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return nil, err
-	}
-	return &d, nil
-}
-
-// validateDates checks that date of birth is not in the future and date of death is after date of birth.
-func validateDates(dob time.Time, dateOfDeath *time.Time) error {
-	if dob.After(time.Now()) {
-		return fmt.Errorf("date of birth cannot be in the future")
-	}
-	if dateOfDeath != nil && dateOfDeath.Before(dob) {
-		return fmt.Errorf("date of death cannot be before date of birth")
-	}
-	return nil
-}
-
-// toStringPtr returns a pointer to s, or nil if s is empty.
-func toStringPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-// findSelfContact returns a pointer to the "self" contact in the slice, or nil if none exists.
-func findSelfContact(contacts []types.Contact) *types.Contact {
-	for i := range contacts {
-		if contacts[i].RelationshipCode == "self" {
-			return &contacts[i]
-		}
-	}
-	return nil
-}
-
-// selfContactSnapshot holds the coordinate fields of the "self" contact for before/after comparison.
-type selfContactSnapshot struct {
-	Email, Phone, ApartmentNumber, StreetAddress, City, Province, CodePostal, PreferredLanguage string
-}
-
-// snapshotSelfContact captures the current coordinate fields of the "self" contact.
-func snapshotSelfContact(contacts []types.Contact) selfContactSnapshot {
-	if sc := findSelfContact(contacts); sc != nil {
-		return selfContactSnapshot{
-			Email: sc.Email, Phone: sc.Phone,
-			ApartmentNumber: sc.ApartmentNumber, StreetAddress: sc.StreetAddress,
-			City: sc.City, Province: sc.Province, CodePostal: sc.CodePostal,
-			PreferredLanguage: sc.PreferredLanguage,
-		}
-	}
-	return selfContactSnapshot{}
-}
-
-// participantFieldsChanged compares the participant's current fields against the incoming request.
-func participantFieldsChanged(p types.Participant, req types.UpdateParticipantRequest, dob time.Time, ramq *string, dateOfDeath *time.Time) bool {
-	if p.FirstName != req.FirstName || p.LastName != req.LastName || p.SexAtBirthCode != req.SexAtBirthCode || p.VitalStatusCode != req.VitalStatusCode {
-		return true
-	}
-	if !p.DateOfBirth.Equal(dob) {
-		return true
-	}
-	cityOfBirth := toStringPtr(req.CityOfBirth)
-	if (p.CityOfBirth == nil) != (cityOfBirth == nil) || (p.CityOfBirth != nil && cityOfBirth != nil && *p.CityOfBirth != *cityOfBirth) {
-		return true
-	}
-	if (p.RAMQ == nil) != (ramq == nil) || (p.RAMQ != nil && ramq != nil && *p.RAMQ != *ramq) {
-		return true
-	}
-	if (p.DateOfDeath == nil) != (dateOfDeath == nil) || (p.DateOfDeath != nil && dateOfDeath != nil && !p.DateOfDeath.Equal(*dateOfDeath)) {
-		return true
-	}
-	return false
-}
-
-// selfContactChanged compares the old self-contact snapshot against the incoming coordinates.
-func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequest) bool {
-	return old.Email != req.Email || old.Phone != req.Phone ||
-		old.ApartmentNumber != req.ApartmentNumber ||
-		old.StreetAddress != req.StreetAddress || old.City != req.City ||
-		old.Province != req.Province || old.CodePostal != req.CodePostal ||
-		old.PreferredLanguage != req.PreferredLanguage
-}
-
-// --- Handlers ---
-
 // ResolveIDsHandler resolves a list of external or internal IDs to participant IDs.
 //
 // @Summary     Resolve IDs to participant IDs
@@ -117,18 +25,19 @@ func selfContactChanged(old selfContactSnapshot, req types.UpdateParticipantRequ
 // @Success     200 {object} resolveIDsResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Router      /participants/resolve-ids [post]
-func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDRepo *repository.ExternalIDRepository) gin.HandlerFunc {
+func ResolveIDsHandler(participantRepo repository.ParticipantDAO, extIDRepo repository.ExternalIDDAO, guidRepo repository.GuidDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req resolveIDsRequest
 		if err := c.ShouldBindJSON(&req); err != nil || len(req.IDs) == 0 || req.Source == "" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "source and ids are required"})
+			handleBadRequest(c, "source and ids are required")
 			return
 		}
 
 		var resolvedIDs []int
 		var notFound []string
 
-		if req.Source == "internal" {
+		switch req.Source {
+		case "internal":
 			// Parse string IDs to ints, check existence
 			seen := make(map[int]bool)
 			for _, raw := range req.IDs {
@@ -137,7 +46,11 @@ func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDR
 					notFound = append(notFound, raw)
 					continue
 				}
-				exists, _ := participantRepo.Exists(id)
+				exists, err := participantRepo.Exists(id)
+				if err != nil {
+					handleInternalError(c, "Failed to resolve IDs")
+					return
+				}
 				if exists && !seen[id] {
 					resolvedIDs = append(resolvedIDs, id)
 					seen[id] = true
@@ -145,7 +58,9 @@ func ResolveIDsHandler(participantRepo *repository.ParticipantRepository, extIDR
 					notFound = append(notFound, raw)
 				}
 			}
-		} else {
+		case "guid":
+			resolvedIDs, notFound = guidRepo.ResolveByGuid(req.IDs)
+		default:
 			resolvedIDs, notFound = extIDRepo.ResolveBySystem(req.Source, req.IDs)
 		}
 
@@ -169,8 +84,8 @@ type resolveIDsRequest struct {
 }
 
 type resolveIDsResponse struct {
-	ResolvedIDs []int    `json:"resolved_ids"`
-	NotFound    []string `json:"not_found"`
+	ResolvedIDs []int    `json:"resolved_ids" validate:"required"`
+	NotFound    []string `json:"not_found" validate:"required"`
 }
 
 // ListParticipantsHandler returns a paginated, sortable, searchable list of participants.
@@ -184,16 +99,16 @@ type resolveIDsResponse struct {
 // @Param       sort_field query string false "Sort field"             default(last_name)
 // @Param       sort_order query string false "Sort order (asc/desc)" default(asc)
 // @Param       search     query string false "Search term (name, RAMQ, etc.)"
-// @Success     200 {object} types.PaginatedResponse[types.Participant]
+// @Success     200 {object} types.PaginatedResponse[repository.ParticipantListItem]
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants [get]
-func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
+func ListParticipantsHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := parsePaginationParams(c, "last_name")
 
 		participants, total, totalPages, err := repo.List(params)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participants"})
+			handleInternalError(c, "Failed to fetch participants")
 			return
 		}
 
@@ -218,82 +133,18 @@ func ListParticipantsHandler(repo *repository.ParticipantRepository) gin.Handler
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id} [get]
-func GetParticipantHandler(repo *repository.ParticipantRepository) gin.HandlerFunc {
+func GetParticipantHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := repo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 		c.JSON(http.StatusOK, participant)
-	}
-}
-
-// DeleteContactHandler removes a contact by ID and records the activity.
-//
-// @Summary     Delete a contact
-// @Description Deletes a contact by ID. Cannot delete a "self" contact or one referenced by a consent.
-// @Tags        contacts
-// @Produce     json
-// @Param       contactId path int true "Contact ID"
-// @Success     200 {object} object{message=string}
-// @Failure     400 {object} types.ErrorResponse
-// @Failure     404 {object} types.ErrorResponse
-// @Failure     500 {object} types.ErrorResponse
-// @Router      /contacts/{contactId} [delete]
-func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		contact, err := contactRepo.FindByID(c.Param("contactId"))
-		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
-			return
-		}
-
-		if contact.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete self contact"})
-			return
-		}
-
-		referenced, err := contactRepo.IsReferencedByConsent(contact.ID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check consent references"})
-			return
-		}
-		if referenced {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot delete contact: referenced as consent signer"})
-			return
-		}
-
-		author := getAuthor(c)
-
-		err = contactRepo.Transaction(func(tx *gorm.DB) error {
-			wasPrimary := contact.IsPrimary
-			if err := contactRepo.Delete(tx, &contact); err != nil {
-				return err
-			}
-			if wasPrimary {
-				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
-				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
-				}
-			}
-			details := fmt.Sprintf("%s %s", contact.FirstName, contact.LastName)
-			return activityRepo.Record(tx, "contact_deleted", &contact.ParticipantID, author, &details)
-		})
-
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to delete contact"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})
 	}
 }
 
@@ -311,48 +162,49 @@ func DeleteContactHandler(contactRepo *repository.ContactRepository, activityRep
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id} [put]
-func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 
 		var req types.UpdateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
+			handleBadRequest(c, "Invalid date_of_birth format")
 			return
 		}
 
 		dateOfDeath, err := parseDate(req.DateOfDeath)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			handleBadRequest(c, "Invalid date_of_death format")
 			return
 		}
 
 		if err := validateDates(dob, dateOfDeath); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			handleBadRequest(c, err.Error())
 			return
 		}
 
-		ramq := toStringPtr(req.RAMQ)
+		ramq := toStringPtr(normalizeRAMQ(req.RAMQ))
 		author := getAuthor(c)
 
 		// Snapshot old state for activity comparison
 		oldChanged := participantFieldsChanged(participant, req, dob, ramq, dateOfDeath)
 		oldSelfSnapshot := snapshotSelfContact(participant.Contacts)
 		oldSelfChanged := selfContactChanged(oldSelfSnapshot, req)
+		needGuidRecompute := guidFieldsChanged(participant, req, dob, ramq)
 
 		err = participantRepo.Transaction(func(tx *gorm.DB) error {
 			// Update participant fields
@@ -368,13 +220,15 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 				return err
 			}
 
-			// Recompute GUIDs
-			g := guid.Compute(&participant)
-			if err := tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "participant_id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"guid_basic", "guid_ramq", "guid_birthplace"}),
-			}).Create(g).Error; err != nil {
-				return err
+			// Recompute GUIDs only if identity fields changed
+			if needGuidRecompute {
+				g := guid.Compute(&participant)
+				if err := tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "participant_id"}},
+					DoUpdates: clause.AssignmentColumns([]string{"guid_basic", "guid_ramq", "guid_birthplace"}),
+				}).Create(g).Error; err != nil {
+					return err
+				}
 			}
 
 			// Update self contact coordinates
@@ -406,11 +260,14 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update participant"})
+			handleInternalError(c, "Failed to update participant")
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusOK, participant)
 	}
 }
@@ -427,27 +284,27 @@ func UpdateParticipantHandler(participantRepo *repository.ParticipantRepository,
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants [post]
-func CreateParticipantHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req types.CreateParticipantRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 		dob, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_birth format"})
+			handleBadRequest(c, "Invalid date_of_birth format")
 			return
 		}
 
 		dateOfDeath, err := parseDate(req.DateOfDeath)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid date_of_death format"})
+			handleBadRequest(c, "Invalid date_of_death format")
 			return
 		}
 
 		if err := validateDates(dob, dateOfDeath); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: err.Error()})
+			handleBadRequest(c, err.Error())
 			return
 		}
 
@@ -456,7 +313,7 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 			LastName:        req.LastName,
 			DateOfBirth:     dob,
 			CityOfBirth:     toStringPtr(req.CityOfBirth),
-			RAMQ:            toStringPtr(req.RAMQ),
+			RAMQ:            toStringPtr(normalizeRAMQ(req.RAMQ)),
 			SexAtBirthCode:  req.SexAtBirthCode,
 			VitalStatusCode: req.VitalStatusCode,
 			DateOfDeath:     dateOfDeath,
@@ -547,11 +404,43 @@ func CreateParticipantHandler(participantRepo *repository.ParticipantRepository,
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create participant"})
+			handleInternalError(c, "Failed to create participant")
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusCreated, participant)
+	}
+}
+
+// DeleteParticipantHandler permanently deletes a participant and all related data (cascade).
+//
+// @Summary     Delete a participant
+// @Description Permanently deletes a participant and all associated data (contacts, consents, communications, activity logs, GUIDs, external IDs, cart items). This action is irreversible.
+// @Tags        participants
+// @Param       id path int true "Participant ID"
+// @Success     204
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /participants/{id} [delete]
+func DeleteParticipantHandler(participantRepo repository.ParticipantDAO) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+
+		if _, err := participantRepo.FindByID(id); err != nil {
+			handleNotFound(c, "Participant")
+			return
+		}
+
+		if err := participantRepo.Delete(id); err != nil {
+			handleInternalError(c, "Failed to delete participant")
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	}
 }

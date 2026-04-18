@@ -14,7 +14,10 @@ function HighlightText({ text, highlight }: HighlightTextProps) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === highlight.toLowerCase() ? (
-          <mark key={i} className="bg-highlight text-highlight-foreground rounded-sm">
+          <mark
+            key={i}
+            className="bg-highlight text-highlight-foreground rounded-sm"
+          >
             {part}
           </mark>
         ) : (

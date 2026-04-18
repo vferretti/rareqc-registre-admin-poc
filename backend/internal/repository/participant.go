@@ -2,11 +2,23 @@ package repository
 
 import (
 	"math"
-	"strings"
 
 	"gorm.io/gorm"
 	"registre-admin/internal/types"
 )
+
+// ParticipantDAO defines the interface for participant data access.
+type ParticipantDAO interface {
+	FindByID(id string) (types.Participant, error)
+	FindByIDs(ids []int) ([]types.Participant, error)
+	Delete(id string) error
+	List(params types.PaginationParams) ([]ParticipantListItem, int, int, error)
+	Create(tx *gorm.DB, p *types.Participant) error
+	Save(tx *gorm.DB, p *types.Participant) error
+	Exists(id int) (bool, error)
+	Transaction(fn func(tx *gorm.DB) error) error
+	Reload(p *types.Participant) error
+}
 
 // ParticipantRepository handles database operations for participants.
 type ParticipantRepository struct {
@@ -23,6 +35,21 @@ func (r *ParticipantRepository) FindByID(id string) (types.Participant, error) {
 	var p types.Participant
 	err := r.db.Preload("Contacts").Preload("Guid").First(&p, id).Error
 	return p, err
+}
+
+// Delete permanently removes a participant. Related data is removed by ON DELETE CASCADE.
+func (r *ParticipantRepository) Delete(id string) error {
+	return r.db.Delete(&types.Participant{}, id).Error
+}
+
+// FindByIDs returns participants with contacts and GUIDs for a list of IDs, sorted by ID.
+func (r *ParticipantRepository) FindByIDs(ids []int) ([]types.Participant, error) {
+	var participants []types.Participant
+	err := r.db.Preload("Contacts").Preload("Guid").
+		Where("id IN ?", ids).
+		Order("id ASC").
+		Find(&participants).Error
+	return participants, err
 }
 
 // ParticipantListItem extends Participant with consent status summaries.
@@ -45,48 +72,26 @@ func (r *ParticipantRepository) List(params types.PaginationParams) ([]Participa
 	query := r.db.Model(&types.Participant{})
 
 	if params.Search != "" {
-		term := "%" + strings.ToLower(params.Search) + "%"
-		query = query.Where(
-			`id IN (
-				SELECT p.id FROM participant p
-				WHERE CAST(p.id AS TEXT) LIKE ? OR LOWER(unaccent(p.first_name)) LIKE unaccent(?) OR LOWER(unaccent(p.last_name)) LIKE unaccent(?) OR LOWER(unaccent(p.first_name || ' ' || p.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(p.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '')
-				UNION
-				SELECT c.participant_id FROM contact c
-				WHERE LOWER(unaccent(c.first_name)) LIKE unaccent(?) OR LOWER(unaccent(c.last_name)) LIKE unaccent(?) OR LOWER(unaccent(c.first_name || ' ' || c.last_name)) LIKE unaccent(?) OR LOWER(c.email) LIKE ? OR c.phone LIKE ?
-				UNION
-				SELECT e.participant_id FROM external_id e
-				WHERE LOWER(e.external_id) LIKE ?
-			)`,
-			term, term, term, term, term,
-			term, term, term, term, term,
-			term,
-		)
+		query = query.Scopes(WithListSearch(params.Search))
 	}
 
 	// Filter by consent clause type + status (AND between clause types, OR within statuses)
-	clauseFilters := []struct {
+	for _, cf := range []struct {
 		clauseType string
 		statuses   []string
 	}{
 		{"registry", params.ConsentRegistry},
 		{"recontact", params.ConsentRecontact},
 		{"external_linkage", params.ConsentExternalLinkage},
-	}
-	for _, cf := range clauseFilters {
+	} {
 		if len(cf.statuses) > 0 {
-			query = query.Where(
-				`id IN (SELECT c.participant_id FROM consent c JOIN consent_clause cc ON c.clause_id = cc.id WHERE cc.clause_type_code = ? AND c.status_code IN ?)`,
-				cf.clauseType, cf.statuses,
-			)
+			query = query.Scopes(WithConsentFilter(cf.clauseType, cf.statuses))
 		}
 	}
 
 	// Filter by external system names (OR: participant has an ID in any of the selected systems)
 	if len(params.ExternalSystems) > 0 {
-		query = query.Where(
-			`id IN (SELECT e.participant_id FROM external_id e JOIN external_system es ON e.external_system_id = es.id WHERE es.name IN ?)`,
-			params.ExternalSystems,
-		)
+		query = query.Scopes(WithExternalSystemFilter(params.ExternalSystems))
 	}
 
 	// Filter by explicit participant IDs (from bulk ID filter)

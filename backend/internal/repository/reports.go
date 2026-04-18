@@ -7,6 +7,11 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ReportsDAO defines the interface for reports data access.
+type ReportsDAO interface {
+	GetSummary(reportDate time.Time) (types.ReportsSummary, error)
+}
+
 // ReportsRepository handles aggregation queries for reporting.
 type ReportsRepository struct {
 	db *gorm.DB

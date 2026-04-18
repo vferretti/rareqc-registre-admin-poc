@@ -1,0 +1,155 @@
+package repository
+
+import (
+	"gorm.io/gorm"
+	"registre-admin/internal/types"
+)
+
+// CommunicationDAO defines the interface for communication data access.
+type CommunicationDAO interface {
+	ListByParticipant(participantID int) ([]CommunicationResponse, error)
+	FindByID(id int) (types.Communication, error)
+	Create(c *types.Communication) error
+	Update(c *types.Communication) error
+	Delete(id int) error
+	DB() *gorm.DB
+}
+
+// CommunicationRepository handles database operations for communications.
+type CommunicationRepository struct {
+	db *gorm.DB
+}
+
+// NewCommunicationRepository creates a new CommunicationRepository.
+func NewCommunicationRepository(db *gorm.DB) *CommunicationRepository {
+	return &CommunicationRepository{db: db}
+}
+
+// CommunicationResponse represents a communication with flattened fields for API responses.
+type CommunicationResponse struct {
+	ID                int     `json:"id" validate:"required"`
+	ParticipantID     int     `json:"participant_id" validate:"required"`
+	ContactID         int     `json:"contact_id" validate:"required"`
+	ContactFirstName  string  `json:"contact_first_name,omitempty"`
+	ContactLastName   string  `json:"contact_last_name,omitempty"`
+	ContactValue      *string `json:"contact_value,omitempty"`
+	MethodCode        string  `json:"method_code" validate:"required"`
+	MethodNameFr      string  `json:"method_name_fr" validate:"required"`
+	MethodNameEn      string  `json:"method_name_en" validate:"required"`
+	SubjectCode       string  `json:"subject_code" validate:"required"`
+	SubjectNameFr     string  `json:"subject_name_fr" validate:"required"`
+	SubjectNameEn     string  `json:"subject_name_en" validate:"required"`
+	OutcomeCode       *string `json:"outcome_code,omitempty"`
+	OutcomeNameFr     string  `json:"outcome_name_fr,omitempty"`
+	OutcomeNameEn     string  `json:"outcome_name_en,omitempty"`
+	CommunicationDate string  `json:"communication_date" validate:"required"`
+	Author            string  `json:"author" validate:"required"`
+	Comment           *string `json:"comment,omitempty"`
+	CreatedAt         string  `json:"created_at" validate:"required"`
+	UpdatedAt         string  `json:"updated_at"`
+}
+
+// outcomeLabel holds bilingual names for an outcome code.
+type outcomeLabel struct {
+	NameFr string
+	NameEn string
+}
+
+// buildOutcomeLookup loads both phone and email outcome tables into a single map.
+func (r *CommunicationRepository) buildOutcomeLookup() (map[string]outcomeLabel, error) {
+	lookup := make(map[string]outcomeLabel)
+	var phone []types.PhoneOutcome
+	if err := r.db.Find(&phone).Error; err != nil {
+		return nil, err
+	}
+	for _, o := range phone {
+		lookup[o.Code] = outcomeLabel{NameFr: o.NameFr, NameEn: o.NameEn}
+	}
+	var email []types.EmailOutcome
+	if err := r.db.Find(&email).Error; err != nil {
+		return nil, err
+	}
+	for _, o := range email {
+		lookup[o.Code] = outcomeLabel{NameFr: o.NameFr, NameEn: o.NameEn}
+	}
+	return lookup, nil
+}
+
+// ListByParticipant returns all communications for a participant, sorted by date desc.
+func (r *CommunicationRepository) ListByParticipant(participantID int) ([]CommunicationResponse, error) {
+	var comms []types.Communication
+	err := r.db.
+		Preload("Contact").
+		Preload("Method").
+		Preload("Subject").
+		Where("participant_id = ?", participantID).
+		Order("communication_date DESC, created_at DESC").
+		Find(&comms).Error
+	if err != nil {
+		return nil, err
+	}
+
+	outcomeLookup, err := r.buildOutcomeLookup()
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]CommunicationResponse, len(comms))
+	for i, c := range comms {
+		resp := CommunicationResponse{
+			ID:                c.ID,
+			ParticipantID:     c.ParticipantID,
+			ContactID:         c.ContactID,
+			ContactValue:      c.ContactValue,
+			MethodCode:        c.MethodCode,
+			MethodNameFr:      c.Method.NameFr,
+			MethodNameEn:      c.Method.NameEn,
+			SubjectCode:       c.SubjectCode,
+			SubjectNameFr:     c.Subject.NameFr,
+			SubjectNameEn:     c.Subject.NameEn,
+			OutcomeCode:       c.OutcomeCode,
+			CommunicationDate: c.CommunicationDate.Format("2006-01-02"),
+			Author:            c.Author,
+			Comment:           c.Comment,
+			CreatedAt:         c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:         c.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+		resp.ContactFirstName = c.Contact.FirstName
+		resp.ContactLastName = c.Contact.LastName
+		if c.OutcomeCode != nil {
+			if label, ok := outcomeLookup[*c.OutcomeCode]; ok {
+				resp.OutcomeNameFr = label.NameFr
+				resp.OutcomeNameEn = label.NameEn
+			}
+		}
+		responses[i] = resp
+	}
+	return responses, nil
+}
+
+// FindByID returns a communication by ID.
+func (r *CommunicationRepository) FindByID(id int) (types.Communication, error) {
+	var c types.Communication
+	err := r.db.First(&c, id).Error
+	return c, err
+}
+
+// Create inserts a new communication record.
+func (r *CommunicationRepository) Create(c *types.Communication) error {
+	return r.db.Create(c).Error
+}
+
+// Update saves changes to an existing communication.
+func (r *CommunicationRepository) Update(c *types.Communication) error {
+	return r.db.Save(c).Error
+}
+
+// Delete removes a communication by ID.
+func (r *CommunicationRepository) Delete(id int) error {
+	return r.db.Delete(&types.Communication{}, id).Error
+}
+
+// DB returns the underlying database connection (for use in transactions).
+func (r *CommunicationRepository) DB() *gorm.DB {
+	return r.db
+}

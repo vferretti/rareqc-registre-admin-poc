@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import { ThemeProvider } from "next-themes";
 import "./index.css";
 import "./lib/i18n";
+import { ErrorBoundary } from "./components/base/error-boundary";
 import { LandingPage } from "./components/feature/landing-page";
 import Root from "./routes/root";
 import Participants from "./routes/participants";
@@ -62,7 +63,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="light">
-      <RouterProvider router={router} />
+      <ErrorBoundary>
+        <RouterProvider router={router} />
+      </ErrorBoundary>
     </ThemeProvider>
   </StrictMode>,
 );

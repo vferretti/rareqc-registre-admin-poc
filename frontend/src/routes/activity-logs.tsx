@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { translateDetails } from "@/components/feature/activity-timeline-item";
+import ExcelJS from "exceljs";
+import { translateDetails } from "@/lib/translate-details";
 import {
   type ColumnDef,
   type SortingState,
@@ -12,33 +13,23 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
-  flexRender,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/base/table/table";
+import { DataTable } from "@/components/base/data-table";
 import { PaginationBar } from "@/components/base/table/pagination";
 import { SortableHeader } from "@/components/base/table/sortable-header";
-import { TextCell, BadgeCell, TimestampCell } from "@/components/base/table/cells";
+import {
+  TextCell,
+  BadgeCell,
+  TimestampCell,
+} from "@/components/base/table/cells";
 import { PageHeader } from "@/components/base/page/page-header";
 import { useActivityLogs } from "@/hooks/useActivityLogs";
-import {
-  getColumnPinningHeaderCN,
-  getColumnPinningCellCN,
-  getColumnPinningHeaderStyle,
-  getColumnPinningCellStyle,
-} from "@/lib/table-pinning";
 import { cn } from "@/lib/utils";
 import { ACTION_BADGE } from "@/lib/badge-variants";
 import { MultiSelectFilter } from "@/components/base/multi-select-filter";
 import { CalendarDays, ListFilter, X } from "lucide-react";
-import { Input } from "@/components/base/ui/input";
 import { Button } from "@/components/base/ui/button";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import { Badge } from "@/components/base/badges/badge";
 import {
   DropdownMenu,
@@ -48,21 +39,15 @@ import {
 import { InputSearch } from "@/components/base/input-search";
 import { HighlightText } from "@/components/base/highlight-text";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { ActivityLog } from "@/types/activity-log";
-
-const ACTION_TYPES = [
-  "participant_created",
-  "participant_edited",
-  "contact_created",
-  "contact_edited",
-  "contact_deleted",
-  "consent_added",
-  "consent_edited",
-] as const;
 
 /** Global activity logs page with server-side pagination and sorting. */
 export default function ActivityLogs() {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const [sorting, setSorting] = useState<SortingState>([
     { id: "created_at", desc: true },
   ]);
@@ -75,6 +60,7 @@ export default function ActivityLogs() {
     right: [],
   });
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
+  const [isExporting, setIsExporting] = useState(false);
   const [search, setSearch] = useState("");
   const [actionTypes, setActionTypes] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState("");
@@ -96,6 +82,17 @@ export default function ActivityLogs() {
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });
+
+  const columnLabels = useMemo(
+    () => ({
+      created_at: t("activity_log.columns.date"),
+      author: t("activity_log.columns.author"),
+      action_type_code: t("activity_log.columns.action"),
+      participant_name: t("activity_log.columns.participant"),
+      details: t("activity_log.columns.details"),
+    }),
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<ActivityLog>[]>(
     () => [
@@ -129,7 +126,10 @@ export default function ActivityLogs() {
         ),
         cell: ({ getValue }) => (
           <TextCell>
-            <HighlightText text={getValue<string>()} highlight={debouncedSearch} />
+            <HighlightText
+              text={getValue<string>()}
+              highlight={debouncedSearch}
+            />
           </TextCell>
         ),
       },
@@ -149,7 +149,7 @@ export default function ActivityLogs() {
           const code = getValue<string>();
           return (
             <BadgeCell variant={ACTION_BADGE[code] ?? "secondary"}>
-              {t(`enums.action_type.${code}`, { defaultValue: code })}
+              {enumLabel(enums?.action_type, code, lang)}
             </BadgeCell>
           );
         },
@@ -180,7 +180,7 @@ export default function ActivityLogs() {
         cell: ({ getValue }) => {
           const val = getValue<string | null>();
           if (!val) return <TextCell>—</TextCell>;
-          const translated = translateDetails(val, t);
+          const translated = translateDetails(val, enums, lang);
           return (
             <TextCell>
               <HighlightText text={translated} highlight={debouncedSearch} />
@@ -211,6 +211,43 @@ export default function ActivityLogs() {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet(t("activity_log.title"));
+      ws.addRow([
+        t("activity_log.columns.date"),
+        t("activity_log.columns.author"),
+        t("activity_log.columns.action"),
+        t("activity_log.columns.participant"),
+        t("activity_log.columns.details"),
+      ]);
+      for (const log of logs) {
+        ws.addRow([
+          log.created_at ? new Date(log.created_at).toLocaleString(lang) : "",
+          log.author ?? "",
+          enumLabel(enums?.action_type, log.action_type_code, lang),
+          log.participant_name ?? "",
+          log.details ? translateDetails(log.details, enums, lang) : "",
+        ]);
+      }
+      ws.getRow(1).font = { bold: true };
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `activity_log_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -232,28 +269,36 @@ export default function ActivityLogs() {
                   <CalendarDays className="size-4" />
                   {t("activity_log.date_period")}
                   {(dateFrom || dateTo) && (
-                    <Badge variant="default" className="ml-1">1</Badge>
+                    <Badge variant="default" className="ml-1">
+                      1
+                    </Badge>
                   )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="p-3 min-w-56">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_from")}</label>
-                    <Input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      max={dateTo || undefined}
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {t("activity_log.date_from")}
+                    </label>
+                    <DatePicker
+                      value={dateFrom || undefined}
+                      onChange={(v) => setDateFrom(v ?? "")}
+                      maxDate={
+                        dateTo ? new Date(dateTo + "T00:00:00") : undefined
+                      }
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-muted-foreground">{t("activity_log.date_to")}</label>
-                    <Input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      min={dateFrom || undefined}
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {t("activity_log.date_to")}
+                    </label>
+                    <DatePicker
+                      value={dateTo || undefined}
+                      onChange={(v) => setDateTo(v ?? "")}
+                      minDate={
+                        dateFrom ? new Date(dateFrom + "T00:00:00") : undefined
+                      }
                     />
                   </div>
                   {(dateFrom || dateTo) && (
@@ -261,7 +306,10 @@ export default function ActivityLogs() {
                       variant="ghost"
                       size="sm"
                       className="w-full"
-                      onClick={() => { setDateFrom(""); setDateTo(""); }}
+                      onClick={() => {
+                        setDateFrom("");
+                        setDateTo("");
+                      }}
                     >
                       {t("common.clear")}
                     </Button>
@@ -272,9 +320,9 @@ export default function ActivityLogs() {
             <MultiSelectFilter
               icon={ListFilter}
               label={t("activity_log.filter_action_type")}
-              options={ACTION_TYPES.map((code) => ({
-                value: code,
-                label: t(`enums.action_type.${code}`, { defaultValue: code }),
+              options={(enums?.action_type ?? []).map((e) => ({
+                value: e.code,
+                label: enumLabel(enums?.action_type, e.code, lang),
               }))}
               selected={actionTypes}
               onChange={setActionTypes}
@@ -299,86 +347,20 @@ export default function ActivityLogs() {
             <p className="text-destructive mb-4">{t("common.error")}</p>
           )}
           <div className={cn("transition-opacity", isLoading && "opacity-50")}>
-            <div className="text-sm text-muted-foreground mb-1">
-              {t("pagination.results", {
-                from:
-                  total > 0
-                    ? (
-                        pagination.pageIndex * pagination.pageSize +
-                        1
-                      ).toLocaleString(i18n.language)
-                    : "0",
-                to: Math.min(
-                  (pagination.pageIndex + 1) * pagination.pageSize,
-                  total,
-                ).toLocaleString(i18n.language),
-                total: total.toLocaleString(i18n.language),
-              })}
-            </div>
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        key={header.id}
-                        className={getColumnPinningHeaderCN(header)}
-                        style={getColumnPinningHeaderStyle(header)}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        {header.column.getCanResize() && (
-                          <div
-                            onDoubleClick={() => header.column.resetSize()}
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            className={cn(
-                              "absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-foreground/50 opacity-0 hover:opacity-50",
-                              header.column.getIsResizing() && "opacity-100",
-                            )}
-                          />
-                        )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      {isLoading
-                        ? t("common.loading")
-                        : t("activity_log.empty")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className={getColumnPinningCellCN(cell.column)}
-                          style={getColumnPinningCellStyle(cell.column)}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              table={table}
+              isLoading={isLoading}
+              emptyMessage={t("activity_log.empty")}
+              columnLabels={columnLabels}
+              enableFullscreen
+              enableExport
+              onExport={handleExport}
+              exportDisabled={isExporting || total === 0}
+              exportTitle={t("activity_log.export")}
+              total={total}
+              pageIndex={pagination.pageIndex}
+              pageSize={pagination.pageSize}
+            />
             <PaginationBar
               page={pagination.pageIndex + 1}
               totalPages={totalPages}

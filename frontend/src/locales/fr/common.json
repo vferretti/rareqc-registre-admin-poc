@@ -117,6 +117,7 @@
     "noResults": "Aucun résultat",
     "search_placeholder": "Rechercher…",
     "clear": "Effacer",
+    "close": "Fermer",
     "today": "Aujourd'hui",
     "copied": "Copié !",
     "actions": "Actions",
@@ -144,6 +145,7 @@
       "title": "Filtrer par liste d'IDs",
       "source": "Source des IDs",
       "source_internal": "Registre",
+      "source_guid": "GUID",
       "ids_label": "IDs (un par ligne)",
       "apply": "Appliquer",
       "not_found_one": "{{count}} ID non trouvé",
@@ -242,6 +244,7 @@
     "no_consents": "Aucun consentement enregistré",
     "signed_by": "Signé par {{name}} ({{relationship}})",
     "cannot_delete_signer": "Ce contact ne peut pas être supprimé car il est signataire d'un consentement",
+    "cannot_delete_contact_referenced": "Ce contact ne peut pas être supprimé car il est lié à un consentement ou une communication",
     "add_consent": "+ Ajouter un consentement",
     "add_consent_title": "Ajouter un consentement",
     "edit_consent_title": "Modifier le consentement",
@@ -275,7 +278,22 @@
     "guid_birthplace_desc": "Base + Ville de naissance",
     "guid_not_available": "Non disponible",
     "guid_copied": "Copié!",
-    "document_signed": "Document <strong>signé</strong>"
+    "document_signed": "Document <strong>signé</strong>",
+    "section_communications": "Communications",
+    "add_communication": "Rapporter une communication",
+    "edit_communication": "Modifier la communication",
+    "delete_communication": "Supprimer la communication",
+    "no_communications": "Aucune communication rapportée",
+    "communication_method": "Moyen",
+    "communication_subject": "Sujet",
+    "communication_outcome": "Résultat",
+    "communication_date": "Date",
+    "communication_contact": "Contact utilisé",
+    "communication_comment": "Commentaire",
+    "confirm_delete_communication": "Êtes-vous certain de vouloir supprimer cette communication ?",
+    "unknown_contact": "Contact inconnu",
+    "view_communication": "Voir les détails",
+    "communication_author": "Rapporté par"
   },
   "enums": {
     "sex_at_birth": {
@@ -376,7 +394,11 @@
       "action_type_code": "Type d'action",
       "consent_status_code": "Statut de consentement",
       "clause_type_code": "Type de clause",
-      "document_type_code": "Type de document"
+      "document_type_code": "Type de document",
+      "communication_method": "Moyen de communication",
+      "communication_subject": "Sujet de communication",
+      "phone_outcome": "Résultat d'appel téléphonique",
+      "email_outcome": "Résultat de courriel"
     },
     "external_systems": {
       "title": "Systèmes externes",
@@ -387,6 +409,20 @@
       "cannot_delete": "Ce système est utilisé et ne peut pas être supprimé",
       "delete_title": "Supprimer le système",
       "delete_confirm": "Êtes-vous sûr de vouloir supprimer le système « {{name}} » ?"
+    },
+    "delete_participant": {
+      "title": "Supprimer un participant",
+      "description": "Suppression permanente et irréversible d'un participant et de toutes ses données",
+      "warning": "La suppression d'un participant est permanente et irréversible. Toutes les données associées seront supprimées : contacts, consentements, communications, historique d'activités, identifiants externes et GUIDs.",
+      "search_label": "ID du participant",
+      "not_found": "Participant introuvable",
+      "delete_button": "Supprimer ce participant",
+      "confirm_title": "Suppression irréversible",
+      "confirm_description": "Vous êtes sur le point de supprimer définitivement ce participant et toutes ses données associées :",
+      "confirm_irreversible": "Cette action est irréversible. Toutes les données seront définitivement perdues.",
+      "confirm_type_name": "Tapez « {{name}} » pour confirmer",
+      "confirm_delete": "Supprimer définitivement",
+      "success": "Le participant a été supprimé avec succès."
     }
   },
   "communications": {
@@ -402,6 +438,17 @@
     "empty": "Le panier est vide",
     "clear": "Vider le panier",
     "export": "Exporter",
+    "excel_report": "Rapport Excel",
+    "communication": "Communication",
+    "communication_subtitle_one": "{{count}} participant",
+    "communication_subtitle_other": "{{count}} participants",
+    "bulk_communication_hint": "Une communication sera enregistrée pour chaque participant, en utilisant son contact principal (ou son contact-self si aucun contact principal n'est défini).",
+    "bulk_communication_confirm_title": "Confirmation",
+    "bulk_communication_confirm_one": "Confirmer l'enregistrement de cette communication dans le dossier du {{count}} participant du panier.",
+    "bulk_communication_confirm_other": "Confirmer l'enregistrement de cette communication dans le dossier des {{count}} participants du panier.",
+    "bulk_communication_skipped_title": "Participants ignorés",
+    "bulk_communication_skipped_one": "{{count}} participant a été ignoré car il n'a aucun contact configuré.",
+    "bulk_communication_skipped_other": "{{count}} participants ont été ignorés car ils n'ont aucun contact configuré.",
     "search_placeholder": "Rechercher dans le panier…",
     "item_count_one": "{{count}} participant",
     "item_count_other": "{{count}} participants",
@@ -452,6 +499,7 @@
     "date_to": "Date fin",
     "filter_action_type": "Type d'action",
     "all_actions": "Toutes les actions",
+    "export": "Exporter en Excel",
     "empty": "Aucune activité enregistrée",
     "participant_section_title": "Historique",
     "show_more": "Voir plus",
@@ -461,7 +509,9 @@
   },
   "validation": {
     "required": "Ce champ est obligatoire",
-    "ramq_format": "Format RAMQ invalide (ex. TREG 8501 0112)"
+    "ramq_format": "Format RAMQ invalide (ex. TREG 8501 0112)",
+    "email_format": "Format de courriel invalide",
+    "file_too_large": "Le fichier dépasse la taille maximale de 10 Mo"
   },
   "pagination": {
     "results": "{{from}} – {{to}} de {{total}}",
@@ -474,6 +524,34 @@
     "pin_left": "Épingler à gauche",
     "pin_right": "Épingler à droite",
     "unpin": "Désépingler"
+  },
+  "report": {
+    "sheet_participants": "Participants",
+    "sheet_consents": "Consentements",
+    "sheet_external_ids": "IDs externes",
+    "sheet_guids": "GUIDs",
+    "col_id": "ID",
+    "col_first_name": "Prénom",
+    "col_last_name": "Nom",
+    "col_name": "Nom",
+    "col_dob": "Date de naissance",
+    "col_sex": "Sexe",
+    "col_ramq": "RAMQ",
+    "col_vital_status": "Statut vital",
+    "col_email": "Courriel",
+    "col_phone": "Téléphone",
+    "col_address": "Adresse",
+    "col_city": "Ville",
+    "col_province": "Province",
+    "col_postal_code": "Code postal",
+    "col_language": "Langue",
+    "col_contact": "Contact",
+    "col_relationship": "Lien",
+    "col_primary": "Principal",
+    "col_yes": "Oui",
+    "col_guid_basic": "GUID de base",
+    "col_guid_ramq": "GUID RAMQ",
+    "col_guid_birthplace": "GUID lieu de naissance"
   },
   "user_menu": {
     "connected_as": "Connecté en tant que {{email}}",

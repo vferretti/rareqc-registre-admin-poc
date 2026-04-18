@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+	"registre-admin/internal/types"
 )
 
 // CodeEntry represents a single row in any code/reference table.
 type CodeEntry struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 // codeTableMeta describes a reference table and where its codes are used.
@@ -25,10 +26,38 @@ var registry = []codeTableMeta{
 	{Table: "sex_at_birth_code", FKTable: "participant", FKColumn: "sex_at_birth_code"},
 	{Table: "vital_status_code", FKTable: "participant", FKColumn: "vital_status_code"},
 	{Table: "relationship_code", FKTable: "contact", FKColumn: "relationship_code"},
-	{Table: "action_type_code", FKTable: "activity_log", FKColumn: "action_type_code"},
 	{Table: "consent_status_code", FKTable: "consent", FKColumn: "status_code"},
-	{Table: "clause_type_code", FKTable: "consent_clause", FKColumn: "clause_type_code"},
 	{Table: "document_type_code", FKTable: "document", FKColumn: "type_code"},
+	{Table: "communication_method", FKTable: "communication", FKColumn: "method_code"},
+	{Table: "communication_subject", FKTable: "communication", FKColumn: "subject_code"},
+	{Table: "phone_outcome", FKTable: "communication", FKColumn: "outcome_code"},
+	{Table: "email_outcome", FKTable: "communication", FKColumn: "outcome_code"},
+}
+
+// EnumsData holds all reference data for the GET /enums endpoint.
+type EnumsData struct {
+	SexAtBirth            []types.SexAtBirth           `json:"sex_at_birth" validate:"required"`
+	VitalStatus           []types.VitalStatus          `json:"vital_status" validate:"required"`
+	Relationship          []types.Relationship         `json:"relationship" validate:"required"`
+	ActionType            []types.ActionType           `json:"action_type" validate:"required"`
+	ConsentStatus         []types.ConsentStatus        `json:"consent_status" validate:"required"`
+	ClauseType            []types.ClauseType           `json:"clause_type" validate:"required"`
+	CommunicationMethods  []types.CommunicationMethod  `json:"communication_methods" validate:"required"`
+	CommunicationSubjects []types.CommunicationSubject `json:"communication_subjects" validate:"required"`
+	PhoneOutcomes         []types.PhoneOutcome         `json:"phone_outcomes" validate:"required"`
+	EmailOutcomes         []types.EmailOutcome         `json:"email_outcomes" validate:"required"`
+}
+
+// CodeTableDAO defines the interface for code table data access.
+type CodeTableDAO interface {
+	ListTables() []string
+	List(table string) ([]CodeEntry, error)
+	Create(table string, entry *CodeEntry) error
+	Update(table, code string, entry *CodeEntry) error
+	Delete(table, code string) error
+	IsReferenced(table, code string) (bool, error)
+	ListReferencedCodes(table string) ([]string, error)
+	LoadAllEnums() (EnumsData, error)
 }
 
 // CodeTableRepository handles CRUD operations on all code/reference tables.
@@ -137,4 +166,54 @@ func (r *CodeTableRepository) IsReferenced(table, code string) (bool, error) {
 	var count int64
 	err = r.db.Table(meta.FKTable).Where(fmt.Sprintf("%s = ?", meta.FKColumn), code).Count(&count).Error
 	return count > 0, err
+}
+
+// ListReferencedCodes returns all codes in a reference table that are used in its FK domain table.
+func (r *CodeTableRepository) ListReferencedCodes(table string) ([]string, error) {
+	meta, err := findMeta(table)
+	if err != nil {
+		return nil, err
+	}
+	var codes []string
+	err = r.db.Table(meta.FKTable).
+		Distinct(meta.FKColumn).
+		Where(fmt.Sprintf("%s IS NOT NULL", meta.FKColumn)).
+		Pluck(meta.FKColumn, &codes).Error
+	return codes, err
+}
+
+// LoadAllEnums returns all reference data ordered by code.
+func (r *CodeTableRepository) LoadAllEnums() (EnumsData, error) {
+	var data EnumsData
+	if err := r.db.Order("code").Find(&data.SexAtBirth).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.VitalStatus).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.Relationship).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ActionType).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ConsentStatus).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.ClauseType).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.CommunicationMethods).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.CommunicationSubjects).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.PhoneOutcomes).Error; err != nil {
+		return data, err
+	}
+	if err := r.db.Order("code").Find(&data.EmailOutcomes).Error; err != nil {
+		return data, err
+	}
+	return data, nil
 }

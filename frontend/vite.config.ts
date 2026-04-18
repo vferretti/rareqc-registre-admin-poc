@@ -12,7 +12,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:8082",
+      "/api": {
+        target: "http://localhost:8082",
+        bypass(req) {
+          // Don't proxy requests for the generated API client (frontend/api/)
+          if (req.url?.match(/\.(ts|js|map)(\?|$)/)) {
+            return req.url;
+          }
+        },
+      },
     },
   },
 });

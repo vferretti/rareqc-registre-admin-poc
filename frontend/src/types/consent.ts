@@ -1,16 +1,5 @@
-/** A participant's consent to a specific clause. */
-export interface ConsentResponse {
-  id: number;
-  clause_type_code: string;
-  clause_fr: string;
-  clause_en: string;
-  status_code: string;
-  date: string;
-  signed_by_id?: number | null;
-  signed_by_name?: string;
-  signed_by_relationship?: string;
-  document_id?: number | null;
-  document_name?: string;
-  document_mime?: string;
-  template_name?: string;
-}
+/**
+ * Re-exports from the generated API client.
+ * Do not define types manually — update backend swagger annotations and run `make generate`.
+ */
+export type { ConsentResponse } from "../../api/api";

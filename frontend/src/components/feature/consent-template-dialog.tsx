@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { ConsentClause } from "@/hooks/useConsentClauses";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 
 interface ConsentTemplateDialogProps {
   open: boolean;
@@ -40,8 +42,6 @@ interface ClauseEntry {
   clauseEn: string;
 }
 
-const CLAUSE_TYPES = ["registry", "recontact", "external_linkage"];
-
 function emptyClause(): ClauseEntry {
   return { clauseTypeCode: "", clauseFr: "", clauseEn: "" };
 }
@@ -55,7 +55,9 @@ export function ConsentTemplateDialog({
   editFileName,
   editClauses,
 }: ConsentTemplateDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const isEdit = editTemplateId != null;
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -85,7 +87,11 @@ export function ConsentTemplateDialog({
     setClauses([emptyClause()]);
   };
 
-  const updateClause = (index: number, field: keyof ClauseEntry, value: string) => {
+  const updateClause = (
+    index: number,
+    field: keyof ClauseEntry,
+    value: string,
+  ) => {
     setClauses((prev) =>
       prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
     );
@@ -196,19 +202,24 @@ export function ConsentTemplateDialog({
             </div>
 
             {clauses.map((clause, index) => (
-              <div key={index} className="rounded-md border p-3 flex flex-col gap-2">
+              <div
+                key={index}
+                className="rounded-md border p-3 flex flex-col gap-2"
+              >
                 <div className="flex items-center justify-between">
                   <Select
                     value={clause.clauseTypeCode}
-                    onValueChange={(v) => updateClause(index, "clauseTypeCode", v)}
+                    onValueChange={(v) =>
+                      updateClause(index, "clauseTypeCode", v)
+                    }
                   >
                     <SelectTrigger className="w-64">
                       <SelectValue placeholder={t("admin.clause_type")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {CLAUSE_TYPES.map((ct) => (
-                        <SelectItem key={ct} value={ct}>
-                          {t(`enums.clause_type.${ct}`)}
+                      {(enums?.clause_type ?? []).map((e) => (
+                        <SelectItem key={e.code} value={e.code}>
+                          {enumLabel(enums?.clause_type, e.code, lang)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -231,7 +242,9 @@ export function ConsentTemplateDialog({
                   </Label>
                   <Textarea
                     value={clause.clauseFr}
-                    onChange={(e) => updateClause(index, "clauseFr", e.target.value)}
+                    onChange={(e) =>
+                      updateClause(index, "clauseFr", e.target.value)
+                    }
                     rows={2}
                   />
                 </div>
@@ -242,7 +255,9 @@ export function ConsentTemplateDialog({
                   </Label>
                   <Textarea
                     value={clause.clauseEn}
-                    onChange={(e) => updateClause(index, "clauseEn", e.target.value)}
+                    onChange={(e) =>
+                      updateClause(index, "clauseEn", e.target.value)
+                    }
                     rows={2}
                   />
                 </div>

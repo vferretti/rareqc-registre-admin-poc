@@ -2,63 +2,63 @@ package types
 
 // SexAtBirth reference table
 type SexAtBirth struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (SexAtBirth) TableName() string { return "sex_at_birth_code" }
 
 // VitalStatus reference table
 type VitalStatus struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (VitalStatus) TableName() string { return "vital_status_code" }
 
 // Relationship reference table
 type Relationship struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (Relationship) TableName() string { return "relationship_code" }
 
 // ActionType reference table
 type ActionType struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (ActionType) TableName() string { return "action_type_code" }
 
 // ConsentStatus reference table (valid, expired, withdrawn, replaced_by_new_version)
 type ConsentStatus struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (ConsentStatus) TableName() string { return "consent_status_code" }
 
 // ClauseType reference table (registry, recontact, external_linkage)
 type ClauseType struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (ClauseType) TableName() string { return "clause_type_code" }
 
 // DocumentType reference table (consent, ...)
 type DocumentType struct {
-	Code   string `json:"code" gorm:"primaryKey;type:text"`
-	NameEn string `json:"name_en" gorm:"not null"`
-	NameFr string `json:"name_fr" gorm:"not null"`
+	Code   string `json:"code" gorm:"primaryKey;type:text" validate:"required"`
+	NameEn string `json:"name_en" gorm:"not null" validate:"required"`
+	NameFr string `json:"name_fr" gorm:"not null" validate:"required"`
 }
 
 func (DocumentType) TableName() string { return "document_type_code" }

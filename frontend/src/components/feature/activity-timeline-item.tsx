@@ -3,6 +3,9 @@ import { Link } from "react-router";
 import { format, parseISO } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { UserAvatar } from "@/components/layout/user-avatar";
+import { enumLabel } from "@/lib/enum-label";
+import { translateDetails } from "@/lib/translate-details";
+import { useEnums } from "@/hooks/useEnums";
 import type { ActivityLog } from "@/types/activity-log";
 
 interface ActivityTimelineItemProps {
@@ -24,46 +27,15 @@ function formatDateTime(date: string, lang: string): string {
   }
 }
 
-/** Translates activity details that contain enum codes (e.g. "registry — valid"). */
-export function translateDetails(details: string, t: (key: string, opts?: Record<string, string>) => string): string {
-  // Format: "clause_type — old_status → new_status (other_clause other_status)"
-  const fullMatch = details.match(/^(\w+)\s*[—–-]\s*(\w+)\s*→\s*(\w+)(?:\s*\((\w+)\s+(\w+)\))?$/);
-  if (fullMatch) {
-    const clause = t(`enums.clause_type.${fullMatch[1]}`, { defaultValue: fullMatch[1] });
-    const from = t(`enums.consent_status.${fullMatch[2]}`, { defaultValue: fullMatch[2] });
-    const to = t(`enums.consent_status.${fullMatch[3]}`, { defaultValue: fullMatch[3] });
-    let result = `${clause} — ${from} → ${to}`;
-    if (fullMatch[4] && fullMatch[5]) {
-      const otherClause = t(`enums.clause_type.${fullMatch[4]}`, { defaultValue: fullMatch[4] });
-      const otherStatus = t(`enums.consent_status.${fullMatch[5]}`, { defaultValue: fullMatch[5] });
-      result += ` (${otherClause} ${otherStatus})`;
-    }
-    return result;
-  }
-  // Consent added: "clause_type — status"
-  const consentMatch = details.match(/^(\w+)\s*[—–-]\s*(\w+)$/);
-  if (consentMatch) {
-    const clause = t(`enums.clause_type.${consentMatch[1]}`, { defaultValue: consentMatch[1] });
-    const status = t(`enums.consent_status.${consentMatch[2]}`, { defaultValue: consentMatch[2] });
-    return `${clause} — ${status}`;
-  }
-  // Consent edited: "old_status → new_status"
-  const editMatch = details.match(/^(\w+)\s*→\s*(\w+)$/);
-  if (editMatch) {
-    const from = t(`enums.consent_status.${editMatch[1]}`, { defaultValue: editMatch[1] });
-    const to = t(`enums.consent_status.${editMatch[2]}`, { defaultValue: editMatch[2] });
-    return `${from} → ${to}`;
-  }
-  return details;
-}
-
 /** A single entry in the activity timeline with avatar, action, details, and timestamp. */
 export function ActivityTimelineItem({
   log,
   showLine = true,
   showParticipantLink = false,
 }: ActivityTimelineItemProps) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
 
   return (
     <div className="flex gap-3">
@@ -76,13 +48,11 @@ export function ActivityTimelineItem({
       {/* Content */}
       <div className="pb-5 min-w-0">
         <p className="text-sm font-medium text-foreground">
-          {t(`enums.action_type.${log.action_type_code}`, {
-            defaultValue: log.action_type_code,
-          })}
+          {enumLabel(enums?.action_type, log.action_type_code, lang)}
         </p>
         {log.details && (
           <p className="text-sm text-muted-foreground">
-            {translateDetails(log.details, t)}
+            {translateDetails(log.details, enums, lang)}
             {showParticipantLink &&
               log.participant_name &&
               log.participant_id && (
@@ -99,7 +69,7 @@ export function ActivityTimelineItem({
           </p>
         )}
         <p className="text-xs text-muted-foreground mt-0.5">
-          {log.author}, {formatDateTime(log.created_at, i18n.language)}
+          {log.author}, {formatDateTime(log.created_at, lang)}
         </p>
       </div>
     </div>

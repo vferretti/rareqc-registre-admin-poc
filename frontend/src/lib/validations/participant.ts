@@ -14,7 +14,11 @@ export const contactSchema = (t: TFunction) =>
     preferred_language: z.string(),
     same_coordinates: z.boolean(),
     is_primary: z.boolean(),
-    email: z.string(),
+    email: z
+      .string()
+      .email(t("validation.email_format"))
+      .optional()
+      .or(z.literal("")),
     phone: z.string(),
     apartment_number: z.string(),
     street_address: z.string(),
@@ -36,7 +40,11 @@ export const participantSchema = (t: TFunction) =>
     }),
     vital_status_code: z.string(),
     date_of_death: z.string(),
-    email: z.string(),
+    email: z
+      .string()
+      .email(t("validation.email_format"))
+      .optional()
+      .or(z.literal("")),
     phone: z.string(),
     apartment_number: z.string(),
     street_address: z.string(),

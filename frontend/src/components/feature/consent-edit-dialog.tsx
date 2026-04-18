@@ -10,8 +10,8 @@ import {
   DialogFooter,
 } from "@/components/base/ui/dialog";
 import { Button } from "@/components/base/ui/button";
-import { Input } from "@/components/base/ui/input";
 import { Label } from "@/components/base/ui/label";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/base/ui/select";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { Contact } from "@/types/participant";
 import type { ConsentResponse } from "@/types/consent";
 
@@ -29,13 +31,6 @@ interface ConsentEditDialogProps {
   contacts: Contact[];
   onSuccess?: () => void;
 }
-
-const CONSENT_STATUS_OPTIONS = [
-  "valid",
-  "expired",
-  "withdrawn",
-  "replaced_by_new_version",
-] as const;
 
 /** Required field label with red asterisk. */
 function RequiredLabel({ children }: { children: React.ReactNode }) {
@@ -54,16 +49,22 @@ export function ConsentEditDialog({
   contacts,
   onSuccess,
 }: ConsentEditDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [statusCode, setStatusCode] = useState("");
   const [date, setDate] = useState("");
   const [signedById, setSignedById] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [existingDocId, setExistingDocId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  /** Maximum file size: 10 MB. */
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
   const selfContact = contacts.find((c) => c.relationship_code === "self");
   const nonSelfContacts = contacts.filter(
@@ -85,6 +86,7 @@ export function ConsentEditDialog({
   const handleOpenChange = (value: boolean) => {
     if (!value) {
       setFile(null);
+      setFileError(null);
       setSubmitError(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -137,13 +139,13 @@ export function ConsentEditDialog({
         <div className="space-y-4">
           <div className="space-y-1">
             {consent.template_name && (
-              <p className="text-sm text-muted-foreground">{consent.template_name}</p>
+              <p className="text-sm text-muted-foreground">
+                {consent.template_name}
+              </p>
             )}
             <Label>{t("participant_detail.consent_clause")}</Label>
             <p className="text-sm text-foreground">
-              {t(`enums.clause_type.${consent.clause_type_code}`, {
-                defaultValue: consent.clause_type_code,
-              })}
+              {enumLabel(enums?.clause_type, consent.clause_type_code, lang)}
             </p>
           </div>
 
@@ -157,9 +159,9 @@ export function ConsentEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CONSENT_STATUS_OPTIONS.map((code) => (
-                    <SelectItem key={code} value={code}>
-                      {t(`enums.consent_status.${code}`)}
+                  {enums?.consent_status?.map((e) => (
+                    <SelectItem key={e.code} value={e.code}>
+                      {enumLabel(enums?.consent_status, e.code, lang)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -170,10 +172,9 @@ export function ConsentEditDialog({
               <RequiredLabel>
                 {t("participant_detail.consent_date")}
               </RequiredLabel>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+              <DatePicker
+                value={date || undefined}
+                onChange={(v) => setDate(v ?? "")}
               />
             </div>
           </div>
@@ -185,9 +186,7 @@ export function ConsentEditDialog({
             <Select value={signedById} onValueChange={setSignedById}>
               <SelectTrigger>
                 <SelectValue
-                  placeholder={t(
-                    "participant_detail.signed_by_placeholder",
-                  )}
+                  placeholder={t("participant_detail.signed_by_placeholder")}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -199,10 +198,7 @@ export function ConsentEditDialog({
                 {nonSelfContacts.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
                     {c.first_name} {c.last_name} (
-                    {t(`enums.relationship.${c.relationship_code}`, {
-                      defaultValue: c.relationship_code,
-                    })}
-                    )
+                    {enumLabel(enums?.relationship, c.relationship_code, lang)})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -210,13 +206,20 @@ export function ConsentEditDialog({
           </div>
 
           <div className="space-y-2">
-            <Label><Trans i18nKey="participant_detail.document_signed">Document <strong>signed</strong></Trans></Label>
+            <Label>
+              <Trans i18nKey="participant_detail.document_signed">
+                Document <strong>signed</strong>
+              </Trans>
+            </Label>
             {existingDocId && !file && consent.document_name && (
               <div className="flex items-center gap-2">
                 <button
                   className="text-sm text-primary hover:underline cursor-pointer"
                   onClick={() =>
-                    window.open(`/api/documents/${existingDocId}/file`, "_blank")
+                    window.open(
+                      `/api/documents/${existingDocId}/file`,
+                      "_blank",
+                    )
                   }
                 >
                   {consent.document_name}
@@ -247,6 +250,7 @@ export function ConsentEditDialog({
                   size="icon-sm"
                   onClick={() => {
                     setFile(null);
+                    setFileError(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
                   className="text-muted-foreground hover:text-destructive"
@@ -259,9 +263,21 @@ export function ConsentEditDialog({
                 type="file"
                 accept=".pdf,.doc,.docx"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const selected = e.target.files?.[0] ?? null;
+                  if (selected && selected.size > MAX_FILE_SIZE) {
+                    setFileError(t("validation.file_too_large"));
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    return;
+                  }
+                  setFileError(null);
+                  setFile(selected);
+                }}
               />
             </div>
+            {fileError && (
+              <p className="text-sm text-destructive">{fileError}</p>
+            )}
           </div>
 
           {submitError && (

@@ -1,22 +1,16 @@
 import useSWR from "swr";
 import api from "@/lib/api";
+import type { ExternalIDResponse } from "../../api/api";
 
-export interface ExternalIdResponse {
-  id: number;
-  external_system_id: number;
-  system_name: string;
-  system_title_fr: string;
-  system_title_en: string;
-  external_id: string;
-}
+export type { ExternalIDResponse as ExternalIdResponse };
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches external IDs for a participant. */
 export function useExternalIds(participantId?: number) {
-  const { data, isLoading } = useSWR<ExternalIdResponse[]>(
+  const { data, error, isLoading } = useSWR<ExternalIDResponse[]>(
     participantId ? `/participants/${participantId}/external-ids` : null,
     fetcher,
   );
-  return { externalIds: data ?? [], isLoading };
+  return { externalIds: data ?? [], error, isLoading };
 }

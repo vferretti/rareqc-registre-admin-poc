@@ -29,8 +29,8 @@ export function formatAddress(
   postalCode: string | null | undefined,
 ): string {
   const streetPart =
-    apartment && street
-      ? `${apartment}-${street}`
-      : street || "";
-  return [streetPart, city, province, postalCode].filter(Boolean).join(", ") || "—";
+    apartment && street ? `${apartment}-${street}` : street || "";
+  return (
+    [streetPart, city, province, postalCode].filter(Boolean).join(", ") || "—"
+  );
 }

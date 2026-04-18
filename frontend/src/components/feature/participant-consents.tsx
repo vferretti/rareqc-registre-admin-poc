@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
-import { Download, CheckCircle2, Plus, Pencil, Info } from "lucide-react";
+import { Download, CheckCircle2, Plus, Pencil, Eye } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -25,7 +25,13 @@ import { useConsents } from "@/hooks/useConsents";
 import { ConsentFormDialog } from "@/components/feature/consent-form-dialog";
 import { ConsentEditDialog } from "@/components/feature/consent-edit-dialog";
 import { formatDate } from "@/lib/format";
-import { CONSENT_STATUS_BADGE, CONSENT_STATUS_ICON, CONSENT_STATUS_COLOR } from "@/lib/badge-variants";
+import {
+  CONSENT_STATUS_BADGE,
+  CONSENT_STATUS_ICON,
+  CONSENT_STATUS_COLOR,
+} from "@/lib/badge-variants";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { ConsentResponse } from "@/types/consent";
 import type { Contact } from "@/types/participant";
 
@@ -44,16 +50,22 @@ export function ParticipantConsents({
   onConsentAdded,
 }: ParticipantConsentsProps) {
   const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const {
     consents: fetchedConsents,
     isLoading,
     mutate,
   } = useConsents(externalConsents ? undefined : participantId);
   const consents = externalConsents ?? fetchedConsents;
-  const lang = i18n.language === "fr" ? "clause_fr" : "clause_en";
+  const clauseField = i18n.language === "fr" ? "clause_fr" : "clause_en";
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingConsent, setEditingConsent] = useState<ConsentResponse | null>(null);
-  const [viewingClause, setViewingClause] = useState<ConsentResponse | null>(null);
+  const [editingConsent, setEditingConsent] = useState<ConsentResponse | null>(
+    null,
+  );
+  const [viewingClause, setViewingClause] = useState<ConsentResponse | null>(
+    null,
+  );
 
   const handleSuccess = () => {
     mutate();
@@ -103,18 +115,22 @@ export function ParticipantConsents({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">
-                          {t(`enums.clause_type.${c.clause_type_code}`, {
-                            defaultValue: c.clause_type_code,
-                          })}
+                          {enumLabel(
+                            enums?.clause_type,
+                            c.clause_type_code,
+                            lang,
+                          )}
                         </span>
                         <Badge
                           variant={
                             CONSENT_STATUS_BADGE[c.status_code] ?? "secondary"
                           }
                         >
-                          {t(`enums.consent_status.${c.status_code}`, {
-                            defaultValue: c.status_code,
-                          })}
+                          {enumLabel(
+                            enums?.consent_status,
+                            c.status_code,
+                            lang,
+                          )}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -126,9 +142,10 @@ export function ParticipantConsents({
                               ? t("participant_detail.signed_by_participant")
                               : t("participant_detail.signed_by", {
                                   name: c.signed_by_name,
-                                  relationship: t(
-                                    `enums.relationship.${c.signed_by_relationship}`,
-                                    { defaultValue: c.signed_by_relationship },
+                                  relationship: enumLabel(
+                                    enums?.relationship,
+                                    c.signed_by_relationship,
+                                    lang,
                                   ),
                                 })}
                           </>
@@ -143,7 +160,7 @@ export function ParticipantConsents({
                             size="icon-sm"
                             onClick={() => setViewingClause(c)}
                           >
-                            <Info className="size-3.5" />
+                            <Eye className="size-3.5" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -160,9 +177,7 @@ export function ParticipantConsents({
                             <Pencil className="size-3.5" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          {t("common.edit")}
-                        </TooltipContent>
+                        <TooltipContent>{t("common.edit")}</TooltipContent>
                       </Tooltip>
                       {c.document_id && (
                         <Tooltip>
@@ -204,24 +219,33 @@ export function ParticipantConsents({
 
       <ConsentEditDialog
         open={!!editingConsent}
-        onOpenChange={(open) => { if (!open) setEditingConsent(null); }}
+        onOpenChange={(open) => {
+          if (!open) setEditingConsent(null);
+        }}
         consent={editingConsent}
         contacts={contacts}
-        onSuccess={() => { setEditingConsent(null); handleSuccess(); }}
+        onSuccess={() => {
+          setEditingConsent(null);
+          handleSuccess();
+        }}
       />
 
       {/* Consent detail dialog */}
       <Dialog
         open={!!viewingClause}
-        onOpenChange={(open) => { if (!open) setViewingClause(null); }}
+        onOpenChange={(open) => {
+          if (!open) setViewingClause(null);
+        }}
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {viewingClause &&
-                t(`enums.clause_type.${viewingClause.clause_type_code}`, {
-                  defaultValue: viewingClause.clause_type_code,
-                })}
+                enumLabel(
+                  enums?.clause_type,
+                  viewingClause.clause_type_code,
+                  lang,
+                )}
             </DialogTitle>
           </DialogHeader>
           {viewingClause && (
@@ -239,7 +263,7 @@ export function ParticipantConsents({
                   {t("participant_detail.consent_clause")}
                 </p>
                 <p className="text-sm leading-relaxed">
-                  {viewingClause[lang]}
+                  {viewingClause[clauseField]}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -247,10 +271,17 @@ export function ParticipantConsents({
                   <p className="text-xs font-medium text-muted-foreground">
                     {t("participant_detail.consent_status")}
                   </p>
-                  <Badge variant={CONSENT_STATUS_BADGE[viewingClause.status_code] ?? "secondary"}>
-                    {t(`enums.consent_status.${viewingClause.status_code}`, {
-                      defaultValue: viewingClause.status_code,
-                    })}
+                  <Badge
+                    variant={
+                      CONSENT_STATUS_BADGE[viewingClause.status_code] ??
+                      "secondary"
+                    }
+                  >
+                    {enumLabel(
+                      enums?.consent_status,
+                      viewingClause.status_code,
+                      lang,
+                    )}
                   </Badge>
                 </div>
                 <div className="space-y-1">
@@ -270,9 +301,10 @@ export function ParticipantConsents({
                       ? t("participant_detail.signed_by_participant")
                       : t("participant_detail.signed_by", {
                           name: viewingClause.signed_by_name,
-                          relationship: t(
-                            `enums.relationship.${viewingClause.signed_by_relationship}`,
-                            { defaultValue: viewingClause.signed_by_relationship },
+                          relationship: enumLabel(
+                            enums?.relationship,
+                            viewingClause.signed_by_relationship,
+                            lang,
                           ),
                         })
                     : "—"}
@@ -280,7 +312,9 @@ export function ParticipantConsents({
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground">
-                  <Trans i18nKey="participant_detail.document_signed">Document <strong>signed</strong></Trans>
+                  <Trans i18nKey="participant_detail.document_signed">
+                    Document <strong>signed</strong>
+                  </Trans>
                 </p>
                 {viewingClause.document_id ? (
                   <button

@@ -13,7 +13,6 @@ import (
 // @version         1.0
 // @description     REST API pour le registre québécois de patients atteints de maladies rares — administration.
 
-// @host      localhost:8080
 // @BasePath  /api
 func main() {
 	pgDB, err := database.NewPostgresDB()
@@ -21,8 +20,8 @@ func main() {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}
 
-	if err := database.AutoMigrate(pgDB); err != nil {
-		log.Fatalf("failed to auto-migrate: %v", err)
+	if err := database.Migrate(); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
 	}
 
 	r := server.SetupRouter(pgDB)

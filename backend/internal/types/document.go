@@ -5,17 +5,17 @@ import "time"
 // Document represents a document's metadata (e.g. consent form).
 // The file content is stored separately in DocumentFile (database) or an object store (S3).
 type Document struct {
-	ID          int            `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name        string         `json:"name" gorm:"not null"`
-	FileName    string         `json:"file_name" gorm:"not null;type:text"`
-	TypeCode    string         `json:"type_code" gorm:"not null;type:text"`
-	Type        DocumentType   `json:"-" gorm:"foreignKey:TypeCode;references:Code"`
-	MimeType    string         `json:"mime_type" gorm:"not null;type:text"`
-	FileSize    int64          `json:"file_size" gorm:"not null;default:0"`
-	StorageType string         `json:"storage_type" gorm:"not null;type:text;default:'database'"`
-	StorageURL  *string        `json:"storage_url,omitempty" gorm:"type:text"`
-	CreatedAt   time.Time      `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt   time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	ID          int          `json:"id" gorm:"primaryKey;autoIncrement" validate:"required"`
+	Name        string       `json:"name" gorm:"not null" validate:"required"`
+	FileName    string       `json:"file_name" gorm:"not null;type:text" validate:"required"`
+	TypeCode    string       `json:"type_code" gorm:"not null;type:text" validate:"required"`
+	Type        DocumentType `json:"-" gorm:"foreignKey:TypeCode;references:Code"`
+	MimeType    string       `json:"mime_type" gorm:"not null;type:text" validate:"required"`
+	FileSize    int64        `json:"file_size" gorm:"not null;default:0" validate:"required"`
+	StorageType string       `json:"storage_type" gorm:"not null;type:text;default:'database'" validate:"required"`
+	StorageURL  *string      `json:"storage_url,omitempty" gorm:"type:text"`
+	CreatedAt   time.Time    `json:"created_at" gorm:"autoCreateTime" validate:"required"`
+	UpdatedAt   time.Time    `json:"updated_at" gorm:"autoUpdateTime" validate:"required"`
 }
 
 func (Document) TableName() string { return "document" }

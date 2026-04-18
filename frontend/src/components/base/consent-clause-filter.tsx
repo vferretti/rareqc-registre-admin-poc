@@ -8,6 +8,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/base/ui/dropdown-menu";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 
 interface ClauseFilterState {
   registry: string[];
@@ -16,19 +18,6 @@ interface ClauseFilterState {
 }
 
 type ClauseType = keyof ClauseFilterState;
-
-const CLAUSE_TYPES: ClauseType[] = [
-  "registry",
-  "recontact",
-  "external_linkage",
-];
-
-const STATUS_CODES = [
-  "valid",
-  "expired",
-  "withdrawn",
-  "replaced_by_new_version",
-] as const;
 
 interface ConsentClauseFilterProps {
   value: ClauseFilterState;
@@ -40,7 +29,12 @@ export function ConsentClauseFilter({
   value,
   onChange,
 }: ConsentClauseFilterProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
+  const clauseTypes = (enums?.clause_type?.map((e) => e.code) ??
+    []) as ClauseType[];
+  const consentStatuses = enums?.consent_status?.map((e) => e.code) ?? [];
 
   const totalSelected =
     value.registry.length +
@@ -75,13 +69,13 @@ export function ConsentClauseFilter({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="p-3 min-w-56">
         <div className="flex flex-col gap-3">
-          {CLAUSE_TYPES.map((clause) => (
+          {clauseTypes.map((clause) => (
             <div key={clause}>
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
                 {t(`participants.columns.consent_${clause}`)}
               </div>
               <div className="flex flex-col gap-1.5 pl-1">
-                {STATUS_CODES.map((status) => (
+                {consentStatuses.map((status) => (
                   <label
                     key={status}
                     className="flex items-center gap-2 text-sm cursor-pointer"
@@ -90,7 +84,7 @@ export function ConsentClauseFilter({
                       checked={value[clause].includes(status)}
                       onCheckedChange={() => toggle(clause, status)}
                     />
-                    {t(`enums.consent_status.${status}`)}
+                    {enumLabel(enums?.consent_status, status, lang)}
                   </label>
                 ))}
               </div>

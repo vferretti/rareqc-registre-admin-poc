@@ -1,7 +1,19 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Users, FileBarChart, ScrollText, Settings, ArrowRight } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/base/ui/card";
+import {
+  Users,
+  FileBarChart,
+  ScrollText,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/base/ui/card";
 import { PageHeader } from "@/components/base/page/page-header";
 import { ActivityTimelineItem } from "@/components/feature/activity-timeline-item";
 import { SearchBox } from "@/components/feature/search-box";
@@ -19,10 +31,7 @@ export default function Home() {
 
   return (
     <>
-      <PageHeader
-        title={t("home.title")}
-        description={t("home.description")}
-      />
+      <PageHeader title={t("home.title")} description={t("home.description")} />
       <div className="p-8">
         <div className="flex flex-col gap-6">
           {/* Search bar */}
@@ -32,7 +41,9 @@ export default function Home() {
             {/* Navigation card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{t("home.explore_title")}</CardTitle>
+                <CardTitle className="text-lg">
+                  {t("home.explore_title")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
                 <Link
@@ -43,7 +54,9 @@ export default function Home() {
                     <Users className="size-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{t("home.explore_participants")}</div>
+                    <div className="font-medium">
+                      {t("home.explore_participants")}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {t("home.explore_participants_description")}
                     </div>
@@ -58,7 +71,9 @@ export default function Home() {
                     <FileBarChart className="size-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{t("home.explore_reports")}</div>
+                    <div className="font-medium">
+                      {t("home.explore_reports")}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {t("home.explore_reports_description")}
                     </div>
@@ -73,7 +88,9 @@ export default function Home() {
                     <ScrollText className="size-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{t("home.explore_activity")}</div>
+                    <div className="font-medium">
+                      {t("home.explore_activity")}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {t("home.explore_activity_description")}
                     </div>
@@ -101,7 +118,9 @@ export default function Home() {
             {/* Recent activity card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{t("home.recent_activity")}</CardTitle>
+                <CardTitle className="text-lg">
+                  {t("home.recent_activity")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {logs.length === 0 ? (

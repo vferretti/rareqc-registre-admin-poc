@@ -1,40 +1,20 @@
 import useSWR from "swr";
 import api from "@/lib/api";
+import type {
+  AgeRangeCount,
+  CityCount,
+  ExternalSystemCount,
+  QuarterCount,
+  ReportsSummary,
+} from "../../api/api";
 
-export interface ExternalSystemCount {
-  name: string;
-  count: number;
-}
-
-export interface QuarterCount {
-  quarter: string;
-  count: number;
-}
-
-export interface AgeRangeCount {
-  range: string;
-  count: number;
-}
-
-export interface CityCount {
-  city: string;
-  count: number;
-}
-
-export interface ReportsSummary {
-  total_participants: number;
-  female_count: number;
-  male_count: number;
-  average_age: number;
-  deceased_count: number;
-  consent_registry: number;
-  consent_recontact: number;
-  consent_ext_linkage: number;
-  external_systems: ExternalSystemCount[];
-  growth_by_quarter: QuarterCount[];
-  age_distribution: AgeRangeCount[];
-  city_distribution: CityCount[];
-}
+export type {
+  AgeRangeCount,
+  CityCount,
+  ExternalSystemCount,
+  QuarterCount,
+  ReportsSummary,
+};
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 

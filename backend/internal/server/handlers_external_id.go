@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"registre-admin/internal/repository"
-	"registre-admin/internal/types"
+	_ "registre-admin/internal/types" // for swagger annotations
 )
 
 // ListParticipantExternalIDsHandler returns all external IDs for a participant.
@@ -20,17 +20,17 @@ import (
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/external-ids [get]
-func ListParticipantExternalIDsHandler(extIDRepo *repository.ExternalIDRepository) gin.HandlerFunc {
+func ListParticipantExternalIDsHandler(extIDRepo repository.ExternalIDDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var participantID int
 		if _, err := fmt.Sscanf(c.Param("id"), "%d", &participantID); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		extIDs, err := extIDRepo.ListByParticipant(participantID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch external IDs"})
+			handleInternalError(c, "Failed to fetch external IDs")
 			return
 		}
 

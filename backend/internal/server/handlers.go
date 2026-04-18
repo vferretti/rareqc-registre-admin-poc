@@ -34,35 +34,43 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	consentRepo := repository.NewConsentRepository(db)
 	docRepo := repository.NewDocumentRepository(db)
 	extIDRepo := repository.NewExternalIDRepository(db)
+	guidRepo := repository.NewGuidRepository(db)
 	codeTableRepo := repository.NewCodeTableRepository(db)
 	extSysRepo := repository.NewExternalSystemRepository(db)
 	cartRepo := repository.NewCartRepository(db)
 	reportsRepo := repository.NewReportsRepository(db)
+	commRepo := repository.NewCommunicationRepository(db)
 
 	api := r.Group("/api")
 	{
-		api.GET("/health", HealthHandler())
-		api.GET("/enums", EnumsHandler(db))
+		api.GET("/health", HealthHandler(db))
+		api.GET("/enums", EnumsHandler(codeTableRepo))
 		api.GET("/reports/summary", ReportsSummaryHandler(reportsRepo))
 
 		api.GET("/participants", ListParticipantsHandler(participantRepo))
 		api.GET("/participants/:id", GetParticipantHandler(participantRepo))
-		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo))
+		api.POST("/participants/resolve-ids", ResolveIDsHandler(participantRepo, extIDRepo, guidRepo))
 		api.POST("/participants", CreateParticipantHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/participants/:id", UpdateParticipantHandler(participantRepo, contactRepo, activityRepo))
+		api.DELETE("/participants/:id", DeleteParticipantHandler(participantRepo))
 
 		api.POST("/participants/:id/contacts", AddContactHandler(participantRepo, contactRepo, activityRepo))
 		api.PUT("/contacts/:contactId", UpdateContactHandler(contactRepo, activityRepo))
 		api.DELETE("/contacts/:contactId", DeleteContactHandler(contactRepo, activityRepo))
 
 		api.GET("/participants/:id/consents", ListParticipantConsentsHandler(consentRepo))
-		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, activityRepo))
-		api.PUT("/consents/:consentId", UpdateConsentHandler(consentRepo, activityRepo))
+		api.POST("/participants/:id/consents", CreateParticipantConsentHandler(consentRepo, contactRepo, activityRepo))
+		api.PUT("/consents/:consentId", UpdateConsentHandler(consentRepo, contactRepo, activityRepo))
 		api.GET("/consent-clauses", ListConsentClausesHandler(consentRepo))
 		api.GET("/consent-templates", ListConsentTemplatesHandler(consentRepo))
 		api.POST("/consent-templates", CreateConsentTemplateHandler(consentRepo))
 		api.PUT("/consent-templates/:id", UpdateConsentTemplateHandler(consentRepo))
 		api.DELETE("/consent-templates/:id", DeleteConsentTemplateHandler(consentRepo))
+
+		api.GET("/participants/:id/communications", ListParticipantCommunicationsHandler(commRepo))
+		api.POST("/participants/:id/communications", CreateParticipantCommunicationHandler(commRepo))
+		api.PUT("/communications/:communicationId", UpdateCommunicationHandler(commRepo))
+		api.DELETE("/communications/:communicationId", DeleteCommunicationHandler(commRepo))
 
 		api.POST("/documents", UploadDocumentHandler(docRepo))
 		api.GET("/documents/:id/file", DownloadDocumentHandler(docRepo))
@@ -91,6 +99,8 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 			cart.POST("/items", AddCartItemsHandler(cartRepo))
 			cart.DELETE("/items", RemoveCartItemsHandler(cartRepo))
 			cart.DELETE("", ClearCartHandler(cartRepo))
+			cart.POST("/export-data", CartExportDataHandler(cartRepo, participantRepo, consentRepo, extIDRepo))
+			cart.POST("/communications", CreateCartCommunicationsHandler(cartRepo, commRepo))
 		}
 	}
 

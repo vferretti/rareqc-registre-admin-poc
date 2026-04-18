@@ -144,6 +144,7 @@
       "title": "Filter by ID list",
       "source": "ID source",
       "source_internal": "Registry",
+      "source_guid": "GUID",
       "ids_label": "IDs (one per line)",
       "apply": "Apply",
       "not_found_one": "{{count}} ID not found",
@@ -242,6 +243,7 @@
     "no_consents": "No consents recorded",
     "signed_by": "Signed by {{name}} ({{relationship}})",
     "cannot_delete_signer": "This contact cannot be deleted because they signed a consent",
+    "cannot_delete_contact_referenced": "This contact cannot be deleted because it is linked to a consent or communication",
     "add_consent": "+ Add consent",
     "add_consent_title": "Add consent",
     "edit_consent_title": "Edit consent",
@@ -275,7 +277,22 @@
     "guid_birthplace_desc": "Basic + City of birth",
     "guid_not_available": "Not available",
     "guid_copied": "Copied!",
-    "document_signed": "Signed <strong>document</strong>"
+    "document_signed": "Signed <strong>document</strong>",
+    "section_communications": "Communications",
+    "add_communication": "Report a communication",
+    "edit_communication": "Edit communication",
+    "delete_communication": "Delete communication",
+    "no_communications": "No communications reported",
+    "communication_method": "Method",
+    "communication_subject": "Subject",
+    "communication_outcome": "Outcome",
+    "communication_date": "Date",
+    "communication_contact": "Contact used",
+    "communication_comment": "Comment",
+    "confirm_delete_communication": "Are you sure you want to delete this communication?",
+    "unknown_contact": "Unknown contact",
+    "view_communication": "View details",
+    "communication_author": "Reported by"
   },
   "enums": {
     "sex_at_birth": {
@@ -376,7 +393,11 @@
       "action_type_code": "Action type",
       "consent_status_code": "Consent status",
       "clause_type_code": "Clause type",
-      "document_type_code": "Document type"
+      "document_type_code": "Document type",
+      "communication_method": "Communication method",
+      "communication_subject": "Communication subject",
+      "phone_outcome": "Phone call outcome",
+      "email_outcome": "Email outcome"
     },
     "external_systems": {
       "title": "External systems",
@@ -387,6 +408,20 @@
       "cannot_delete": "This system is in use and cannot be deleted",
       "delete_title": "Delete system",
       "delete_confirm": "Are you sure you want to delete the system \"{{name}}\"?"
+    },
+    "delete_participant": {
+      "title": "Delete a participant",
+      "description": "Permanent and irreversible deletion of a participant and all their data",
+      "warning": "Deleting a participant is permanent and irreversible. All associated data will be deleted: contacts, consents, communications, activity history, external IDs and GUIDs.",
+      "search_label": "Participant ID",
+      "not_found": "Participant not found",
+      "delete_button": "Delete this participant",
+      "confirm_title": "Irreversible deletion",
+      "confirm_description": "You are about to permanently delete this participant and all their associated data:",
+      "confirm_irreversible": "This action is irreversible. All data will be permanently lost.",
+      "confirm_type_name": "Type \"{{name}}\" to confirm",
+      "confirm_delete": "Delete permanently",
+      "success": "The participant has been successfully deleted."
     }
   },
   "communications": {
@@ -402,6 +437,17 @@
     "empty": "The cart is empty",
     "clear": "Clear cart",
     "export": "Export",
+    "excel_report": "Excel Report",
+    "communication": "Communication",
+    "communication_subtitle_one": "{{count}} participant",
+    "communication_subtitle_other": "{{count}} participants",
+    "bulk_communication_hint": "One communication will be recorded for every participant, using their primary contact (or their self contact if no primary is set).",
+    "bulk_communication_confirm_title": "Confirmation",
+    "bulk_communication_confirm_one": "Confirm recording this communication in the file of the {{count}} participant in the cart.",
+    "bulk_communication_confirm_other": "Confirm recording this communication in the files of the {{count}} participants in the cart.",
+    "bulk_communication_skipped_title": "Skipped participants",
+    "bulk_communication_skipped_one": "{{count}} participant was skipped because they have no contact configured.",
+    "bulk_communication_skipped_other": "{{count}} participants were skipped because they have no contact configured.",
     "search_placeholder": "Search in cart…",
     "item_count_one": "{{count}} participant",
     "item_count_other": "{{count}} participants",
@@ -452,6 +498,7 @@
     "date_to": "End date",
     "filter_action_type": "Action type",
     "all_actions": "All actions",
+    "export": "Export to Excel",
     "empty": "No activity recorded",
     "participant_section_title": "History",
     "show_more": "Show more",
@@ -461,7 +508,9 @@
   },
   "validation": {
     "required": "This field is required",
-    "ramq_format": "Invalid RAMQ format (e.g. TREG 8501 0112)"
+    "ramq_format": "Invalid RAMQ format (e.g. TREG 8501 0112)",
+    "email_format": "Invalid email format",
+    "file_too_large": "File exceeds the maximum size of 10 MB"
   },
   "pagination": {
     "results": "{{from}} – {{to}} of {{total}}",
@@ -474,6 +523,34 @@
     "pin_left": "Pin left",
     "pin_right": "Pin right",
     "unpin": "Unpin"
+  },
+  "report": {
+    "sheet_participants": "Participants",
+    "sheet_consents": "Consents",
+    "sheet_external_ids": "External IDs",
+    "sheet_guids": "GUIDs",
+    "col_id": "ID",
+    "col_first_name": "First name",
+    "col_last_name": "Last name",
+    "col_name": "Name",
+    "col_dob": "Date of birth",
+    "col_sex": "Sex",
+    "col_ramq": "RAMQ",
+    "col_vital_status": "Vital status",
+    "col_email": "Email",
+    "col_phone": "Phone",
+    "col_address": "Address",
+    "col_city": "City",
+    "col_province": "Province",
+    "col_postal_code": "Postal code",
+    "col_language": "Language",
+    "col_contact": "Contact",
+    "col_relationship": "Relationship",
+    "col_primary": "Primary",
+    "col_yes": "Yes",
+    "col_guid_basic": "Basic GUID",
+    "col_guid_ramq": "RAMQ GUID",
+    "col_guid_birthplace": "Birthplace GUID"
   },
   "user_menu": {
     "connected_as": "Connected as {{email}}",

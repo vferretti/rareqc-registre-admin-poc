@@ -13,8 +13,8 @@ import {
   DialogFooter,
 } from "@/components/base/ui/dialog";
 import { Button } from "@/components/base/ui/button";
-import { Input } from "@/components/base/ui/input";
 import { Label } from "@/components/base/ui/label";
+import { DatePicker } from "@/components/base/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/base/ui/select";
+import { enumLabel } from "@/lib/enum-label";
+import { useEnums } from "@/hooks/useEnums";
 import type { Contact } from "@/types/participant";
 
 interface ConsentFormDialogProps {
@@ -64,10 +66,14 @@ export function ConsentFormDialog({
   contacts,
   onSuccess,
 }: ConsentFormDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language;
+  const { enums } = useEnums();
   const { templates } = useConsentTemplates();
   const [templateId, setTemplateId] = useState("");
-  const { clauses } = useConsentClauses(templateId ? Number(templateId) : undefined);
+  const { clauses } = useConsentClauses(
+    templateId ? Number(templateId) : undefined,
+  );
 
   const [entries, setEntries] = useState<ConsentEntry[]>([emptyEntry()]);
   const [file, setFile] = useState<File | null>(null);
@@ -107,7 +113,8 @@ export function ConsentFormDialog({
     onOpenChange(value);
   };
 
-  const isValid = !!templateId && entries.every((e) => e.clauseId && e.signedById);
+  const isValid =
+    !!templateId && entries.every((e) => e.clauseId && e.signedById);
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -150,18 +157,22 @@ export function ConsentFormDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {t("participant_detail.add_consent_title")}
-          </DialogTitle>
+          <DialogTitle>{t("participant_detail.add_consent_title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Template selector */}
           <div className="space-y-2">
-            <RequiredLabel>{t("participant_detail.consent_template")}</RequiredLabel>
+            <RequiredLabel>
+              {t("participant_detail.consent_template")}
+            </RequiredLabel>
             <Select value={templateId} onValueChange={handleTemplateChange}>
               <SelectTrigger>
-                <SelectValue placeholder={t("participant_detail.consent_template_placeholder")} />
+                <SelectValue
+                  placeholder={t(
+                    "participant_detail.consent_template_placeholder",
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {templates.map((tpl) => (
@@ -175,8 +186,16 @@ export function ConsentFormDialog({
 
           {/* Shared document upload */}
           <div className="space-y-2">
-            <Label><Trans i18nKey="participant_detail.document_signed">Document <strong>signed</strong></Trans></Label>
-            <FileUpload file={file} onChange={setFile} accept=".pdf,.doc,.docx" />
+            <Label>
+              <Trans i18nKey="participant_detail.document_signed">
+                Document <strong>signed</strong>
+              </Trans>
+            </Label>
+            <FileUpload
+              file={file}
+              onChange={setFile}
+              accept=".pdf,.doc,.docx"
+            />
           </div>
 
           <hr className="border-border" />
@@ -224,9 +243,11 @@ export function ConsentFormDialog({
                   <SelectContent>
                     {clauses.map((clause) => (
                       <SelectItem key={clause.id} value={String(clause.id)}>
-                        {t(`enums.clause_type.${clause.clause_type_code}`, {
-                          defaultValue: clause.clause_type_code,
-                        })}
+                        {enumLabel(
+                          enums?.clause_type,
+                          clause.clause_type_code,
+                          lang,
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -237,13 +258,9 @@ export function ConsentFormDialog({
                 <RequiredLabel>
                   {t("participant_detail.consent_date")}
                 </RequiredLabel>
-                <Input
-                  type="date"
-                  value={entry.date}
-                  onChange={(e) =>
-                    updateEntry(index, { date: e.target.value })
-                  }
-                  className="max-w-48"
+                <DatePicker
+                  value={entry.date || undefined}
+                  onChange={(v) => updateEntry(index, { date: v ?? "" })}
                 />
               </div>
 
@@ -253,9 +270,7 @@ export function ConsentFormDialog({
                 </RequiredLabel>
                 <Select
                   value={entry.signedById}
-                  onValueChange={(v) =>
-                    updateEntry(index, { signedById: v })
-                  }
+                  onValueChange={(v) => updateEntry(index, { signedById: v })}
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -273,9 +288,11 @@ export function ConsentFormDialog({
                     {nonSelfContacts.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
                         {c.first_name} {c.last_name} (
-                        {t(`enums.relationship.${c.relationship_code}`, {
-                          defaultValue: c.relationship_code,
-                        })}
+                        {enumLabel(
+                          enums?.relationship,
+                          c.relationship_code,
+                          lang,
+                        )}
                         )
                       </SelectItem>
                     ))}

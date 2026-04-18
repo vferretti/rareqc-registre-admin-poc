@@ -5,6 +5,13 @@ import (
 	"registre-admin/internal/types"
 )
 
+// ExternalIDDAO defines the interface for external ID data access.
+type ExternalIDDAO interface {
+	ResolveBySystem(systemName string, ids []string) ([]int, []string)
+	ListByParticipant(participantID int) ([]ExternalIDResponse, error)
+	ListByParticipantIDs(participantIDs []int) ([]ExternalIDExportRow, error)
+}
+
 // ExternalIDRepository handles database operations for external IDs.
 type ExternalIDRepository struct {
 	db *gorm.DB
@@ -17,19 +24,19 @@ func NewExternalIDRepository(db *gorm.DB) *ExternalIDRepository {
 
 // ExternalIDResponse represents an external ID with the system name for API responses.
 type ExternalIDResponse struct {
-	ID               int    `json:"id"`
-	ExternalSystemID int    `json:"external_system_id"`
-	SystemName       string `json:"system_name"`
-	SystemTitleFr    string `json:"system_title_fr"`
-	SystemTitleEn    string `json:"system_title_en"`
-	ExternalID       string `json:"external_id"`
+	ID               int    `json:"id" validate:"required"`
+	ExternalSystemID int    `json:"external_system_id" validate:"required"`
+	SystemName       string `json:"system_name" validate:"required"`
+	SystemTitleFr    string `json:"system_title_fr" validate:"required"`
+	SystemTitleEn    string `json:"system_title_en" validate:"required"`
+	ExternalID       string `json:"external_id" validate:"required"`
 }
 
 // ResolveBySystem returns participant IDs for a list of external IDs in a given system.
 // Also returns the list of external IDs that were not found.
 func (r *ExternalIDRepository) ResolveBySystem(systemName string, ids []string) ([]int, []string) {
 	var extIDs []types.ExternalID
-	r.db.Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+	r.db.Joins(joinExternalSystem).
 		Where("external_system.name = ? AND external_id.external_id IN ?", systemName, ids).
 		Find(&extIDs)
 
@@ -53,7 +60,7 @@ func (r *ExternalIDRepository) ResolveBySystem(systemName string, ids []string) 
 func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalIDResponse, error) {
 	var extIDs []types.ExternalID
 	err := r.db.Preload("ExternalSystem").
-		Joins("JOIN external_system ON external_system.id = external_id.external_system_id").
+		Joins(joinExternalSystem).
 		Where("participant_id = ?", participantID).
 		Order("external_system.name ASC").
 		Find(&extIDs).Error
@@ -73,4 +80,34 @@ func (r *ExternalIDRepository) ListByParticipant(participantID int) ([]ExternalI
 		}
 	}
 	return responses, nil
+}
+
+// ExternalIDExportRow is a lightweight row for bulk export (includes participant_id).
+type ExternalIDExportRow struct {
+	ParticipantID int    `json:"participant_id" validate:"required"`
+	SystemName    string `json:"system_name" validate:"required"`
+	ExternalID    string `json:"external_id" validate:"required"`
+}
+
+// ListByParticipantIDs returns external IDs for multiple participants.
+func (r *ExternalIDRepository) ListByParticipantIDs(participantIDs []int) ([]ExternalIDExportRow, error) {
+	var extIDs []types.ExternalID
+	err := r.db.Preload("ExternalSystem").
+		Joins(joinExternalSystem).
+		Where("participant_id IN ?", participantIDs).
+		Order("participant_id ASC, external_system.name ASC").
+		Find(&extIDs).Error
+	if err != nil {
+		return nil, err
+	}
+
+	rows := make([]ExternalIDExportRow, len(extIDs))
+	for i, e := range extIDs {
+		rows[i] = ExternalIDExportRow{
+			ParticipantID: e.ParticipantID,
+			SystemName:    e.ExternalSystem.Name,
+			ExternalID:    e.ExternalID,
+		}
+	}
+	return rows, nil
 }

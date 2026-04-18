@@ -25,7 +25,7 @@ import (
 // @Success     200 {object} types.PaginatedResponse[repository.ActivityLogResponse]
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /activity-logs [get]
-func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFunc {
+func ListActivityLogsHandler(repo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params := defaultDescParams(c)
 
@@ -44,7 +44,7 @@ func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFun
 
 		responses, total, totalPages, err := repo.List(p)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch activity logs"})
+			handleInternalError(c, "Failed to fetch activity logs")
 			return
 		}
 
@@ -74,21 +74,21 @@ func ListActivityLogsHandler(repo *repository.ActivityRepository) gin.HandlerFun
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/activity-logs [get]
-func ListParticipantActivityLogsHandler(participantRepo *repository.ParticipantRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func ListParticipantActivityLogsHandler(participantRepo repository.ParticipantDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participantID, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid participant ID"})
+			handleBadRequest(c, "Invalid participant ID")
 			return
 		}
 
 		exists, err := participantRepo.Exists(participantID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to check participant"})
+			handleInternalError(c, "Failed to check participant")
 			return
 		}
 		if !exists {
-			c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			handleNotFound(c, "Participant")
 			return
 		}
 
@@ -101,7 +101,7 @@ func ListParticipantActivityLogsHandler(participantRepo *repository.ParticipantR
 
 		responses, total, totalPages, err := activityRepo.List(p)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch activity logs"})
+			handleInternalError(c, "Failed to fetch activity logs")
 			return
 		}
 

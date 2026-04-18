@@ -78,10 +78,13 @@ func main() {
 	}
 
 	// Clean existing data (order matters for FK)
+	db.Exec("DELETE FROM communication")
 	db.Exec("DELETE FROM cart_item")
 	db.Exec("DELETE FROM external_id")
 	db.Exec("DELETE FROM consent")
+	db.Exec("DELETE FROM consent_clause")
 	db.Exec("DELETE FROM document_file")
+	db.Exec("DELETE FROM document")
 	db.Exec("DELETE FROM activity_log")
 	db.Exec("DELETE FROM guid")
 	db.Exec("DELETE FROM contact")
@@ -149,6 +152,9 @@ func main() {
 			db.Exec("UPDATE participant SET created_at = ? WHERE id = ?", enrollTimes[i], p.ID)
 		}
 	}
+
+	// Seed consent templates and clauses (demo/dev data)
+	seedConsentTemplates(db)
 
 	// Load consent PDF into document table
 	seedConsentDocuments(db)
@@ -340,6 +346,60 @@ func seedAdult(db *gorm.DB, index int, ts time.Time) {
 		createActivityLog(db, "participant_edited", participant.ID, editAuthor,
 			fmt.Sprintf("%s %s", firstName, lastName), editTs)
 	}
+}
+
+// seedConsentTemplates creates the consent template documents and their clauses (demo/dev data).
+func seedConsentTemplates(db *gorm.DB) {
+	// Template 1: RareQc — 2 clauses (registry + recontact)
+	rareqcDoc := types.Document{
+		Name:     "Formulaire de consentement – RareQc",
+		FileName: "Consentement_RareQc.pdf",
+		TypeCode: "consent_template",
+		MimeType: "application/pdf",
+	}
+	if err := db.Where("file_name = ?", rareqcDoc.FileName).FirstOrCreate(&rareqcDoc).Error; err != nil {
+		log.Printf("Error creating RareQc template: %v", err)
+	}
+
+	rareqcClauses := []types.ConsentClause{
+		{TemplateDocumentID: rareqcDoc.ID, ClauseTypeCode: "registry",
+			ClauseFr: "Je consens à faire partie du registre RareQc.",
+			ClauseEn: "I consent to be part of the RareQc registry."},
+		{TemplateDocumentID: rareqcDoc.ID, ClauseTypeCode: "recontact",
+			ClauseFr: "Je consens à être recontacté(e) pour des recherches futures ou des informations liées au registre RareQc.",
+			ClauseEn: "I consent to be recontacted for future research or information related to the RareQc registry."},
+	}
+	for _, clause := range rareqcClauses {
+		db.Where("clause_type_code = ? AND template_document_id = ?", clause.ClauseTypeCode, rareqcDoc.ID).FirstOrCreate(&clause)
+	}
+
+	// Template 2: RQDM — 3 clauses (registry + recontact + external linkage)
+	rqdmDoc := types.Document{
+		Name:     "Formulaire de consentement – RQDM",
+		FileName: "Consentement_RQDM.pdf",
+		TypeCode: "consent_template",
+		MimeType: "application/pdf",
+	}
+	if err := db.Where("name = ?", rqdmDoc.Name).FirstOrCreate(&rqdmDoc).Error; err != nil {
+		log.Printf("Error creating RQDM template: %v", err)
+	}
+
+	rqdmClauses := []types.ConsentClause{
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "registry",
+			ClauseFr: "Je consens à faire partie du registre RareQc et à ce que mes échantillons biologiques, mes données cliniques et génomiques soient conservés et utilisés à des fins de diagnostic moléculaire et de recherche en génomique.",
+			ClauseEn: "I consent to be part of the RareQc registry and to having my biological samples, clinical and genomic data stored and used for molecular diagnostic and genomic research purposes."},
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "recontact",
+			ClauseFr: "Je consens à être recontacté(e) si de nouvelles découvertes pertinentes à ma condition de santé sont identifiées, ou pour être invité(e) à participer à de nouvelles études de recherche.",
+			ClauseEn: "I consent to being recontacted if new findings relevant to my health condition are identified, or to be invited to participate in new research studies."},
+		{TemplateDocumentID: rqdmDoc.ID, ClauseTypeCode: "external_linkage",
+			ClauseFr: "Je consens à ce que mes données soient liées à des bases de données provinciales, nationales ou internationales (ex. ClinVar, OMIM, bases hospitalières) à des fins de recherche et d'amélioration du diagnostic.",
+			ClauseEn: "I consent to having my data linked to provincial, national, or international databases (e.g., ClinVar, OMIM, hospital databases) for research and diagnostic improvement purposes."},
+	}
+	for _, clause := range rqdmClauses {
+		db.Where("clause_type_code = ? AND template_document_id = ?", clause.ClauseTypeCode, rqdmDoc.ID).FirstOrCreate(&clause)
+	}
+
+	log.Println("Consent templates and clauses seeded")
 }
 
 // loadTemplatePDF loads a PDF file into a template document's document_file row.

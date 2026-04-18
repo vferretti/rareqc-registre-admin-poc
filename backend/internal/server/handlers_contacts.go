@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -24,26 +25,26 @@ import (
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /participants/{id}/contacts [post]
-func AddContactHandler(participantRepo *repository.ParticipantRepository, contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func AddContactHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		participant, err := participantRepo.FindByID(c.Param("id"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Participant not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Participant")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch participant"})
+			handleInternalError(c, "Failed to fetch participant")
 			return
 		}
 
 		var req types.CreateContactRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
 		if req.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot create self contact"})
+			handleBadRequest(c, "Cannot create self contact")
 			return
 		}
 
@@ -90,10 +91,14 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 			// If no non-self contact is primary and new one isn't either, self stays primary
 			// If new one is primary, self was already cleared above
 			if !req.IsPrimary {
-				// Ensure self is primary if nobody else is
-				count, _ := contactRepo.CountNonSelfPrimary(tx, participant.ID)
+				count, err := contactRepo.CountNonSelfPrimary(tx, participant.ID)
+				if err != nil {
+					return err
+				}
 				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, participant.ID, true)
+					if err := contactRepo.SetSelfPrimary(tx, participant.ID, true); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -102,11 +107,14 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to create contact"})
+			handleInternalError(c, "Failed to create contact")
 			return
 		}
 
-		participantRepo.Reload(&participant)
+		if err := participantRepo.Reload(&participant); err != nil {
+			handleInternalError(c, "Failed to reload participant")
+			return
+		}
 		c.JSON(http.StatusCreated, participant)
 	}
 }
@@ -125,26 +133,26 @@ func AddContactHandler(participantRepo *repository.ParticipantRepository, contac
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
 // @Router      /contacts/{contactId} [put]
-func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRepo *repository.ActivityRepository) gin.HandlerFunc {
+func UpdateContactHandler(contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		contact, err := contactRepo.FindByID(c.Param("contactId"))
 		if err != nil {
-			if err == gorm.ErrRecordNotFound {
-				c.JSON(http.StatusNotFound, types.ErrorResponse{Error: "Contact not found"})
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Contact")
 				return
 			}
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to fetch contact"})
+			handleInternalError(c, "Failed to fetch contact")
 			return
 		}
 
 		if contact.RelationshipCode == "self" {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Cannot edit self contact directly"})
+			handleBadRequest(c, "Cannot edit self contact directly")
 			return
 		}
 
 		var req types.CreateContactRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, types.ErrorResponse{Error: "Invalid request body"})
+			handleBadRequest(c, "Invalid request body")
 			return
 		}
 
@@ -177,9 +185,14 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 
 			// Ensure at least one contact is primary
 			if !req.IsPrimary {
-				count, _ := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				count, err := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if err != nil {
+					return err
+				}
 				if count == 0 {
-					contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true)
+					if err := contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -188,10 +201,89 @@ func UpdateContactHandler(contactRepo *repository.ContactRepository, activityRep
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, types.ErrorResponse{Error: "Failed to update contact"})
+			handleInternalError(c, "Failed to update contact")
 			return
 		}
 
 		c.JSON(http.StatusOK, contact)
+	}
+}
+
+// DeleteContactHandler removes a contact by ID and records the activity.
+//
+// @Summary     Delete a contact
+// @Description Deletes a contact by ID. Cannot delete a "self" contact or one referenced by a consent.
+// @Tags        contacts
+// @Produce     json
+// @Param       contactId path int true "Contact ID"
+// @Success     200 {object} object{message=string}
+// @Failure     400 {object} types.ErrorResponse
+// @Failure     404 {object} types.ErrorResponse
+// @Failure     500 {object} types.ErrorResponse
+// @Router      /contacts/{contactId} [delete]
+func DeleteContactHandler(contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		contact, err := contactRepo.FindByID(c.Param("contactId"))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				handleNotFound(c, "Contact")
+				return
+			}
+			handleInternalError(c, "Failed to fetch contact")
+			return
+		}
+
+		if contact.RelationshipCode == "self" {
+			handleBadRequest(c, "Cannot delete self contact")
+			return
+		}
+
+		referenced, err := contactRepo.IsReferencedByConsent(contact.ID)
+		if err != nil {
+			handleInternalError(c, "Failed to check consent references")
+			return
+		}
+		if referenced {
+			handleBadRequest(c, "Cannot delete contact: referenced as consent signer")
+			return
+		}
+
+		commReferenced, err := contactRepo.IsReferencedByCommunication(contact.ID)
+		if err != nil {
+			handleInternalError(c, "Failed to check communication references")
+			return
+		}
+		if commReferenced {
+			handleBadRequest(c, "Cannot delete contact: referenced in a communication")
+			return
+		}
+
+		author := getAuthor(c)
+
+		err = contactRepo.Transaction(func(tx *gorm.DB) error {
+			wasPrimary := contact.IsPrimary
+			if err := contactRepo.Delete(tx, &contact); err != nil {
+				return err
+			}
+			if wasPrimary {
+				count, err := contactRepo.CountNonSelfPrimary(tx, contact.ParticipantID)
+				if err != nil {
+					return err
+				}
+				if count == 0 {
+					if err := contactRepo.SetSelfPrimary(tx, contact.ParticipantID, true); err != nil {
+						return err
+					}
+				}
+			}
+			details := fmt.Sprintf("%s %s (%s)", contact.FirstName, contact.LastName, contact.RelationshipCode)
+			return activityRepo.Record(tx, "contact_deleted", &contact.ParticipantID, author, &details)
+		})
+
+		if err != nil {
+			handleInternalError(c, "Failed to delete contact")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Contact deleted"})
 	}
 }

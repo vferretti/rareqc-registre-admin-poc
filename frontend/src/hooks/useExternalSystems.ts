@@ -1,22 +1,16 @@
 import useSWR from "swr";
 import api from "@/lib/api";
+import type { ExternalSystemResponse } from "../../api/api";
 
-/** An external system with its reference status. */
-export interface ExternalSystem {
-  id: number;
-  name: string;
-  title_fr: string;
-  title_en: string;
-  is_referenced: boolean;
-}
+export type { ExternalSystemResponse as ExternalSystem };
 
 const fetcher = (url: string) => api.get(url).then((res) => res.data);
 
 /** Fetches all external systems. */
 export function useExternalSystems() {
-  const { data, isLoading, mutate } = useSWR<ExternalSystem[]>(
+  const { data, error, isLoading, mutate } = useSWR<ExternalSystemResponse[]>(
     "/external-systems",
     fetcher,
   );
-  return { systems: data ?? [], isLoading, mutate };
+  return { systems: data ?? [], error, isLoading, mutate };
 }

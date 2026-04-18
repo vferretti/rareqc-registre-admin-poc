@@ -8,6 +8,11 @@ import (
 	"registre-admin/internal/types"
 )
 
+// SearchDAO defines the interface for search data access.
+type SearchDAO interface {
+	Search(q string) ([]SearchSuggestion, error)
+}
+
 // SearchRepository handles search queries across participants and contact.
 type SearchRepository struct {
 	db *gorm.DB
@@ -20,25 +25,27 @@ func NewSearchRepository(db *gorm.DB) *SearchRepository {
 
 // SearchSuggestion represents a single search result with the participant and what matched.
 type SearchSuggestion struct {
-	ParticipantID   int    `json:"participant_id"`
-	ParticipantName string `json:"participant_name"`
-	MatchField      string `json:"match_field"`
-	MatchValue      string `json:"match_value"`
+	ParticipantID   int    `json:"participant_id" validate:"required"`
+	ParticipantName string `json:"participant_name" validate:"required"`
+	MatchField      string `json:"match_field" validate:"required"`
+	MatchValue      string `json:"match_value" validate:"required"`
 }
 
 // Search returns up to 10 suggestions matching a query across participants and contact.
-func (r *SearchRepository) Search(q string) []SearchSuggestion {
-	like := fmt.Sprintf("%%%s%%", strings.ToLower(q))
+func (r *SearchRepository) Search(q string) ([]SearchSuggestion, error) {
+	like := searchTerm(q)
 	var suggestions []SearchSuggestion
 
 	// Search by participant name, RAMQ, or self-contact phone/email
+	pSQL, pN := participantSearchSQL("participant")
+	cExtra := sprintf(matchEmail, "contact") + " OR " + sprintf(matchPhone, "contact")
 	var participants []types.Participant
-	r.db.Preload("Contacts", "relationship_code = 'self'").
+	if err := r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
-		Where(
-			"CAST(participant.id AS TEXT) LIKE ? OR unaccent(lower(participant.first_name)) LIKE unaccent(?) OR unaccent(lower(participant.last_name)) LIKE unaccent(?) OR unaccent(lower(participant.first_name || ' ' || participant.last_name)) LIKE unaccent(?) OR REPLACE(LOWER(COALESCE(participant.ramq, '')), ' ', '') LIKE REPLACE(?, ' ', '') OR lower(contact.email) LIKE ? OR contact.phone LIKE ?",
-			like, like, like, like, like, like, like,
-		).Limit(10).Find(&participants)
+		Where(pSQL+" OR "+cExtra, repeatArg(like, pN+2)...).
+		Limit(10).Find(&participants).Error; err != nil {
+		return nil, err
+	}
 
 	// Deduplicate across all search sources
 	seen := make(map[int]bool)
@@ -57,9 +64,11 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 
 	// Search by external ID
 	var extIDs []types.ExternalID
-	r.db.Preload("Participant").Preload("ExternalSystem").
+	if err := r.db.Preload("Participant").Preload("ExternalSystem").
 		Where("lower(external_id) LIKE ?", like).
-		Limit(10).Find(&extIDs)
+		Limit(10).Find(&extIDs).Error; err != nil {
+		return nil, err
+	}
 
 	for _, e := range extIDs {
 		if seen[e.ParticipantID] {
@@ -76,11 +85,13 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	}
 
 	// Search by contact name, email, or phone (non-self contacts)
+	cSQL, cN := contactSearchSQL("contact")
 	var contacts []types.Contact
-	r.db.Preload("Participant").Where(
-		"relationship_code != 'self' AND (unaccent(lower(first_name)) LIKE unaccent(?) OR unaccent(lower(last_name)) LIKE unaccent(?) OR unaccent(lower(first_name || ' ' || last_name)) LIKE unaccent(?) OR lower(email) LIKE ? OR phone LIKE ?)",
-		like, like, like, like, like,
-	).Limit(10).Find(&contacts)
+	if err := r.db.Preload("Participant").
+		Where("relationship_code != 'self' AND ("+cSQL+")", repeatArg(like, cN)...).
+		Limit(10).Find(&contacts).Error; err != nil {
+		return nil, err
+	}
 
 	for _, ct := range contacts {
 		if seen[ct.ParticipantID] {
@@ -101,7 +112,7 @@ func (r *SearchRepository) Search(q string) []SearchSuggestion {
 	if len(suggestions) > 10 {
 		suggestions = suggestions[:10]
 	}
-	return suggestions
+	return suggestions, nil
 }
 
 // detectParticipantMatch determines which field matched (id > name > ramq > email > phone).

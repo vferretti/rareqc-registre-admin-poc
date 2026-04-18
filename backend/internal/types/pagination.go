@@ -14,9 +14,9 @@ type PaginationParams struct {
 }
 
 type PaginatedResponse[T any] struct {
-	Data       []T `json:"data"`
-	Total      int `json:"total"`
-	PageIndex  int `json:"page_index"`
-	PageSize   int `json:"page_size"`
-	TotalPages int `json:"total_pages"`
+	Data       []T `json:"data" validate:"required"`
+	Total      int `json:"total" validate:"required"`
+	PageIndex  int `json:"page_index" validate:"required"`
+	PageSize   int `json:"page_size" validate:"required"`
+	TotalPages int `json:"total_pages" validate:"required"`
 }
