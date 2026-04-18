@@ -1,5 +1,6 @@
 import * as React from "react";
 import { format, parse, setMonth, setYear, getMonth, getYear } from "date-fns";
+import type { Locale } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { useTranslation } from "react-i18next";
