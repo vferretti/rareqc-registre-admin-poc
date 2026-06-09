@@ -32,8 +32,16 @@ export function ConsentClauseFilter({
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
   const { enums } = useEnums();
-  const clauseTypes = (enums?.clause_type?.map((e) => e.code) ??
-    []) as ClauseType[];
+  // Only the clause types the filter state knows about. Guards against
+  // unexpected reference-table rows (e.g. test data) crashing the page.
+  const knownClauseTypes: ClauseType[] = [
+    "registry",
+    "recontact",
+    "external_linkage",
+  ];
+  const clauseTypes = (enums?.clause_type?.map((e) => e.code) ?? []).filter(
+    (code): code is ClauseType => knownClauseTypes.includes(code as ClauseType),
+  );
   const consentStatuses = enums?.consent_status?.map((e) => e.code) ?? [];
 
   const totalSelected =
@@ -42,7 +50,7 @@ export function ConsentClauseFilter({
     value.external_linkage.length;
 
   const toggle = (clause: ClauseType, status: string) => {
-    const current = value[clause];
+    const current = value[clause] ?? [];
     onChange({
       ...value,
       [clause]: current.includes(status)
