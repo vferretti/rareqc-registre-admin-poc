@@ -44,6 +44,21 @@ interface ParticipantCommunicationsProps {
   contacts: Contact[];
 }
 
+/**
+ * Display name for a communication's contact: full name when known, an
+ * "unknown contact" label for a deleted contact, or null when there is none.
+ */
+function contactDisplayName(
+  comm: CommunicationResponse,
+  t: (key: string) => string,
+): string | null {
+  if (comm.contact_first_name && comm.contact_last_name) {
+    return `${comm.contact_first_name} ${comm.contact_last_name}`;
+  }
+  if (comm.contact_id == null) return null;
+  return t("participant_detail.unknown_contact");
+}
+
 export function ParticipantCommunications({
   participantId,
   contacts,
@@ -122,12 +137,7 @@ export function ParticipantCommunications({
                 const outcomeLabel = comm.outcome_code
                   ? localizedField(comm, "outcome_name", lang)
                   : null;
-                const contactName =
-                  comm.contact_first_name && comm.contact_last_name
-                    ? `${comm.contact_first_name} ${comm.contact_last_name}`
-                    : comm.contact_id === null || comm.contact_id === undefined
-                      ? null
-                      : t("participant_detail.unknown_contact");
+                const contactName = contactDisplayName(comm, t);
 
                 return (
                   <div key={comm.id} className="flex items-start gap-3">

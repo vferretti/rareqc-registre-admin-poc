@@ -42,6 +42,30 @@ interface ParticipantConsentsProps {
   onConsentAdded?: () => void;
 }
 
+/**
+ * Human-readable "signed by" label: the participant themselves, or the
+ * signatory's name and relationship. Returns null when there is no signatory.
+ */
+function signedByLabel(
+  consent: Pick<ConsentResponse, "signed_by_name" | "signed_by_relationship">,
+  t: ReturnType<typeof useTranslation>["t"],
+  enums: ReturnType<typeof useEnums>["enums"],
+  lang: string,
+): string | null {
+  if (!consent.signed_by_name) return null;
+  if (consent.signed_by_relationship === "self") {
+    return t("participant_detail.signed_by_participant");
+  }
+  return t("participant_detail.signed_by", {
+    name: consent.signed_by_name,
+    relationship: enumLabel(
+      enums?.relationship,
+      consent.signed_by_relationship,
+      lang,
+    ),
+  });
+}
+
 /** Displays the consent status for a participant with a dialog to add new consents. */
 export function ParticipantConsents({
   participantId,
@@ -134,21 +158,8 @@ export function ParticipantConsents({
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatDate(c.date)}
-                        {c.signed_by_name && (
-                          <>
-                            {" — "}
-                            {c.signed_by_relationship === "self"
-                              ? t("participant_detail.signed_by_participant")
-                              : t("participant_detail.signed_by", {
-                                  name: c.signed_by_name,
-                                  relationship: enumLabel(
-                                    enums?.relationship,
-                                    c.signed_by_relationship,
-                                    lang,
-                                  ),
-                                })}
-                          </>
-                        )}
+                        {c.signed_by_name &&
+                          ` — ${signedByLabel(c, t, enums, lang)}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -295,18 +306,7 @@ export function ParticipantConsents({
                   {t("participant_detail.signed_by_label")}
                 </p>
                 <p className="text-sm">
-                  {viewingClause.signed_by_name
-                    ? viewingClause.signed_by_relationship === "self"
-                      ? t("participant_detail.signed_by_participant")
-                      : t("participant_detail.signed_by", {
-                          name: viewingClause.signed_by_name,
-                          relationship: enumLabel(
-                            enums?.relationship,
-                            viewingClause.signed_by_relationship,
-                            lang,
-                          ),
-                        })
-                    : "—"}
+                  {signedByLabel(viewingClause, t, enums, lang) ?? "—"}
                 </p>
               </div>
               <div className="space-y-1">

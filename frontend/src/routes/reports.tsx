@@ -28,9 +28,16 @@ import { todayISO } from "@/lib/format";
 
 /** Formats a count with its percentage of total. */
 function pct(value: number, total: number): string {
-  return total > 0
-    ? `${value} (${((value / total) * 100).toFixed(1)}%)`
-    : `${value}`;
+  if (total <= 0) return `${value}`;
+  return `${value} (${((value / total) * 100).toFixed(1)}%)`;
+}
+
+/** Chart tick interval scaled to the axis maximum. */
+function tickInterval(max: number): number {
+  if (max <= 50) return 10;
+  if (max <= 200) return 25;
+  if (max <= 500) return 50;
+  return 100;
 }
 
 /** Resolves CSS variables in SVG attributes to computed values. */
@@ -277,14 +284,7 @@ export default function Reports() {
                         domain={[
                           0,
                           (max: number) => {
-                            const tick =
-                              max <= 50
-                                ? 10
-                                : max <= 200
-                                  ? 25
-                                  : max <= 500
-                                    ? 50
-                                    : 100;
+                            const tick = tickInterval(max);
                             return Math.ceil(max / tick) * tick + tick;
                           },
                         ]}

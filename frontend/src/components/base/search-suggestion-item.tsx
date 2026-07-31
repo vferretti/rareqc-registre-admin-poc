@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { CreditCard, Hash, UserRound, Mail, Phone, Link } from "lucide-react";
+import { splitOnHighlight } from "@/lib/highlight";
 
 const MATCH_ICONS: Record<string, LucideIcon> = {
   id: Hash,
@@ -12,23 +13,13 @@ const MATCH_ICONS: Record<string, LucideIcon> = {
 
 /** Bolds portions of text that match a query string. */
 function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <>{text}</>;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(escaped, "gi");
-  const result: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      result.push(text.slice(lastIndex, match.index));
-    }
-    result.push(<strong key={match.index}>{match[0]}</strong>);
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) {
-    result.push(text.slice(lastIndex));
-  }
-  return <>{result}</>;
+  return (
+    <>
+      {splitOnHighlight(text, query).map(({ segment, isMatch }, i) =>
+        isMatch ? <strong key={i}>{segment}</strong> : segment,
+      )}
+    </>
+  );
 }
 
 interface SearchSuggestionItemProps {
