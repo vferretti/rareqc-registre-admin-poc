@@ -4,13 +4,18 @@ import { z } from "zod";
  * Check if a field is required in the Zod schema (Zod v4 API).
  * A field is considered required if it has a min(1+) check on a string type.
  * Fields that are optional, have defaults, or are plain strings without min are not required.
+ *
+ * For array-item field paths (e.g. "entries.0.clauseId"), pass the item
+ * schema — the lookup falls back to the last path segment ("clauseId").
  */
 export function isFieldRequired(
   schema: z.ZodObject<Record<string, z.ZodTypeAny>>,
   fieldName: string,
 ): boolean {
   try {
-    const fieldSchema = schema.shape[fieldName];
+    const fieldSchema =
+      schema.shape[fieldName] ??
+      schema.shape[fieldName.split(".").at(-1) ?? ""];
     if (!fieldSchema) return false;
 
     return isRequiredField(fieldSchema);

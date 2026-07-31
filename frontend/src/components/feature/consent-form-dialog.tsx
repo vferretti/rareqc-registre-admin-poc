@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { todayISO } from "@/lib/format";
+import {
+  consentFormSchema,
+  consentEntrySchema,
+  type ConsentFormValues,
+} from "@/lib/validations/consent";
 import { FileUpload } from "@/components/base/file-upload";
 import { useConsentClauses } from "@/hooks/useConsentClauses";
 import { useConsentTemplates } from "@/hooks/useConsentTemplates";
@@ -13,6 +20,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/base/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+} from "@/components/base/ui/form";
 import { Button } from "@/components/base/ui/button";
 import { Label } from "@/components/base/ui/label";
 import { DatePicker } from "@/components/base/ui/date-picker";
@@ -35,28 +49,9 @@ interface ConsentFormDialogProps {
   onSuccess?: () => void;
 }
 
-interface ConsentEntry {
-  clauseId: string;
-  date: string;
-  signedById: string;
-}
-
-/** Creates a blank consent entry with today's date and status "valid". */
-function emptyEntry(): ConsentEntry {
-  return {
-    clauseId: "",
-    date: todayISO(),
-    signedById: "",
-  };
-}
-
-/** Required field label with red asterisk. */
-function RequiredLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <Label>
-      {children} <span className="text-destructive">*</span>
-    </Label>
-  );
+/** Creates a blank consent entry with today's date. */
+function emptyEntry() {
+  return { clauseId: "", date: todayISO(), signedById: "" };
 }
 
 /** Dialog to add one or more consents for a participant with a shared document. */
@@ -71,55 +66,52 @@ export function ConsentFormDialog({
   const lang = i18n.language;
   const { enums } = useEnums();
   const { templates } = useConsentTemplates();
-  const [templateId, setTemplateId] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const schema = consentFormSchema(t);
+  const entrySchema = consentEntrySchema(t);
+
+  const form = useForm<ConsentFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { templateId: "", entries: [emptyEntry()] },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "entries",
+  });
+
+  const templateId = form.watch("templateId");
   const { clauses } = useConsentClauses(
     templateId ? Number(templateId) : undefined,
   );
-
-  const [entries, setEntries] = useState<ConsentEntry[]>([emptyEntry()]);
-  const [file, setFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const selfContact = contacts.find((c) => c.relationship_code === "self");
   const nonSelfContacts = contacts.filter(
     (c) => c.relationship_code !== "self",
   );
 
-  const handleUpdateEntry = (index: number, patch: Partial<ConsentEntry>) => {
-    setEntries((prev) =>
-      prev.map((e, i) => (i === index ? { ...e, ...patch } : e)),
-    );
-  };
-
-  const handleRemoveEntry = (index: number) => {
-    setEntries((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const resetForm = () => {
-    setTemplateId("");
-    setEntries([emptyEntry()]);
+    form.reset({ templateId: "", entries: [emptyEntry()] });
     setFile(null);
     setSubmitError(null);
   };
 
-  const handleTemplateChange = (value: string) => {
-    setTemplateId(value);
-    // Reset clause selections when template changes
-    setEntries([emptyEntry()]);
-  };
+  // Reset to a blank form each time the dialog opens
+  useEffect(() => {
+    if (open) resetForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleOpenChange = (value: boolean) => {
     if (!value) resetForm();
     onOpenChange(value);
   };
 
-  const isValid =
-    !!templateId && entries.every((e) => e.clauseId && e.signedById);
-
-  const handleSubmit = async () => {
-    if (!isValid) return;
-    setSubmitting(true);
+  const onSubmit = async (data: ConsentFormValues) => {
     setSubmitError(null);
     try {
       // Upload document once if a file was selected
@@ -134,7 +126,7 @@ export function ConsentFormDialog({
       }
 
       // Create each consent with the shared document_id
-      for (const entry of entries) {
+      for (const entry of data.entries) {
         await api.post(`/participants/${participantId}/consents`, {
           clause_id: Number(entry.clauseId),
           status_code: "valid",
@@ -149,8 +141,6 @@ export function ConsentFormDialog({
       onSuccess?.();
     } catch {
       setSubmitError(t("common.error"));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -161,179 +151,228 @@ export function ConsentFormDialog({
           <DialogTitle>{t("participant_detail.add_consent_title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Template selector */}
-          <div className="space-y-2">
-            <RequiredLabel>
-              {t("participant_detail.consent_template")}
-            </RequiredLabel>
-            <Select value={templateId} onValueChange={handleTemplateChange}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={t(
-                    "participant_detail.consent_template_placeholder",
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+            className="space-y-4"
+          >
+            {/* Template selector */}
+            <FormField
+              schema={schema}
+              control={form.control}
+              name="templateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t("participant_detail.consent_template")}
+                  </FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={(v) => {
+                      field.onChange(v);
+                      // Reset clause selections when template changes
+                      form.setValue("entries", [emptyEntry()]);
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t(
+                            "participant_detail.consent_template_placeholder",
+                          )}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {templates.map((tpl) => (
+                        <SelectItem key={tpl.id} value={String(tpl.id)}>
+                          {tpl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+
+            {/* Shared document upload */}
+            <div className="space-y-2">
+              <Label>
+                <Trans i18nKey="participant_detail.document_signed">
+                  Document <strong>signed</strong>
+                </Trans>
+              </Label>
+              <FileUpload
+                file={file}
+                onChange={setFile}
+                accept=".pdf,.doc,.docx"
+              />
+            </div>
+
+            <hr className="border-border" />
+
+            {/* Consent entries */}
+            {fields.map((entryField, index) => (
+              <div
+                key={entryField.id}
+                className="space-y-3 rounded-md border border-border p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">
+                    {t("participant_detail.consent_ordinal", {
+                      number: index + 1,
+                    })}
+                  </p>
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  )}
+                </div>
+
+                <FormField
+                  schema={entrySchema}
+                  control={form.control}
+                  name={`entries.${index}.clauseId`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("participant_detail.consent_clause")}
+                      </FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t(
+                                "participant_detail.consent_clause_placeholder",
+                              )}
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clauses.map((clause) => (
+                            <SelectItem
+                              key={clause.id}
+                              value={String(clause.id)}
+                            >
+                              {enumLabel(
+                                enums?.clause_type,
+                                clause.clause_type_code,
+                                lang,
+                              )}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
                   )}
                 />
-              </SelectTrigger>
-              <SelectContent>
-                {templates.map((tpl) => (
-                  <SelectItem key={tpl.id} value={String(tpl.id)}>
-                    {tpl.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
-          {/* Shared document upload */}
-          <div className="space-y-2">
-            <Label>
-              <Trans i18nKey="participant_detail.document_signed">
-                Document <strong>signed</strong>
-              </Trans>
-            </Label>
-            <FileUpload
-              file={file}
-              onChange={setFile}
-              accept=".pdf,.doc,.docx"
-            />
-          </div>
+                <FormField
+                  schema={entrySchema}
+                  control={form.control}
+                  name={`entries.${index}.date`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("participant_detail.consent_date")}
+                      </FormLabel>
+                      <FormControl>
+                        <DatePicker
+                          value={field.value || undefined}
+                          onChange={(v) => field.onChange(v ?? "")}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-          <hr className="border-border" />
-
-          {/* Consent entries */}
-          {entries.map((entry, index) => (
-            <div
-              key={index}
-              className="space-y-3 rounded-md border border-border p-4"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">
-                  {t("participant_detail.consent_ordinal", {
-                    number: index + 1,
-                  })}
-                </p>
-                {entries.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveEntry(index)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <RequiredLabel>
-                  {t("participant_detail.consent_clause")}
-                </RequiredLabel>
-                <Select
-                  value={entry.clauseId}
-                  onValueChange={(v) =>
-                    handleUpdateEntry(index, { clauseId: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t(
-                        "participant_detail.consent_clause_placeholder",
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clauses.map((clause) => (
-                      <SelectItem key={clause.id} value={String(clause.id)}>
-                        {enumLabel(
-                          enums?.clause_type,
-                          clause.clause_type_code,
-                          lang,
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <RequiredLabel>
-                  {t("participant_detail.consent_date")}
-                </RequiredLabel>
-                <DatePicker
-                  value={entry.date || undefined}
-                  onChange={(v) => handleUpdateEntry(index, { date: v ?? "" })}
+                <FormField
+                  schema={entrySchema}
+                  control={form.control}
+                  name={`entries.${index}.signedById`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("participant_detail.signed_by_label")}
+                      </FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t(
+                                "participant_detail.signed_by_placeholder",
+                              )}
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {selfContact && (
+                            <SelectItem value={String(selfContact.id)}>
+                              {t("participant_detail.signed_by_self_short")}
+                            </SelectItem>
+                          )}
+                          {nonSelfContacts.map((c) => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                              {c.first_name} {c.last_name} (
+                              {enumLabel(
+                                enums?.relationship,
+                                c.relationship_code,
+                                lang,
+                              )}
+                              )
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
                 />
               </div>
+            ))}
 
-              <div className="space-y-2">
-                <RequiredLabel>
-                  {t("participant_detail.signed_by_label")}
-                </RequiredLabel>
-                <Select
-                  value={entry.signedById}
-                  onValueChange={(v) =>
-                    handleUpdateEntry(index, { signedById: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t(
-                        "participant_detail.signed_by_placeholder",
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selfContact && (
-                      <SelectItem value={String(selfContact.id)}>
-                        {t("participant_detail.signed_by_self_short")}
-                      </SelectItem>
-                    )}
-                    {nonSelfContacts.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.first_name} {c.last_name} (
-                        {enumLabel(
-                          enums?.relationship,
-                          c.relationship_code,
-                          lang,
-                        )}
-                        )
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append(emptyEntry())}
+            >
+              <Plus className="mr-1 size-4" />
+              {t("participant_detail.add_another_consent")}
+            </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setEntries((prev) => [...prev, emptyEntry()])}
-          >
-            <Plus className="mr-1 size-4" />
-            {t("participant_detail.add_another_consent")}
-          </Button>
+            {submitError && (
+              <p className="text-sm text-destructive">{submitError}</p>
+            )}
 
-          {submitError && (
-            <p className="text-sm text-destructive">{submitError}</p>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={submitting}
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleSubmit} disabled={!isValid || submitting}>
-            {t("common.save")}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {t("common.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

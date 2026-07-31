@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
+import {
+  consentTemplateSchema,
+  clauseEntrySchema,
+  type ConsentTemplateValues,
+} from "@/lib/validations/consent-template";
 import { FileUpload } from "@/components/base/file-upload";
 import {
   Dialog,
@@ -10,6 +17,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/base/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+} from "@/components/base/ui/form";
 import { Button } from "@/components/base/ui/button";
 import { Input } from "@/components/base/ui/input";
 import { Label } from "@/components/base/ui/label";
@@ -36,13 +50,7 @@ interface ConsentTemplateDialogProps {
   editClauses?: ConsentClause[];
 }
 
-interface ClauseEntry {
-  clauseTypeCode: string;
-  clauseFr: string;
-  clauseEn: string;
-}
-
-function emptyClause(): ClauseEntry {
+function emptyClause() {
   return { clauseTypeCode: "", clauseFr: "", clauseEn: "" };
 }
 
@@ -59,105 +67,83 @@ export function ConsentTemplateDialog({
   const lang = i18n.language;
   const { enums } = useEnums();
   const isEdit = editTemplateId != null;
-  const [name, setName] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [clauses, setClauses] = useState<ClauseEntry[]>([emptyClause()]);
-  const [submitting, setSubmitting] = useState(false);
+
+  const schema = consentTemplateSchema(t, isEdit);
+  const clauseSchema = clauseEntrySchema(t);
+
+  const form = useForm<ConsentTemplateValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: "", file: null, clauses: [emptyClause()] },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "clauses",
+  });
 
   // Populate form when editing
   useEffect(() => {
     if (open && isEdit) {
-      setName(editTemplateName ?? "");
-      setClauses(
-        editClauses && editClauses.length > 0
-          ? editClauses.map((c) => ({
-              clauseTypeCode: c.clause_type_code,
-              clauseFr: c.clause_fr,
-              clauseEn: c.clause_en,
-            }))
-          : [emptyClause()],
-      );
-      setFile(null);
+      form.reset({
+        name: editTemplateName ?? "",
+        file: null,
+        clauses:
+          editClauses && editClauses.length > 0
+            ? editClauses.map((c) => ({
+                clauseTypeCode: c.clause_type_code,
+                clauseFr: c.clause_fr,
+                clauseEn: c.clause_en,
+              }))
+            : [emptyClause()],
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isEdit]);
 
-  const reset = () => {
-    setName("");
-    setFile(null);
-    setClauses([emptyClause()]);
+  const resetForm = () => {
+    form.reset({ name: "", file: null, clauses: [emptyClause()] });
   };
 
-  const handleUpdateClause = (
-    index: number,
-    field: keyof ClauseEntry,
-    value: string,
-  ) => {
-    setClauses((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)),
-    );
+  const handleOpenChange = (value: boolean) => {
+    if (!value) resetForm();
+    onOpenChange(value);
   };
 
-  const handleRemoveClause = (index: number) => {
-    setClauses((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const canSubmit =
-    name.trim() !== "" &&
-    (isEdit || file !== null) &&
-    clauses.length > 0 &&
-    clauses.every(
-      (c) =>
-        c.clauseTypeCode !== "" &&
-        c.clauseFr.trim() !== "" &&
-        c.clauseEn.trim() !== "",
-    );
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-
+  const onSubmit = async (data: ConsentTemplateValues) => {
     const formData = new FormData();
-    formData.append("name", name.trim());
+    formData.append("name", data.name.trim());
     formData.append(
       "clauses",
       JSON.stringify(
-        clauses.map((c) => ({
+        data.clauses.map((c) => ({
           clause_fr: c.clauseFr,
           clause_en: c.clauseEn,
           clause_type_code: c.clauseTypeCode,
         })),
       ),
     );
-    if (file) {
-      formData.append("file", file);
+    if (data.file) {
+      formData.append("file", data.file);
     }
 
-    try {
-      if (isEdit) {
-        await api.put(`/consent-templates/${editTemplateId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      } else {
-        await api.post("/consent-templates", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      }
-      reset();
-      onOpenChange(false);
-      onSuccess?.();
-    } finally {
-      setSubmitting(false);
+    if (isEdit) {
+      await api.put(`/consent-templates/${editTemplateId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    } else {
+      await api.post("/consent-templates", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     }
+    resetForm();
+    onOpenChange(false);
+    onSuccess?.();
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (!o) reset();
-        onOpenChange(o);
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
@@ -165,121 +151,158 @@ export function ConsentTemplateDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
-          {/* Template name */}
-          <div className="flex flex-col gap-1.5">
-            <Label>{t("admin.template_name")}</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t("admin.template_name")}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+            className="flex flex-col gap-4 py-2"
+          >
+            {/* Template name */}
+            <FormField
+              schema={schema}
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("admin.template_name")}</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder={t("admin.template_name")} />
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
 
-          {/* PDF file */}
-          <div className="flex flex-col gap-1.5">
-            <Label>{t("admin.template_file")}</Label>
-            <FileUpload
-              file={file}
-              onChange={setFile}
-              accept=".pdf"
-              existingFileName={isEdit ? editFileName : undefined}
+            {/* PDF file */}
+            <FormField
+              schema={schema}
+              control={form.control}
+              name="file"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("admin.template_file")}</FormLabel>
+                  <FormControl>
+                    <FileUpload
+                      file={field.value}
+                      onChange={field.onChange}
+                      accept=".pdf"
+                      existingFileName={isEdit ? editFileName : undefined}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
             />
-          </div>
 
-          {/* Clauses */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label>{t("admin.clauses")}</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setClauses((prev) => [...prev, emptyClause()])}
-              >
-                <Plus className="size-4 mr-2" />
-                {t("admin.add_clause")}
-              </Button>
+            {/* Clauses */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <Label>{t("admin.clauses")}</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append(emptyClause())}
+                >
+                  <Plus className="size-4 mr-2" />
+                  {t("admin.add_clause")}
+                </Button>
+              </div>
+
+              {fields.map((clauseField, index) => (
+                <div
+                  key={clauseField.id}
+                  className="rounded-md border p-3 flex flex-col gap-2"
+                >
+                  <div className="flex items-start justify-between">
+                    <FormField
+                      schema={clauseSchema}
+                      control={form.control}
+                      name={`clauses.${index}.clauseTypeCode`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-64">
+                                <SelectValue
+                                  placeholder={t("admin.clause_type")}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {(enums?.clause_type ?? []).map((e) => (
+                                <SelectItem key={e.code} value={e.code}>
+                                  {enumLabel(enums?.clause_type, e.code, lang)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <FormField
+                    schema={clauseSchema}
+                    control={form.control}
+                    name={`clauses.${index}.clauseFr`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">
+                          {t("admin.clause_fr")}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={2} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    schema={clauseSchema}
+                    control={form.control}
+                    name={`clauses.${index}.clauseEn`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">
+                          {t("admin.clause_en")}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea {...field} rows={2} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ))}
             </div>
 
-            {clauses.map((clause, index) => (
-              <div
-                key={index}
-                className="rounded-md border p-3 flex flex-col gap-2"
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
               >
-                <div className="flex items-center justify-between">
-                  <Select
-                    value={clause.clauseTypeCode}
-                    onValueChange={(v) =>
-                      handleUpdateClause(index, "clauseTypeCode", v)
-                    }
-                  >
-                    <SelectTrigger className="w-64">
-                      <SelectValue placeholder={t("admin.clause_type")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(enums?.clause_type ?? []).map((e) => (
-                        <SelectItem key={e.code} value={e.code}>
-                          {enumLabel(enums?.clause_type, e.code, lang)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {clauses.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveClause(index)}
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    {t("admin.clause_fr")}
-                  </Label>
-                  <Textarea
-                    value={clause.clauseFr}
-                    onChange={(e) =>
-                      handleUpdateClause(index, "clauseFr", e.target.value)
-                    }
-                    rows={2}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    {t("admin.clause_en")}
-                  </Label>
-                  <Textarea
-                    value={clause.clauseEn}
-                    onChange={(e) =>
-                      handleUpdateClause(index, "clauseEn", e.target.value)
-                    }
-                    rows={2}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              reset();
-              onOpenChange(false);
-            }}
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit || submitting}>
-            {t("common.save")}
-          </Button>
-        </DialogFooter>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {t("common.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

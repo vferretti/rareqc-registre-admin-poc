@@ -1,7 +1,13 @@
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload, X } from "lucide-react";
 import api from "@/lib/api";
+import {
+  consentEditSchema,
+  type ConsentEditValues,
+} from "@/lib/validations/consent";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +15,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/base/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+} from "@/components/base/ui/form";
 import { Button } from "@/components/base/ui/button";
 import { Label } from "@/components/base/ui/label";
 import { DatePicker } from "@/components/base/ui/date-picker";
@@ -32,14 +45,8 @@ interface ConsentEditDialogProps {
   onSuccess?: () => void;
 }
 
-/** Required field label with red asterisk. */
-function RequiredLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <Label>
-      {children} <span className="text-destructive">*</span>
-    </Label>
-  );
-}
+/** Maximum file size: 10 MB. */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 /** Dialog to edit an existing consent (status, date, signer, document). */
 export function ConsentEditDialog({
@@ -54,34 +61,38 @@ export function ConsentEditDialog({
   const { enums } = useEnums();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [statusCode, setStatusCode] = useState("");
-  const [date, setDate] = useState("");
-  const [signedById, setSignedById] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [existingDocId, setExistingDocId] = useState<number | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  /** Maximum file size: 10 MB. */
-  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+  /** Document currently attached to the consent (before any replacement). */
+  const existingDocId = consent?.document_id ?? null;
+
+  const schema = consentEditSchema(t);
+
+  const form = useForm<ConsentEditValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { statusCode: "", date: "", signedById: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
 
   const selfContact = contacts.find((c) => c.relationship_code === "self");
   const nonSelfContacts = contacts.filter(
     (c) => c.relationship_code !== "self",
   );
 
-  // Pre-fill form when consent changes
+  // Pre-fill form when the dialog opens on a consent (file and error state
+  // are cleared on close by handleOpenChange)
   useEffect(() => {
     if (open && consent) {
-      setStatusCode(consent.status_code);
-      setDate(consent.date);
-      setSignedById(consent.signed_by_id ? String(consent.signed_by_id) : "");
-      setExistingDocId(consent.document_id ?? null);
-      setFile(null);
-      setSubmitError(null);
+      form.reset({
+        statusCode: consent.status_code,
+        date: consent.date,
+        signedById: consent.signed_by_id ? String(consent.signed_by_id) : "",
+      });
     }
-  }, [open, consent]);
+  }, [open, consent, form]);
 
   const handleOpenChange = (value: boolean) => {
     if (!value) {
@@ -93,9 +104,8 @@ export function ConsentEditDialog({
     onOpenChange(value);
   };
 
-  const handleSubmit = async () => {
-    if (!consent || !statusCode || !signedById) return;
-    setSubmitting(true);
+  const onSubmit = async (data: ConsentEditValues) => {
+    if (!consent) return;
     setSubmitError(null);
     try {
       // Upload new document if selected
@@ -110,9 +120,9 @@ export function ConsentEditDialog({
       }
 
       await api.put(`/consents/${consent.id}`, {
-        status_code: statusCode,
-        date,
-        signed_by_id: Number(signedById),
+        status_code: data.statusCode,
+        date: data.date,
+        signed_by_id: Number(data.signedById),
         document_id: documentId,
       });
 
@@ -120,8 +130,6 @@ export function ConsentEditDialog({
       onSuccess?.();
     } catch {
       setSubmitError(t("common.error"));
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -136,170 +144,209 @@ export function ConsentEditDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1">
-            {consent.template_name && (
-              <p className="text-sm text-muted-foreground">
-                {consent.template_name}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            noValidate
+            className="space-y-4"
+          >
+            <div className="space-y-1">
+              {consent.template_name && (
+                <p className="text-sm text-muted-foreground">
+                  {consent.template_name}
+                </p>
+              )}
+              <Label>{t("participant_detail.consent_clause")}</Label>
+              <p className="text-sm text-foreground">
+                {enumLabel(enums?.clause_type, consent.clause_type_code, lang)}
               </p>
-            )}
-            <Label>{t("participant_detail.consent_clause")}</Label>
-            <p className="text-sm text-foreground">
-              {enumLabel(enums?.clause_type, consent.clause_type_code, lang)}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <RequiredLabel>
-                {t("participant_detail.consent_status")}
-              </RequiredLabel>
-              <Select value={statusCode} onValueChange={setStatusCode}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {enums?.consent_status?.map((e) => (
-                    <SelectItem key={e.code} value={e.code}>
-                      {enumLabel(enums?.consent_status, e.code, lang)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
-            <div className="space-y-2">
-              <RequiredLabel>
-                {t("participant_detail.consent_date")}
-              </RequiredLabel>
-              <DatePicker
-                value={date || undefined}
-                onChange={(v) => setDate(v ?? "")}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="statusCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.consent_status")}
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {enums?.consent_status?.map((e) => (
+                          <SelectItem key={e.code} value={e.code}>
+                            {enumLabel(enums?.consent_status, e.code, lang)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.consent_date")}
+                    </FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        value={field.value || undefined}
+                        onChange={(v) => field.onChange(v ?? "")}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <RequiredLabel>
-              {t("participant_detail.signed_by_label")}
-            </RequiredLabel>
-            <Select value={signedById} onValueChange={setSignedById}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={t("participant_detail.signed_by_placeholder")}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {selfContact && (
-                  <SelectItem value={String(selfContact.id)}>
-                    {t("participant_detail.signed_by_self_short")}
-                  </SelectItem>
-                )}
-                {nonSelfContacts.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.first_name} {c.last_name} (
-                    {enumLabel(enums?.relationship, c.relationship_code, lang)})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <FormField
+              schema={schema}
+              control={form.control}
+              name="signedById"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t("participant_detail.signed_by_label")}
+                  </FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t(
+                            "participant_detail.signed_by_placeholder",
+                          )}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {selfContact && (
+                        <SelectItem value={String(selfContact.id)}>
+                          {t("participant_detail.signed_by_self_short")}
+                        </SelectItem>
+                      )}
+                      {nonSelfContacts.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.first_name} {c.last_name} (
+                          {enumLabel(
+                            enums?.relationship,
+                            c.relationship_code,
+                            lang,
+                          )}
+                          )
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
 
-          <div className="space-y-2">
-            <Label>
-              <Trans i18nKey="participant_detail.document_signed">
-                Document <strong>signed</strong>
-              </Trans>
-            </Label>
-            {existingDocId && !file && consent.document_name && (
-              <div className="flex items-center gap-2">
-                <button
-                  className="text-sm text-primary hover:underline cursor-pointer"
-                  onClick={() =>
-                    window.open(
-                      `/api/documents/${existingDocId}/file`,
-                      "_blank",
-                    )
-                  }
+            <div className="space-y-2">
+              <Label>
+                <Trans i18nKey="participant_detail.document_signed">
+                  Document <strong>signed</strong>
+                </Trans>
+              </Label>
+              {existingDocId && !file && consent.document_name && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-sm text-primary hover:underline cursor-pointer"
+                    onClick={() =>
+                      window.open(
+                        `/api/documents/${existingDocId}/file`,
+                        "_blank",
+                      )
+                    }
+                  >
+                    {consent.document_name}
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  {consent.document_name}
-                </button>
+                  <Upload className="size-4 mr-1" />
+                  {existingDocId
+                    ? t("participant_detail.replace_file")
+                    : t("participant_detail.upload_file")}
+                </Button>
+                {file && (
+                  <span className="text-sm text-foreground truncate flex-1">
+                    {file.name}
+                  </span>
+                )}
+                {file && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => {
+                      setFile(null);
+                      setFileError(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const selected = e.target.files?.[0] ?? null;
+                    if (selected && selected.size > MAX_FILE_SIZE) {
+                      setFileError(t("validation.file_too_large"));
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                      return;
+                    }
+                    setFileError(null);
+                    setFile(selected);
+                  }}
+                />
               </div>
+              {fileError && (
+                <p className="text-sm text-destructive">{fileError}</p>
+              )}
+            </div>
+
+            {submitError && (
+              <p className="text-sm text-destructive">{submitError}</p>
             )}
-            <div className="flex items-center gap-3">
+
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
-                <Upload className="size-4 mr-1" />
-                {existingDocId
-                  ? t("participant_detail.replace_file")
-                  : t("participant_detail.upload_file")}
+                {t("common.cancel")}
               </Button>
-              {file && (
-                <span className="text-sm text-foreground truncate flex-1">
-                  {file.name}
-                </span>
-              )}
-              {file && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => {
-                    setFile(null);
-                    setFileError(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="size-4" />
-                </Button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.doc,.docx"
-                className="hidden"
-                onChange={(e) => {
-                  const selected = e.target.files?.[0] ?? null;
-                  if (selected && selected.size > MAX_FILE_SIZE) {
-                    setFileError(t("validation.file_too_large"));
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                    return;
-                  }
-                  setFileError(null);
-                  setFile(selected);
-                }}
-              />
-            </div>
-            {fileError && (
-              <p className="text-sm text-destructive">{fileError}</p>
-            )}
-          </div>
-
-          {submitError && (
-            <p className="text-sm text-destructive">{submitError}</p>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={submitting}
-          >
-            {t("common.cancel")}
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!statusCode || !signedById || submitting}
-          >
-            {t("common.save")}
-          </Button>
-        </DialogFooter>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {t("common.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

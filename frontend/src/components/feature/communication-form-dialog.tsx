@@ -1,8 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Info } from "lucide-react";
 import api from "@/lib/api";
 import { todayISO } from "@/lib/format";
+import {
+  communicationSchema,
+  type CommunicationValues,
+} from "@/lib/validations/communication";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +17,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/base/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+} from "@/components/base/ui/form";
 import {
   Tooltip,
   TooltipContent,
@@ -68,6 +81,18 @@ interface CommunicationFormDialogProps {
 
 const NONE_VALUE = "__none__";
 
+/** Blank form values (method defaults to email, date to today). */
+function emptyValues(): CommunicationValues {
+  return {
+    methodCode: "email",
+    contactId: "",
+    subjectCode: "",
+    outcomeCode: NONE_VALUE,
+    commDate: todayISO(),
+    comment: "",
+  };
+}
+
 export function CommunicationFormDialog({
   open,
   onOpenChange,
@@ -82,35 +107,39 @@ export function CommunicationFormDialog({
   const { enums } = useEnums();
   const isEdit = !!communication;
 
-  const [methodCode, setMethodCode] = useState("email");
-  const [contactId, setContactId] = useState<string>("");
-  const [subjectCode, setSubjectCode] = useState("");
-  const [outcomeCode, setOutcomeCode] = useState<string>(NONE_VALUE);
-  const [commDate, setCommDate] = useState<string>(todayISO());
-  const [comment, setComment] = useState("");
-  const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+
+  const schema = communicationSchema(t, bulk);
+
+  const form = useForm<CommunicationValues>({
+    resolver: zodResolver(schema),
+    defaultValues: emptyValues(),
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+
+  const methodCode = form.watch("methodCode");
+  const outcomeCode = form.watch("outcomeCode");
+  const contactId = form.watch("contactId");
 
   // Reset form when dialog opens or communication changes
   useEffect(() => {
     if (!open) return;
     if (communication) {
-      setMethodCode(communication.method_code);
-      setContactId(String(communication.contact_id));
-      setSubjectCode(communication.subject_code);
-      setOutcomeCode(communication.outcome_code ?? NONE_VALUE);
-      setCommDate(communication.communication_date.slice(0, 10));
-      setComment(communication.comment ?? "");
+      form.reset({
+        methodCode: communication.method_code,
+        contactId: String(communication.contact_id),
+        subjectCode: communication.subject_code,
+        outcomeCode: communication.outcome_code ?? NONE_VALUE,
+        commDate: communication.communication_date.slice(0, 10),
+        comment: communication.comment ?? "",
+      });
     } else {
-      setMethodCode("email");
-      setContactId("");
-      setSubjectCode("");
-      setOutcomeCode(NONE_VALUE);
-      setCommDate(todayISO());
-      setComment("");
+      form.reset(emptyValues());
     }
-  }, [open, communication]);
+    setSubmitError(null);
+  }, [open, communication, form]);
 
   // Pick the right outcome list based on method
   const filteredOutcomes = useMemo(
@@ -127,9 +156,9 @@ export function CommunicationFormDialog({
       outcomeCode !== NONE_VALUE &&
       !filteredOutcomes.some((o) => o.code === outcomeCode)
     ) {
-      setOutcomeCode(NONE_VALUE);
+      form.setValue("outcomeCode", NONE_VALUE);
     }
-  }, [methodCode, filteredOutcomes, outcomeCode]);
+  }, [filteredOutcomes, outcomeCode, form]);
 
   // Resolve the phone/email from the selected contact based on method
   const resolvedContactValue = useMemo(() => {
@@ -139,38 +168,34 @@ export function CommunicationFormDialog({
     return methodCode === "email" ? contact.email : contact.phone;
   }, [contactId, methodCode, contacts]);
 
-  const canSubmit =
-    methodCode && subjectCode && commDate && (bulk || contactId);
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    setSaving(true);
+  const onSubmit = async (data: CommunicationValues) => {
     setSubmitError(null);
     try {
       if (bulk) {
-        const { data } = await api.post<{
+        const { data: result } = await api.post<{
           created: number;
           skipped: number[];
         }>("/cart/communications", {
-          method_code: methodCode,
-          subject_code: subjectCode,
-          outcome_code: outcomeCode !== NONE_VALUE ? outcomeCode : null,
-          communication_date: commDate,
-          comment: comment.trim() || null,
+          method_code: data.methodCode,
+          subject_code: data.subjectCode,
+          outcome_code:
+            data.outcomeCode !== NONE_VALUE ? data.outcomeCode : null,
+          communication_date: data.commDate,
+          comment: data.comment.trim() || null,
         });
         onOpenChange(false);
-        onSuccess(data);
+        onSuccess(result);
         return;
       }
 
       const payload = {
-        contact_id: Number(contactId),
+        contact_id: Number(data.contactId),
         contact_value: resolvedContactValue || null,
-        method_code: methodCode,
-        subject_code: subjectCode,
-        outcome_code: outcomeCode !== NONE_VALUE ? outcomeCode : null,
-        communication_date: commDate,
-        comment: comment.trim() || null,
+        method_code: data.methodCode,
+        subject_code: data.subjectCode,
+        outcome_code: data.outcomeCode !== NONE_VALUE ? data.outcomeCode : null,
+        communication_date: data.commDate,
+        comment: data.comment.trim() || null,
       };
 
       if (isEdit) {
@@ -188,10 +213,14 @@ export function CommunicationFormDialog({
       // In bulk mode the form was closed before confirmation; reopen it so
       // the error is visible and the user can retry or cancel.
       if (bulk) onOpenChange(true);
-    } finally {
-      setSaving(false);
     }
   };
+
+  /** In bulk mode, validate first, then close the form and ask for confirmation. */
+  const handleBulkConfirm = form.handleSubmit(() => {
+    onOpenChange(false);
+    setBulkConfirmOpen(true);
+  });
 
   return (
     <>
@@ -229,132 +258,208 @@ export function CommunicationFormDialog({
             )}
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Method */}
-            <div className="space-y-2">
-              <Label>{t("participant_detail.communication_method")}</Label>
-              <RadioGroup
-                value={methodCode}
-                onValueChange={setMethodCode}
-                className="flex gap-4"
-              >
-                {enums?.communication_methods?.map((m) => (
-                  <div key={m.code} className="flex items-center gap-2">
-                    <RadioGroupItem value={m.code} id={`method-${m.code}`} />
-                    <Label
-                      htmlFor={`method-${m.code}`}
-                      className="font-normal cursor-pointer"
-                    >
-                      {localizedField(m, "name", i18n.language)}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-
-            {/* Contact — hidden in bulk mode; backend resolves each participant's primary contact (see tooltip in subtitle) */}
-            {!bulk && (
-              <div className="space-y-2">
-                <Label>{t("participant_detail.communication_contact")}</Label>
-                <Select value={contactId} onValueChange={setContactId}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contacts.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.first_name} {c.last_name}
-                        {c.is_primary
-                          ? ` — ${t("participant_detail.primary_contact")}`
-                          : c.relationship_code !== "self"
-                            ? ` — ${enumLabel(enums?.relationship, c.relationship_code, i18n.language)}`
-                            : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Subject */}
-            <div className="space-y-2">
-              <Label>{t("participant_detail.communication_subject")}</Label>
-              <Select value={subjectCode} onValueChange={setSubjectCode}>
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("participant_detail.communication_subject")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {enums?.communication_subjects?.map((s) => (
-                    <SelectItem key={s.code} value={s.code}>
-                      {localizedField(s, "name", i18n.language)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date */}
-            <div className="space-y-2">
-              <Label>{t("participant_detail.communication_date")}</Label>
-              <DatePicker
-                value={commDate}
-                onChange={(v) => setCommDate(v ?? "")}
-                maxDate={new Date()}
-              />
-            </div>
-
-            {/* Outcome */}
-            <div className="space-y-2">
-              <Label>{t("participant_detail.communication_outcome")}</Label>
-              <Select value={outcomeCode} onValueChange={setOutcomeCode}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE_VALUE}>—</SelectItem>
-                  {filteredOutcomes.map((o) => (
-                    <SelectItem key={o.code} value={o.code}>
-                      {localizedField(o, "name", i18n.language)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Comment */}
-            <div className="space-y-2">
-              <Label>{t("participant_detail.communication_comment")}</Label>
-              <Textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-
-          {submitError && (
-            <p className="text-sm text-destructive">{submitError}</p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button
-              onClick={
-                bulk
-                  ? () => {
-                      onOpenChange(false);
-                      setBulkConfirmOpen(true);
-                    }
-                  : handleSubmit
-              }
-              disabled={!canSubmit || saving}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              noValidate
+              className="space-y-4"
             >
-              {t("common.save")}
-            </Button>
-          </DialogFooter>
+              {/* Method */}
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="methodCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.communication_method")}
+                    </FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="flex gap-4"
+                      >
+                        {enums?.communication_methods?.map((m) => (
+                          <div key={m.code} className="flex items-center gap-2">
+                            <RadioGroupItem
+                              value={m.code}
+                              id={`method-${m.code}`}
+                            />
+                            <Label
+                              htmlFor={`method-${m.code}`}
+                              className="font-normal cursor-pointer"
+                            >
+                              {localizedField(m, "name", i18n.language)}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Contact — hidden in bulk mode; backend resolves each participant's primary contact (see tooltip in subtitle) */}
+              {!bulk && (
+                <FormField
+                  schema={schema}
+                  control={form.control}
+                  name="contactId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("participant_detail.communication_contact")}
+                      </FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {contacts.map((c) => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                              {c.first_name} {c.last_name}
+                              {c.is_primary
+                                ? ` — ${t("participant_detail.primary_contact")}`
+                                : c.relationship_code !== "self"
+                                  ? ` — ${enumLabel(enums?.relationship, c.relationship_code, i18n.language)}`
+                                  : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Subject */}
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="subjectCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.communication_subject")}
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t(
+                              "participant_detail.communication_subject",
+                            )}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {enums?.communication_subjects?.map((s) => (
+                          <SelectItem key={s.code} value={s.code}>
+                            {localizedField(s, "name", i18n.language)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {/* Date */}
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="commDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.communication_date")}
+                    </FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        value={field.value}
+                        onChange={(v) => field.onChange(v ?? "")}
+                        maxDate={new Date()}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Outcome */}
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="outcomeCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.communication_outcome")}
+                    </FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE_VALUE}>—</SelectItem>
+                        {filteredOutcomes.map((o) => (
+                          <SelectItem key={o.code} value={o.code}>
+                            {localizedField(o, "name", i18n.language)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {/* Comment */}
+              <FormField
+                schema={schema}
+                control={form.control}
+                name="comment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("participant_detail.communication_comment")}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea {...field} rows={3} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {submitError && (
+                <p className="text-sm text-destructive">{submitError}</p>
+              )}
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                {bulk ? (
+                  <Button type="button" onClick={handleBulkConfirm}>
+                    {t("common.save")}
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {t("common.save")}
+                  </Button>
+                )}
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -373,7 +478,7 @@ export function CommunicationFormDialog({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit}>
+              <AlertDialogAction onClick={form.handleSubmit(onSubmit)}>
                 {t("common.save")}
               </AlertDialogAction>
             </AlertDialogFooter>
