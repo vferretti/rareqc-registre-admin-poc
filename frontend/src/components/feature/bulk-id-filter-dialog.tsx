@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, X as XIcon, Loader2, Copy, Trash2 } from "lucide-react";
 import api from "@/lib/api";
@@ -14,6 +14,15 @@ import { Textarea } from "@/components/base/ui/textarea";
 import { Button } from "@/components/base/ui/button";
 import { Label } from "@/components/base/ui/label";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+
+/** Splits pasted text into trimmed, non-empty IDs (newline, comma, or semicolon separated). */
+function parseIds(text: string): string[] {
+  return text
+    .split(/[\n,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 interface BulkIdFilterDialogProps {
   open: boolean;
@@ -39,58 +48,22 @@ export function BulkIdFilterDialog({
   const [foundCount, setFoundCount] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
+  const debouncedIdsText = useDebouncedValue(idsText, 500);
 
-  // Clear state when dialog opens and filter was cleared
-  useEffect(() => {
-    if (open && !hasActiveFilter) {
-      setIdsText("");
-      setSource("internal");
-      resetResults();
-    }
-  }, [open, hasActiveFilter]);
-
-  // Debounced validation on text change
-  useEffect(() => {
-    if (!open) return;
-    clearTimeout(debounceRef.current);
-
-    const ids = parseIds(idsText);
-    if (ids.length === 0) {
-      resetResults();
-      return;
-    }
-
-    debounceRef.current = setTimeout(() => validate(idsText, source), 500);
-    return () => clearTimeout(debounceRef.current);
-  }, [idsText]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Re-validate immediately when source changes
-  useEffect(() => {
-    if (!open) return;
-    if (parseIds(idsText).length > 0) {
-      validate(idsText, source);
-    }
-  }, [source]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const parseIds = (text: string) =>
-    text
-      .split(/[\n,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-  const resetResults = () => {
+  const resetResults = useCallback(() => {
     setResolvedIds([]);
     setNotFoundIds([]);
     setFoundCount(0);
-  };
+  }, []);
 
-  const validate = async (text: string, src: string) => {
-    const ids = parseIds(text);
-    if (ids.length === 0) return;
+  const resetForm = useCallback(() => {
+    setIdsText("");
+    setSource("internal");
+    resetResults();
+  }, [resetResults]);
 
+  /** Resolves the given IDs against the API and stores found/not-found results. */
+  const validate = useCallback(async (ids: string[], src: string) => {
     setIsValidating(true);
     try {
       const { data } = await api.post("/participants/resolve-ids", {
@@ -103,7 +76,23 @@ export function BulkIdFilterDialog({
     } finally {
       setIsValidating(false);
     }
-  };
+  }, []);
+
+  // Clear state when dialog opens and filter was cleared
+  useEffect(() => {
+    if (open && !hasActiveFilter) resetForm();
+  }, [open, hasActiveFilter, resetForm]);
+
+  // Validate the debounced IDs against the API (re-runs immediately on source change)
+  useEffect(() => {
+    if (!open) return;
+    const ids = parseIds(debouncedIdsText);
+    if (ids.length === 0) {
+      resetResults();
+      return;
+    }
+    validate(ids, source);
+  }, [open, debouncedIdsText, source, validate, resetResults]);
 
   const copyNotFound = () => {
     navigator.clipboard.writeText(notFoundIds.join("\n")).catch(() => {});
@@ -131,11 +120,7 @@ export function BulkIdFilterDialog({
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen && !hasActiveFilter) {
-      setIdsText("");
-      setSource("internal");
-      resetResults();
-    }
+    if (nextOpen && !hasActiveFilter) resetForm();
     onOpenChange(nextOpen);
   };
 
