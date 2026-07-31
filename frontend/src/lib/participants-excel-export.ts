@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { todayISO } from "@/lib/format";
 import api from "@/lib/api";
 import { enumLabel } from "@/lib/enum-label";
 import type { EnumsResponse, ParticipantListItem } from "@/types/participant";
@@ -101,7 +102,7 @@ export async function exportParticipantsExcel(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `participants_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = `participants_${todayISO()}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }

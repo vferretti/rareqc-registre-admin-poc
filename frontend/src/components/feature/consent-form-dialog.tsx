@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { Plus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
+import { todayISO } from "@/lib/format";
 import { FileUpload } from "@/components/base/file-upload";
 import { useConsentClauses } from "@/hooks/useConsentClauses";
 import { useConsentTemplates } from "@/hooks/useConsentTemplates";
@@ -44,7 +45,7 @@ interface ConsentEntry {
 function emptyEntry(): ConsentEntry {
   return {
     clauseId: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: todayISO(),
     signedById: "",
   };
 }

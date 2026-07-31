@@ -24,11 +24,7 @@ import { Button } from "@/components/base/ui/button";
 import { DatePicker } from "@/components/base/ui/date-picker";
 import { InformationField } from "@/components/base/information/information-field";
 import { useReportsSummary } from "@/hooks/useReportsSummary";
-
-/** Returns today's date as YYYY-MM-DD. */
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayISO } from "@/lib/format";
 
 /** Formats a count with its percentage of total. */
 function pct(value: number, total: number): string {
@@ -119,7 +115,7 @@ function downloadPng(container: HTMLDivElement | null, fileName: string) {
 
 export default function Reports() {
   const { t, i18n } = useTranslation();
-  const [reportDate, setReportDate] = useState(todayStr);
+  const [reportDate, setReportDate] = useState(todayISO);
   const growthChartRef = useRef<HTMLDivElement>(null);
   const ageChartRef = useRef<HTMLDivElement>(null);
   const cityChartRef = useRef<HTMLDivElement>(null);

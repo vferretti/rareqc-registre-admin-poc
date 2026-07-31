@@ -127,6 +127,10 @@
       "reset": "Réinitialiser",
       "maximize": "Plein écran",
       "minimize": "Quitter le plein écran"
+    },
+    "date": {
+      "year_month_day": "yyyy-MM-dd",
+      "year_month_day_hour": "yyyy-MM-dd, h:mm a"
     }
   },
   "address": {

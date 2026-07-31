@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
 import { Info } from "lucide-react";
 import api from "@/lib/api";
+import { todayISO } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -86,9 +86,7 @@ export function CommunicationFormDialog({
   const [contactId, setContactId] = useState<string>("");
   const [subjectCode, setSubjectCode] = useState("");
   const [outcomeCode, setOutcomeCode] = useState<string>(NONE_VALUE);
-  const [commDate, setCommDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd"),
-  );
+  const [commDate, setCommDate] = useState<string>(todayISO());
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -109,7 +107,7 @@ export function CommunicationFormDialog({
       setContactId("");
       setSubjectCode("");
       setOutcomeCode(NONE_VALUE);
-      setCommDate(format(new Date(), "yyyy-MM-dd"));
+      setCommDate(todayISO());
       setComment("");
     }
   }, [open, communication]);

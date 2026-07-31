@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { enumLabel } from "@/lib/enum-label";
-import { formatDate, formatPhone, formatAddress } from "@/lib/format";
+import { formatDate, formatPhone, formatAddress, todayISO } from "@/lib/format";
 import type { Participant, Contact, EnumsResponse } from "@/types/participant";
 import type {
   CartExportData,
@@ -32,7 +32,7 @@ export async function generateCartExcelReport(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `rapport_participants_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.download = `rapport_participants_${todayISO()}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }

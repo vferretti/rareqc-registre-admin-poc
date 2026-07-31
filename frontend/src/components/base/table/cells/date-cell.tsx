@@ -1,4 +1,4 @@
-import { format, parseISO } from "date-fns";
+import { formatDate } from "@/lib/format";
 import EmptyCell from "./empty-cell";
 
 interface DateCellProps {
@@ -8,9 +8,7 @@ interface DateCellProps {
 function DateCell({ date }: DateCellProps) {
   if (!date) return <EmptyCell />;
 
-  const formatted = format(parseISO(date), "yyyy-MM-dd");
-
-  return <div className="font-mono">{formatted}</div>;
+  return <div className="font-mono">{formatDate(date)}</div>;
 }
 
 export default DateCell;

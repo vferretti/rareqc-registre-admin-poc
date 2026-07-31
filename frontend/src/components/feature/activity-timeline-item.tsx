@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { format, parseISO } from "date-fns";
 import { fr, enUS } from "date-fns/locale";
+import i18n from "@/lib/i18n";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { enumLabel } from "@/lib/enum-label";
 import { translateDetails } from "@/lib/translate-details";
@@ -16,10 +17,10 @@ interface ActivityTimelineItemProps {
   showParticipantLink?: boolean;
 }
 
-/** Formats an ISO date string to a locale-aware "yyyy-MM-dd, h:mm a" format. */
+/** Formats an ISO date string using the locale-defined datetime pattern. */
 function formatDateTime(date: string, lang: string): string {
   try {
-    return format(parseISO(date), "yyyy-MM-dd, h:mm a", {
+    return format(parseISO(date), i18n.t("common.date.year_month_day_hour"), {
       locale: lang === "fr" ? fr : enUS,
     });
   } catch {

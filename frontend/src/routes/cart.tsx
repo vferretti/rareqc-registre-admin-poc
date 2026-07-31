@@ -41,6 +41,7 @@ import {
 } from "@/components/base/ui/alert-dialog";
 import { useEnums } from "@/hooks/useEnums";
 import api from "@/lib/api";
+import { todayISO } from "@/lib/format";
 import type { CartItem, CartExportData } from "@/types/cart";
 
 export default function Cart() {
@@ -263,7 +264,7 @@ export default function Cart() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `panier_participants_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `panier_participants_${todayISO()}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   };

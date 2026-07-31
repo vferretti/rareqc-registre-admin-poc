@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import ExcelJS from "exceljs";
 import { translateDetails } from "@/lib/translate-details";
+import { todayISO } from "@/lib/format";
 import {
   type ColumnDef,
   type SortingState,
@@ -240,7 +241,7 @@ export default function ActivityLogs() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `activity_log_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = `activity_log_${todayISO()}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

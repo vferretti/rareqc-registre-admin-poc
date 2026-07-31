@@ -1,13 +1,27 @@
 import { format, parseISO } from "date-fns";
+import i18n from "@/lib/i18n";
 
-/** Formats an ISO date string to "yyyy-MM-dd". Returns "—" for null/invalid dates. */
-export function formatDate(date: string | null | undefined): string {
+/**
+ * Formats an ISO date string using a date-fns pattern.
+ * The pattern defaults to the locale-defined `common.date.year_month_day` key,
+ * so the display format can be changed per language in the translation files.
+ * Returns "—" for null/invalid dates.
+ */
+export function formatDate(
+  date: string | null | undefined,
+  pattern: string = i18n.t("common.date.year_month_day"),
+): string {
   if (!date) return "—";
   try {
-    return format(parseISO(date), "yyyy-MM-dd");
+    return format(parseISO(date), pattern);
   } catch {
     return "—";
   }
+}
+
+/** Returns today's date as an ISO "yyyy-MM-dd" string (for API payloads and filenames). */
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /** Formats a 10-digit phone string as "(514) 302-6651". Returns as-is if not 10 digits. */
