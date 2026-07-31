@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api";
-import { formatRAMQ } from "@/lib/validation";
 import { AddressInput } from "@/components/base/address-autocomplete";
 import {
   participantSchema,
+  formatRAMQ,
   type ParticipantFormValues,
 } from "@/lib/validations/participant";
 import {
