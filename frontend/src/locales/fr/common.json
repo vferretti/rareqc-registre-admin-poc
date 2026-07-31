@@ -12,7 +12,7 @@
     "explore_participants_description": "Consulter et gérer les dossiers des participants",
     "explore_reports": "Créer des rapports",
     "explore_reports_description": "Générer des rapports et statistiques du registre",
-    "explore_activity": "Journal des activités",
+    "explore_activity": "Journal d'activités",
     "explore_activity_description": "Consulter le journal des actions sur le registre",
     "explore_admin": "Administration",
     "explore_admin_description": "Gérer la configuration et les données de référence du registre",
@@ -31,7 +31,7 @@
     "communications": "Communications",
     "activity": "Historique",
     "reports": "Rapport",
-    "activity_log": "Journal des activités",
+    "activity_log": "Journal d'activités",
     "admin": "Administration",
     "guide": "Aide"
   },
