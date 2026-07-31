@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import { DatePicker } from "@/components/base/ui/date-picker";
-import { enumLabel } from "@/lib/enum-label";
+import { enumLabel, localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import type { CommunicationResponse } from "@/types/communication";
 import type { Contact } from "@/types/participant";
@@ -247,7 +247,7 @@ export function CommunicationFormDialog({
                       htmlFor={`method-${m.code}`}
                       className="font-normal cursor-pointer"
                     >
-                      {i18n.language === "en" ? m.name_en : m.name_fr}
+                      {localizedField(m, "name", i18n.language)}
                     </Label>
                   </div>
                 ))}
@@ -290,7 +290,7 @@ export function CommunicationFormDialog({
                 <SelectContent>
                   {enums?.communication_subjects?.map((s) => (
                     <SelectItem key={s.code} value={s.code}>
-                      {i18n.language === "en" ? s.name_en : s.name_fr}
+                      {localizedField(s, "name", i18n.language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -318,7 +318,7 @@ export function CommunicationFormDialog({
                   <SelectItem value={NONE_VALUE}>—</SelectItem>
                   {filteredOutcomes.map((o) => (
                     <SelectItem key={o.code} value={o.code}>
-                      {i18n.language === "en" ? o.name_en : o.name_fr}
+                      {localizedField(o, "name", i18n.language)}
                     </SelectItem>
                   ))}
                 </SelectContent>

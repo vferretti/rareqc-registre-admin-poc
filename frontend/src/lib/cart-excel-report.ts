@@ -132,15 +132,7 @@ function buildParticipantsSheet(
       self?.city ?? "",
       self?.province ?? "",
       self?.code_postal ?? "",
-      self
-        ? lang === "en"
-          ? self.preferred_language === "en"
-            ? "English"
-            : "French"
-          : self.preferred_language === "fr"
-            ? "Fran\u00e7ais"
-            : "Anglais"
-        : "",
+      self ? t(`enums.language.${self.preferred_language}`) : "",
     ];
 
     for (let i = 0; i < maxContacts; i++) {

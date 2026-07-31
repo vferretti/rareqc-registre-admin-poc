@@ -200,7 +200,8 @@
     "add_contact": "Add a contact",
     "submit": "Save",
     "success": "Participant added successfully",
-    "error": "Error creating participant"
+    "error": "Error creating participant",
+    "ramq_placeholder": "TREG 8501 0112"
   },
   "edit_participant": {
     "title": "Edit participant",
@@ -421,7 +422,8 @@
       "confirm_irreversible": "This action is irreversible. All data will be permanently lost.",
       "confirm_type_name": "Type \"{{name}}\" to confirm",
       "confirm_delete": "Delete permanently",
-      "success": "The participant has been successfully deleted."
+      "success": "The participant has been successfully deleted.",
+      "search_placeholder": "ID"
     }
   },
   "communications": {

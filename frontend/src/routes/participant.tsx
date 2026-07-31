@@ -58,7 +58,7 @@ import { useCommunications } from "@/hooks/useCommunications";
 import { useCopyFeedback } from "@/hooks/useCopyFeedback";
 import { formatDate, formatAddress, formatPhone } from "@/lib/format";
 import { SEX_BADGE, VITAL_STATUS_BADGE } from "@/lib/badge-variants";
-import { enumLabel } from "@/lib/enum-label";
+import { enumLabel, localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import { useExternalIds } from "@/hooks/useExternalIds";
 import { useCart } from "@/hooks/useCart";
@@ -211,9 +211,7 @@ export default function ParticipantDetail() {
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {i18n.language === "en"
-                        ? ext.system_title_en
-                        : ext.system_title_fr}
+                      {localizedField(ext, "system_title", i18n.language)}
                     </TooltipContent>
                   </Tooltip>
                 ))}

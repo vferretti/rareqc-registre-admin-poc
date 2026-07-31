@@ -34,6 +34,7 @@ import {
 import { useCommunications } from "@/hooks/useCommunications";
 import { CommunicationFormDialog } from "@/components/feature/communication-form-dialog";
 import { formatDate } from "@/lib/format";
+import { localizedField } from "@/lib/enum-label";
 import api from "@/lib/api";
 import type { CommunicationResponse } from "@/types/communication";
 import type { Contact } from "@/types/participant";
@@ -56,7 +57,7 @@ export function ParticipantCommunications({
   const [deleting, setDeleting] = useState<CommunicationResponse | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const lang = i18n.language === "en" ? "en" : "fr";
+  const lang = i18n.language;
 
   const handleSuccess = () => {
     mutate();
@@ -117,12 +118,9 @@ export function ParticipantCommunications({
           ) : (
             <div className="space-y-3">
               {communications.map((comm) => {
-                const subjectLabel =
-                  lang === "en" ? comm.subject_name_en : comm.subject_name_fr;
+                const subjectLabel = localizedField(comm, "subject_name", lang);
                 const outcomeLabel = comm.outcome_code
-                  ? lang === "en"
-                    ? comm.outcome_name_en
-                    : comm.outcome_name_fr
+                  ? localizedField(comm, "outcome_name", lang)
                   : null;
                 const contactName =
                   comm.contact_first_name && comm.contact_last_name
@@ -246,10 +244,7 @@ export function ParticipantCommunications({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {viewing &&
-                (lang === "en"
-                  ? viewing.subject_name_en
-                  : viewing.subject_name_fr)}
+              {viewing && localizedField(viewing, "subject_name", lang)}
             </DialogTitle>
           </DialogHeader>
           {viewing && (
@@ -260,9 +255,7 @@ export function ParticipantCommunications({
                     {t("participant_detail.communication_method")}
                   </p>
                   <p className="text-sm">
-                    {lang === "en"
-                      ? viewing.method_name_en
-                      : viewing.method_name_fr}
+                    {localizedField(viewing, "method_name", lang)}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -280,9 +273,7 @@ export function ParticipantCommunications({
                     {t("participant_detail.communication_subject")}
                   </p>
                   <Badge variant="secondary">
-                    {lang === "en"
-                      ? viewing.subject_name_en
-                      : viewing.subject_name_fr}
+                    {localizedField(viewing, "subject_name", lang)}
                   </Badge>
                 </div>
                 <div className="space-y-1">
@@ -291,9 +282,7 @@ export function ParticipantCommunications({
                   </p>
                   {viewing.outcome_code ? (
                     <Badge variant="secondary">
-                      {lang === "en"
-                        ? viewing.outcome_name_en
-                        : viewing.outcome_name_fr}
+                      {localizedField(viewing, "outcome_name", lang)}
                     </Badge>
                   ) : (
                     <p className="text-sm text-muted-foreground">—</p>

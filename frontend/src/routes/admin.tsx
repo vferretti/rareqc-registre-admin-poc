@@ -66,7 +66,7 @@ import { useCodeTables } from "@/hooks/useCodeTables";
 import { ExternalSystemCard } from "@/components/feature/external-system-card";
 import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { DeleteParticipantSection } from "@/components/feature/delete-participant-section";
-import { enumLabel } from "@/lib/enum-label";
+import { enumLabel, localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 
 export default function Admin() {
@@ -101,7 +101,7 @@ export default function Admin() {
     clauses.filter((c) => c.template_document_id === templateId);
 
   const clauseText = (clause: ConsentClause) =>
-    i18n.language === "en" ? clause.clause_en : clause.clause_fr;
+    localizedField(clause, "clause", i18n.language);
 
   const refresh = () => {
     mutateTemplates();

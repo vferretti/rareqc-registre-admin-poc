@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { Contact, Participant } from "@/types/participant";
+import { localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import { LANGUAGE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/constants";
 
@@ -116,7 +117,7 @@ export function ContactFormDialog({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const { enums } = useEnums();
   const isEdit = !!contact;
-  const lang = i18n.language === "fr" ? "name_fr" : "name_en";
+  const lang = i18n.language;
 
   const schema = contactsFormSchema(t);
 
@@ -292,7 +293,7 @@ export function ContactFormDialog({
                                 .filter((e) => e.code !== "self")
                                 .map((e) => (
                                   <SelectItem key={e.code} value={e.code}>
-                                    {e[lang]}
+                                    {localizedField(e, "name", lang)}
                                   </SelectItem>
                                 ))}
                             </SelectContent>

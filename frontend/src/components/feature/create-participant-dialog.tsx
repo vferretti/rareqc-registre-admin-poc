@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/base/ui/select";
 import type { Participant } from "@/types/participant";
+import { localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import { LANGUAGE_OPTIONS, PROVINCE_OPTIONS } from "@/lib/constants";
 
@@ -106,7 +107,7 @@ export function ParticipantFormDialog({
   const { TourButton, TourOverlay } = useTour(
     isEdit ? [] : createParticipantTour,
   );
-  const lang = i18n.language === "fr" ? "name_fr" : "name_en";
+  const lang = i18n.language;
 
   const schema = participantSchema(t);
 
@@ -293,7 +294,7 @@ export function ParticipantFormDialog({
                         <SelectContent>
                           {enums?.sex_at_birth.map((e) => (
                             <SelectItem key={e.code} value={e.code}>
-                              {e[lang]}
+                              {localizedField(e, "name", lang)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -316,7 +317,7 @@ export function ParticipantFormDialog({
                           onChange={(e) =>
                             field.onChange(formatRAMQ(e.target.value))
                           }
-                          placeholder="TREG 8501 0112"
+                          placeholder={t("create_participant.ramq_placeholder")}
                         />
                       </FormControl>
                     </FormItem>
@@ -360,7 +361,7 @@ export function ParticipantFormDialog({
                         <SelectContent>
                           {enums?.vital_status.map((e) => (
                             <SelectItem key={e.code} value={e.code}>
-                              {e[lang]}
+                              {localizedField(e, "name", lang)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -653,7 +654,7 @@ export function ParticipantFormDialog({
                                       .filter((e) => e.code !== "self")
                                       .map((e) => (
                                         <SelectItem key={e.code} value={e.code}>
-                                          {e[lang]}
+                                          {localizedField(e, "name", lang)}
                                         </SelectItem>
                                       ))}
                                   </SelectContent>

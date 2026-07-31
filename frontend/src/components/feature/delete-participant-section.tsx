@@ -98,7 +98,7 @@ export function DeleteParticipantSection() {
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="ID"
+              placeholder={t("admin.delete_participant.search_placeholder")}
               className="font-mono"
             />
           </div>

@@ -30,7 +30,7 @@ import {
   CONSENT_STATUS_ICON,
   CONSENT_STATUS_COLOR,
 } from "@/lib/badge-variants";
-import { enumLabel } from "@/lib/enum-label";
+import { enumLabel, localizedField } from "@/lib/enum-label";
 import { useEnums } from "@/hooks/useEnums";
 import type { ConsentResponse } from "@/types/consent";
 import type { Contact } from "@/types/participant";
@@ -58,7 +58,6 @@ export function ParticipantConsents({
     mutate,
   } = useConsents(externalConsents ? undefined : participantId);
   const consents = externalConsents ?? fetchedConsents;
-  const clauseField = i18n.language === "fr" ? "clause_fr" : "clause_en";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingConsent, setEditingConsent] = useState<ConsentResponse | null>(
     null,
@@ -263,7 +262,7 @@ export function ParticipantConsents({
                   {t("participant_detail.consent_clause")}
                 </p>
                 <p className="text-sm leading-relaxed">
-                  {viewingClause[clauseField]}
+                  {localizedField(viewingClause, "clause", i18n.language)}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">

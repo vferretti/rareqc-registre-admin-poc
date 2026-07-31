@@ -201,7 +201,8 @@
     "add_contact": "Ajouter un contact",
     "submit": "Enregistrer",
     "success": "Participant ajouté avec succès",
-    "error": "Erreur lors de la création du participant"
+    "error": "Erreur lors de la création du participant",
+    "ramq_placeholder": "TREG 8501 0112"
   },
   "edit_participant": {
     "title": "Modifier le participant",
@@ -422,7 +423,8 @@
       "confirm_irreversible": "Cette action est irréversible. Toutes les données seront définitivement perdues.",
       "confirm_type_name": "Tapez « {{name}} » pour confirmer",
       "confirm_delete": "Supprimer définitivement",
-      "success": "Le participant a été supprimé avec succès."
+      "success": "Le participant a été supprimé avec succès.",
+      "search_placeholder": "ID"
     }
   },
   "communications": {
