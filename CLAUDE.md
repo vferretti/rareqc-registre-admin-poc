@@ -87,6 +87,16 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - Hooks follow `use<Entity>.ts` pattern in `src/hooks/`
 - Search in participants page also searches contacts (name, email, phone) via backend subquery
 
+### Code conventions (aligned with radiant-portal — apply to ALL new code)
+- **Forms**: react-hook-form + `zodResolver` + shared `Form`/`FormField` primitives (`src/components/base/ui/form.tsx`). Zod schemas live in `src/lib/validations/` as `(t) => z.object(...)` factories using `validation.*` translation keys. Never build forms with manual per-field `useState`/`canSubmit` gates. Required-field asterisks come automatically from the schema via `isFieldRequired` (pass `schema` to `FormField`; for array-item fields pass the item schema).
+- **Bilingual API fields** (`name_en`/`name_fr`, `clause_en`/`clause_fr`...): use `localizedField(obj, base, lang)` from `src/lib/enum-label.ts`. Never write `i18n.language === "en" ? x.name_en : x.name_fr` ternaries (only the navbar/landing language toggles may test `i18n.language`).
+- **Dates**: display format patterns live in translation keys (`common.date.year_month_day`, `common.date.year_month_day_hour`) — keep them identical in fr/en unless asked otherwise. Use `formatDate(date, pattern?)` and `todayISO()` from `src/lib/format.ts`. Never inline `format(new Date(), "yyyy-MM-dd")` or `new Date().toISOString().slice(0, 10)`.
+- **Debounce/fetch**: reuse `useDebouncedValue` + SWR with a conditional key (see `useSearch.ts`, `address-autocomplete.tsx`). Never hand-roll setTimeout debounces or raw `fetch` in effects.
+- **Table columns**: pure factories `getXColumns(opts)` (no hooks inside), memoized at the consumption site with complete dependency arrays. Column cells must not close over data arrays — read rows via `table.getRowModel()`.
+- **Naming**: JSX event handlers are `handle*` (`handleDelete`, `handleOpenChange`); plain verbs are reserved for pure helpers (`parseIds`, `resetForm`, `refresh`).
+- **Readability**: no nested ternaries — extract a named helper function; no `while ((m = regex.exec(...)))` loops — use `splitOnHighlight` (`src/lib/highlight.ts`) or `matchAll`/`split`.
+- **`src/lib/`**: dedicated single-purpose helper files (radiant style). Validation helpers go in `src/lib/validations/` (there is no `lib/validation.ts`).
+
 ## Frontend pages
 - `/` — Landing page (login)
 - `/home` — Dashboard with search box and navigation cards
