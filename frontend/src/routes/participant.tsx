@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -87,10 +87,15 @@ export default function ParticipantDetail() {
   const { externalIds } = useExternalIds(participant?.id);
   const { copiedKey, copy } = useCopyFeedback();
   const { communications } = useCommunications(participant?.id);
-  const protectedContactIds = new Set([
-    ...consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id!),
-    ...communications.filter((c) => c.contact_id).map((c) => c.contact_id!),
-  ]);
+  // Contacts referenced by a consent or a communication cannot be deleted.
+  const protectedContactIds = useMemo(
+    () =>
+      new Set([
+        ...consents.filter((c) => c.signed_by_id).map((c) => c.signed_by_id!),
+        ...communications.filter((c) => c.contact_id).map((c) => c.contact_id!),
+      ]),
+    [consents, communications],
+  );
   const [editParticipantOpen, setEditParticipantOpen] = useState(false);
   const [editContactsOpen, setEditContactsOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -102,7 +107,7 @@ export default function ParticipantDetail() {
   const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
-  const confirmDeleteContact = async () => {
+  const confirmDeleteContact = useCallback(async () => {
     if (!deletingContact) return;
     setDeleteError(null);
     try {
@@ -115,13 +120,53 @@ export default function ParticipantDetail() {
           ?.error ?? t("common.error");
       setDeleteError(message);
     }
-  };
+  }, [deletingContact, mutate, t]);
 
-  const copyGuid = (value: string) => {
+  const copyGuid = useCallback((value: string) => {
     navigator.clipboard.writeText(value).catch(() => {});
     setCopiedGuid(value);
     setTimeout(() => setCopiedGuid(null), 2000);
-  };
+  }, []);
+
+  // Derived participant data — memoized before the early returns below so the
+  // hook order stays stable across renders.
+  const selfContact = useMemo(
+    () => participant?.contacts?.find((c) => c.relationship_code === "self"),
+    [participant],
+  );
+  const otherContacts = useMemo(
+    () =>
+      participant?.contacts?.filter((c) => c.relationship_code !== "self") ??
+      [],
+    [participant],
+  );
+  const isInCart = useMemo(
+    () => cartItems.some((item) => item.participant_id === participant?.id),
+    [cartItems, participant],
+  );
+
+  const toggleCart = useCallback(async () => {
+    if (!participant) return;
+    if (isInCart) {
+      await removeItems([participant.id]);
+    } else {
+      await addItems([participant.id]);
+    }
+  }, [participant, isInCart, addItems, removeItems]);
+
+  const handleSuccess = useCallback(
+    () => void mutate(undefined, { revalidate: true }),
+    [mutate],
+  );
+
+  const guidEntries = useMemo(
+    () => [
+      { key: "guid_basic", value: participant?.guid?.guid_basic },
+      { key: "guid_ramq", value: participant?.guid?.guid_ramq },
+      { key: "guid_birthplace", value: participant?.guid?.guid_birthplace },
+    ],
+    [participant],
+  );
 
   if (isLoading) {
     return (
@@ -152,26 +197,6 @@ export default function ParticipantDetail() {
       </>
     );
   }
-
-  const selfContact = participant.contacts?.find(
-    (c) => c.relationship_code === "self",
-  );
-  const otherContacts =
-    participant.contacts?.filter((c) => c.relationship_code !== "self") ?? [];
-
-  const isInCart = cartItems.some(
-    (item) => item.participant_id === participant.id,
-  );
-
-  const toggleCart = async () => {
-    if (isInCart) {
-      await removeItems([participant.id]);
-    } else {
-      await addItems([participant.id]);
-    }
-  };
-
-  const handleSuccess = () => void mutate(undefined, { revalidate: true });
 
   return (
     <TooltipProvider>
@@ -525,14 +550,7 @@ export default function ParticipantDetail() {
               <DialogTitle>{t("participant_detail.guid_title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {[
-                { key: "guid_basic", value: participant.guid?.guid_basic },
-                { key: "guid_ramq", value: participant.guid?.guid_ramq },
-                {
-                  key: "guid_birthplace",
-                  value: participant.guid?.guid_birthplace,
-                },
-              ].map(({ key, value }) => (
+              {guidEntries.map(({ key, value }) => (
                 <div key={key} className="space-y-1">
                   <div className="text-sm font-medium">
                     {t(`participant_detail.${key}`)}

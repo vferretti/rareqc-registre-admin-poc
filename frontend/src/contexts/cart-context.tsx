@@ -11,19 +11,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items],
   );
 
-  return (
-    <CartContext.Provider
-      value={{
-        items,
-        count,
-        isLoading,
-        selectedParticipantIds,
-        addParticipants: addItems,
-        removeParticipants: removeItems,
-        clearCart,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  // Memoized so consumers only re-render when the cart actually changes.
+  const value = useMemo(
+    () => ({
+      items,
+      count,
+      isLoading,
+      selectedParticipantIds,
+      addParticipants: addItems,
+      removeParticipants: removeItems,
+      clearCart,
+    }),
+    [
+      items,
+      count,
+      isLoading,
+      selectedParticipantIds,
+      addItems,
+      removeItems,
+      clearCart,
+    ],
   );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

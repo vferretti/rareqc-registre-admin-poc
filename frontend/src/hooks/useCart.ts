@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import useSWR from "swr";
 import api from "@/lib/api";
 import type {
@@ -19,35 +19,41 @@ export function useCart() {
   } = useSWR<CartResponse>("/cart/items", fetcher);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const items: CartItem[] = data?.items ?? [];
+  const items: CartItem[] = useMemo(() => data?.items ?? [], [data]);
   const count = data?.count ?? 0;
   const error = fetchError ?? mutationError;
 
-  const addItems = async (participantIds: number[]) => {
-    try {
-      setMutationError(null);
-      await api.post<CartMutationResponse>("/cart/items", {
-        participant_ids: participantIds,
-      });
-      mutate();
-    } catch {
-      setMutationError("Failed to add items to cart");
-    }
-  };
+  const addItems = useCallback(
+    async (participantIds: number[]) => {
+      try {
+        setMutationError(null);
+        await api.post<CartMutationResponse>("/cart/items", {
+          participant_ids: participantIds,
+        });
+        mutate();
+      } catch {
+        setMutationError("Failed to add items to cart");
+      }
+    },
+    [mutate],
+  );
 
-  const removeItems = async (participantIds: number[]) => {
-    try {
-      setMutationError(null);
-      await api.delete<CartMutationResponse>("/cart/items", {
-        data: { participant_ids: participantIds },
-      });
-      mutate();
-    } catch {
-      setMutationError("Failed to remove items from cart");
-    }
-  };
+  const removeItems = useCallback(
+    async (participantIds: number[]) => {
+      try {
+        setMutationError(null);
+        await api.delete<CartMutationResponse>("/cart/items", {
+          data: { participant_ids: participantIds },
+        });
+        mutate();
+      } catch {
+        setMutationError("Failed to remove items from cart");
+      }
+    },
+    [mutate],
+  );
 
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     try {
       setMutationError(null);
       await api.delete<CartMutationResponse>("/cart");
@@ -55,7 +61,7 @@ export function useCart() {
     } catch {
       setMutationError("Failed to clear cart");
     }
-  };
+  }, [mutate]);
 
   return { items, count, error, isLoading, addItems, removeItems, clearCart };
 }

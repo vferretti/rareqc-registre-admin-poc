@@ -31,7 +31,7 @@ import { useExternalSystems } from "@/hooks/useExternalSystems";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
 import { useEnums } from "@/hooks/useEnums";
-import { useParticipantsColumns } from "@/components/feature/participants-columns";
+import { getParticipantsColumns } from "@/components/feature/participants-columns";
 import { exportParticipantsExcel } from "@/lib/participants-excel-export";
 
 const DEFAULT_COLUMN_VISIBILITY: Record<string, boolean> = {
@@ -140,15 +140,25 @@ export default function Participants() {
     [t],
   );
 
-  const columns = useParticipantsColumns({
-    t,
-    lang,
-    enums,
-    participants,
-    selectedParticipantIds,
-    addParticipants,
-    removeParticipants,
-  });
+  const columns = useMemo(
+    () =>
+      getParticipantsColumns({
+        t,
+        lang,
+        enums,
+        selectedParticipantIds,
+        addParticipants,
+        removeParticipants,
+      }),
+    [
+      t,
+      lang,
+      enums,
+      selectedParticipantIds,
+      addParticipants,
+      removeParticipants,
+    ],
+  );
 
   const table = useReactTable({
     data: participants,

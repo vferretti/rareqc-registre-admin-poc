@@ -190,7 +190,7 @@ export default function ActivityLogs() {
         },
       },
     ],
-    [t],
+    [t, enums, lang, debouncedSearch],
   );
 
   const table = useReactTable({
