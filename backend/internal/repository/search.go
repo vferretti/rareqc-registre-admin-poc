@@ -38,11 +38,12 @@ func (r *SearchRepository) Search(q string) ([]SearchSuggestion, error) {
 
 	// Search by participant name, RAMQ, or self-contact phone/email
 	pSQL, pN := participantSearchSQL("participant")
+	// matchEmail uses 1 arg, matchPhone uses 2
 	cExtra := sprintf(matchEmail, "contact") + " OR " + sprintf(matchPhone, "contact")
 	var participants []types.Participant
 	if err := r.db.Preload("Contacts", "relationship_code = 'self'").
 		Joins("LEFT JOIN contact ON contact.participant_id = participant.id AND contact.relationship_code = 'self'").
-		Where(pSQL+" OR "+cExtra, repeatArg(like, pN+2)...).
+		Where(pSQL+" OR "+cExtra, repeatArg(like, pN+3)...).
 		Limit(10).Find(&participants).Error; err != nil {
 		return nil, err
 	}
@@ -138,7 +139,7 @@ func detectParticipantMatch(p types.Participant, name, q string) (string, string
 		if strings.Contains(strings.ToLower(self.Email), lq) {
 			return "email", self.Email
 		}
-		if self.Phone != "" && strings.Contains(self.Phone, q) {
+		if phoneContains(self.Phone, q) {
 			return "phone", self.Phone
 		}
 	}
@@ -158,8 +159,26 @@ func detectContactMatch(ct types.Contact, q string) (string, string) {
 	if strings.Contains(strings.ToLower(ct.Email), lq) {
 		return "email", ct.Email
 	}
-	if ct.Phone != "" && strings.Contains(ct.Phone, q) {
+	if phoneContains(ct.Phone, q) {
 		return "phone", ct.Phone
 	}
 	return "contact", cName
+}
+
+// digitsOnly strips every non-digit character from s.
+func digitsOnly(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// phoneContains reports whether the query's digits appear in the phone's digits,
+// mirroring the punctuation-insensitive SQL matchPhone clause.
+func phoneContains(phone, q string) bool {
+	qDigits := digitsOnly(q)
+	return phone != "" && qDigits != "" && strings.Contains(digitsOnly(phone), qDigits)
 }

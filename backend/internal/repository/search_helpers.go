@@ -34,9 +34,14 @@ const (
 	// matchID matches participant ID as text. Uses 1 arg.
 	matchID = `CAST(%s.id AS TEXT) LIKE ?`
 
-	// matchEmail / matchPhone for contact fields. Uses 1 arg each.
+	// matchEmail for contact fields. Uses 1 arg.
 	matchEmail = `LOWER(%s.email) LIKE ?`
-	matchPhone = `%s.phone LIKE ?`
+
+	// matchPhone compares digits only on both sides, so punctuated queries
+	// ("302-6651", "(514) 302") match the raw stored digits. The first guard
+	// keeps digit-less queries (e.g. names) from matching every phone. Uses 2 args.
+	matchPhone = `(REGEXP_REPLACE(?, '[^0-9]', '', 'g') <> '' AND ` +
+		`REGEXP_REPLACE(%s.phone, '[^0-9]', '', 'g') LIKE '%' || REGEXP_REPLACE(?, '[^0-9]', '', 'g') || '%')`
 )
 
 // participantSearchSQL returns the WHERE clause and arg count for participant name/RAMQ/ID search.
@@ -62,7 +67,8 @@ func contactSearchSQL(alias string) (sql string, argCount int) {
 		sprintf(matchEmail, alias),
 		sprintf(matchPhone, alias),
 	}
-	return strings.Join(clauses, " OR "), 5
+	// 3 name args + 1 email arg + 2 phone args
+	return strings.Join(clauses, " OR "), 6
 }
 
 // Reusable JOIN clauses.
