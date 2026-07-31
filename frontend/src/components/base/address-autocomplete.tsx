@@ -25,7 +25,7 @@ interface AddressInputProps {
 }
 
 const AQRES_BASE =
-  "https://servicescarto.mern.gouv.qc.ca/pes/rest/services/Territoire/AdressesQuebec_Geocodage/GeocodeServer";
+  "https://servicescarto.mern.gouv.qc.ca/pes/rest/services/Territoire/Adresse_Geocodage/GeocodeServer";
 
 const NO_SUGGESTIONS: Suggestion[] = [];
 
@@ -91,18 +91,16 @@ export function AddressInput({
       const res = await fetch(`${AQRES_BASE}/findAddressCandidates?${params}`);
       const data = await res.json();
       if (data.candidates?.length) {
+        // Attribute schema of the Adresse_Geocodage service: Num (house
+        // number), Odonyme (street name), Unite (apartment), City, ZIP.
         const attrs = data.candidates[0].attributes;
-        const streetParts = [
-          attrs.House,
-          attrs.PreType,
-          attrs.StreetName,
-          attrs.SufType,
-        ].filter(Boolean);
+        const streetParts = [attrs.Num, attrs.Odonyme].filter(Boolean);
         const parsed: ParsedAddress = {
           street_address: streetParts.join(" "),
-          apartment_number: "",
+          apartment_number: attrs.Unite || "",
           city: attrs.City || "",
-          province: attrs.State === "Québec" ? "QC" : attrs.State || "QC",
+          // The service only covers Québec addresses.
+          province: "QC",
           code_postal: attrs.ZIP
             ? attrs.ZIP.replace(/(.{3})(.{3})/, "$1 $2")
             : "",
