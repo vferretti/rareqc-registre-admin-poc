@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { CreditCard, Hash, UserRound, Mail, Phone, Link } from "lucide-react";
-import { splitOnHighlight } from "@/lib/highlight";
+import { splitOnHighlight, splitOnDigitHighlight } from "@/lib/highlight";
+import { formatPhone } from "@/lib/format";
 
 const MATCH_ICONS: Record<string, LucideIcon> = {
   id: Hash,
@@ -12,10 +13,22 @@ const MATCH_ICONS: Record<string, LucideIcon> = {
 };
 
 /** Bolds portions of text that match a query string. */
-function HighlightMatch({ text, query }: { text: string; query: string }) {
+function HighlightMatch({
+  text,
+  query,
+  digitTolerant = false,
+}: {
+  text: string;
+  query: string;
+  /** Match the query's digits across formatting characters (phone numbers). */
+  digitTolerant?: boolean;
+}) {
+  const segments = digitTolerant
+    ? splitOnDigitHighlight(text, query)
+    : splitOnHighlight(text, query);
   return (
     <>
-      {splitOnHighlight(text, query).map(({ segment, isMatch }, i) =>
+      {segments.map(({ segment, isMatch }, i) =>
         isMatch ? <strong key={i}>{segment}</strong> : segment,
       )}
     </>
@@ -48,6 +61,8 @@ function SearchSuggestionItem({
   onClick,
 }: SearchSuggestionItemProps) {
   const Icon = MATCH_ICONS[matchField];
+  const isPhone = matchField === "phone";
+  const displayValue = isPhone ? formatPhone(matchValue) : matchValue;
 
   return (
     <button
@@ -65,7 +80,11 @@ function SearchSuggestionItem({
         <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
           {Icon && <Icon className="size-3 shrink-0" />}
           <span>
-            <HighlightMatch text={matchValue} query={query} />
+            <HighlightMatch
+              text={displayValue}
+              query={query}
+              digitTolerant={isPhone}
+            />
           </span>
         </span>
       )}
