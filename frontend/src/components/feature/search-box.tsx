@@ -42,7 +42,7 @@ export function SearchBox() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const selectSuggestion = (participantId: number) => {
+  const handleSelectSuggestion = (participantId: number) => {
     setOpen(false);
     setQuery("");
     navigate(`/participants/${participantId}`);
@@ -59,7 +59,7 @@ export function SearchBox() {
       setActiveIndex((i) => (i > 0 ? i - 1 : suggestions.length - 1));
     } else if (e.key === "Enter" && activeIndex >= 0) {
       e.preventDefault();
-      selectSuggestion(suggestions[activeIndex].participant_id);
+      handleSelectSuggestion(suggestions[activeIndex].participant_id);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -102,7 +102,7 @@ export function SearchBox() {
                 query={query}
                 active={index === activeIndex}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => selectSuggestion(s.participant_id)}
+                onClick={() => handleSelectSuggestion(s.participant_id)}
               />
             ))}
         </div>

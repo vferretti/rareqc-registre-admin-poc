@@ -152,7 +152,7 @@ export function ContactFormDialog({
   };
 
   /** Toggles the primary flag: only one contact can be primary at a time. */
-  const togglePrimaryContact = (index: number) => {
+  const handleTogglePrimaryContact = (index: number) => {
     const contacts = form.getValues("contacts");
     const isAlreadyPrimary = contacts[index]?.is_primary;
     contacts.forEach((_, i) => {
@@ -336,7 +336,7 @@ export function ContactFormDialog({
                     <Checkbox
                       id={`contact-${index}-is-primary`}
                       checked={form.watch(`contacts.${index}.is_primary`)}
-                      onCheckedChange={() => togglePrimaryContact(index)}
+                      onCheckedChange={() => handleTogglePrimaryContact(index)}
                     />
                     <Label
                       htmlFor={`contact-${index}-is-primary`}

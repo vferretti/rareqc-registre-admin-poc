@@ -124,7 +124,7 @@ export function ParticipantFormDialog({
   });
 
   /** Toggles primary: only one contact can be primary at a time. */
-  const togglePrimaryContact = (index: number) => {
+  const handleTogglePrimaryContact = (index: number) => {
     const contacts = form.getValues("contacts") ?? [];
     const isAlreadyPrimary = contacts[index]?.is_primary;
     contacts.forEach((_, i) => {
@@ -135,7 +135,7 @@ export function ParticipantFormDialog({
     });
   };
 
-  const addContact = () => {
+  const handleAddContact = () => {
     append({
       first_name: "",
       last_name: "",
@@ -697,7 +697,9 @@ export function ParticipantFormDialog({
                           <Checkbox
                             id={`c-${index}-is-primary`}
                             checked={form.watch(`contacts.${index}.is_primary`)}
-                            onCheckedChange={() => togglePrimaryContact(index)}
+                            onCheckedChange={() =>
+                              handleTogglePrimaryContact(index)
+                            }
                           />
                           <Label
                             htmlFor={`c-${index}-is-primary`}
@@ -941,7 +943,7 @@ export function ParticipantFormDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={addContact}
+                    onClick={handleAddContact}
                   >
                     <Plus className="mr-1 size-4" />
                     {t("create_participant.add_contact")}

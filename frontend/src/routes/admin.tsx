@@ -118,12 +118,12 @@ export default function Admin() {
     }
   };
 
-  const openEdit = (tpl: ConsentTemplate) => {
+  const handleOpenEdit = (tpl: ConsentTemplate) => {
     setEditTemplate(tpl);
     setTemplateDialogOpen(true);
   };
 
-  const openCreate = () => {
+  const handleOpenCreate = () => {
     setEditTemplate(null);
     setTemplateDialogOpen(true);
   };
@@ -182,7 +182,7 @@ export default function Admin() {
                 <CardHeader>
                   <CardTitle>{t("admin.consents")}</CardTitle>
                   <CardAction>
-                    <Button size="sm" onClick={openCreate}>
+                    <Button size="sm" onClick={handleOpenCreate}>
                       <Plus className="size-4 mr-2" />
                       {t("admin.add_template")}
                     </Button>
@@ -261,7 +261,7 @@ export default function Admin() {
                                           variant="ghost"
                                           size="sm"
                                           disabled={tpl.has_consents}
-                                          onClick={() => openEdit(tpl)}
+                                          onClick={() => handleOpenEdit(tpl)}
                                         >
                                           <Pencil className="size-4" />
                                         </Button>

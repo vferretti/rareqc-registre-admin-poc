@@ -86,13 +86,13 @@ export function ConsentFormDialog({
     (c) => c.relationship_code !== "self",
   );
 
-  const updateEntry = (index: number, patch: Partial<ConsentEntry>) => {
+  const handleUpdateEntry = (index: number, patch: Partial<ConsentEntry>) => {
     setEntries((prev) =>
       prev.map((e, i) => (i === index ? { ...e, ...patch } : e)),
     );
   };
 
-  const removeEntry = (index: number) => {
+  const handleRemoveEntry = (index: number) => {
     setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -218,7 +218,7 @@ export function ConsentFormDialog({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeEntry(index)}
+                    onClick={() => handleRemoveEntry(index)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="size-4" />
@@ -232,7 +232,9 @@ export function ConsentFormDialog({
                 </RequiredLabel>
                 <Select
                   value={entry.clauseId}
-                  onValueChange={(v) => updateEntry(index, { clauseId: v })}
+                  onValueChange={(v) =>
+                    handleUpdateEntry(index, { clauseId: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -261,7 +263,7 @@ export function ConsentFormDialog({
                 </RequiredLabel>
                 <DatePicker
                   value={entry.date || undefined}
-                  onChange={(v) => updateEntry(index, { date: v ?? "" })}
+                  onChange={(v) => handleUpdateEntry(index, { date: v ?? "" })}
                 />
               </div>
 
@@ -271,7 +273,9 @@ export function ConsentFormDialog({
                 </RequiredLabel>
                 <Select
                   value={entry.signedById}
-                  onValueChange={(v) => updateEntry(index, { signedById: v })}
+                  onValueChange={(v) =>
+                    handleUpdateEntry(index, { signedById: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue

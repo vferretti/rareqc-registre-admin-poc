@@ -87,7 +87,7 @@ export function ConsentTemplateDialog({
     setClauses([emptyClause()]);
   };
 
-  const updateClause = (
+  const handleUpdateClause = (
     index: number,
     field: keyof ClauseEntry,
     value: string,
@@ -97,7 +97,7 @@ export function ConsentTemplateDialog({
     );
   };
 
-  const removeClause = (index: number) => {
+  const handleRemoveClause = (index: number) => {
     setClauses((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -210,7 +210,7 @@ export function ConsentTemplateDialog({
                   <Select
                     value={clause.clauseTypeCode}
                     onValueChange={(v) =>
-                      updateClause(index, "clauseTypeCode", v)
+                      handleUpdateClause(index, "clauseTypeCode", v)
                     }
                   >
                     <SelectTrigger className="w-64">
@@ -229,7 +229,7 @@ export function ConsentTemplateDialog({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeClause(index)}
+                      onClick={() => handleRemoveClause(index)}
                     >
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
@@ -243,7 +243,7 @@ export function ConsentTemplateDialog({
                   <Textarea
                     value={clause.clauseFr}
                     onChange={(e) =>
-                      updateClause(index, "clauseFr", e.target.value)
+                      handleUpdateClause(index, "clauseFr", e.target.value)
                     }
                     rows={2}
                   />
@@ -256,7 +256,7 @@ export function ConsentTemplateDialog({
                   <Textarea
                     value={clause.clauseEn}
                     onChange={(e) =>
-                      updateClause(index, "clauseEn", e.target.value)
+                      handleUpdateClause(index, "clauseEn", e.target.value)
                     }
                     rows={2}
                   />

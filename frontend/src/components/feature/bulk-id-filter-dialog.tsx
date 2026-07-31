@@ -94,13 +94,13 @@ export function BulkIdFilterDialog({
     validate(ids, source);
   }, [open, debouncedIdsText, source, validate, resetResults]);
 
-  const copyNotFound = () => {
+  const handleCopyNotFound = () => {
     navigator.clipboard.writeText(notFoundIds.join("\n")).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const removeNotFound = () => {
+  const handleRemoveNotFound = () => {
     const notFoundSet = new Set(notFoundIds);
     const remaining = parseIds(idsText).filter((id) => !notFoundSet.has(id));
     setIdsText(remaining.join("\n"));
@@ -221,7 +221,7 @@ export function BulkIdFilterDialog({
                     variant="ghost"
                     size="sm"
                     className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
-                    onClick={copyNotFound}
+                    onClick={handleCopyNotFound}
                   >
                     {copied ? (
                       <Check className="size-3 mr-1 text-green-foreground" />
@@ -234,7 +234,7 @@ export function BulkIdFilterDialog({
                     variant="ghost"
                     size="sm"
                     className="h-auto py-0.5 px-1.5 text-xs text-muted-foreground"
-                    onClick={removeNotFound}
+                    onClick={handleRemoveNotFound}
                   >
                     <Trash2 className="size-3 mr-1" />
                     {t("participants.bulk_id_filter.remove_not_found")}

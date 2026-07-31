@@ -107,7 +107,7 @@ export default function ParticipantDetail() {
   const [copiedGuid, setCopiedGuid] = useState<string | null>(null);
 
   /** Deletes a contact after user confirmation. */
-  const confirmDeleteContact = useCallback(async () => {
+  const handleDeleteContact = useCallback(async () => {
     if (!deletingContact) return;
     setDeleteError(null);
     try {
@@ -122,7 +122,7 @@ export default function ParticipantDetail() {
     }
   }, [deletingContact, mutate, t]);
 
-  const copyGuid = useCallback((value: string) => {
+  const handleCopyGuid = useCallback((value: string) => {
     navigator.clipboard.writeText(value).catch(() => {});
     setCopiedGuid(value);
     setTimeout(() => setCopiedGuid(null), 2000);
@@ -145,7 +145,7 @@ export default function ParticipantDetail() {
     [cartItems, participant],
   );
 
-  const toggleCart = useCallback(async () => {
+  const handleToggleCart = useCallback(async () => {
     if (!participant) return;
     if (isInCart) {
       await removeItems([participant.id]);
@@ -274,7 +274,7 @@ export default function ParticipantDetail() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={toggleCart}
+                          onClick={handleToggleCart}
                         >
                           <ShoppingCart
                             className={`size-4 ${isInCart ? "text-primary fill-primary" : ""}`}
@@ -535,7 +535,7 @@ export default function ParticipantDetail() {
             <AlertDialogFooter>
               <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               {!deleteError && (
-                <AlertDialogAction onClick={confirmDeleteContact}>
+                <AlertDialogAction onClick={handleDeleteContact}>
                   {t("common.delete")}
                 </AlertDialogAction>
               )}
@@ -566,7 +566,7 @@ export default function ParticipantDetail() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => copyGuid(value)}
+                        onClick={() => handleCopyGuid(value)}
                       >
                         {copiedGuid === value ? (
                           <Check className="size-4 text-green-foreground" />

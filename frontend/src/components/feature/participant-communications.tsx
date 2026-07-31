@@ -78,7 +78,7 @@ export function ParticipantCommunications({
     mutate();
   };
 
-  const confirmDelete = async () => {
+  const handleDelete = async () => {
     if (!deleting) return;
     setDeleteError(null);
     try {
@@ -350,7 +350,7 @@ export function ParticipantCommunications({
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
+            <AlertDialogAction onClick={handleDelete}>
               {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>

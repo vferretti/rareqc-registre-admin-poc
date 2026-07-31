@@ -87,11 +87,11 @@ export function EditableTableCard({
     return values;
   };
 
-  const startAdd = () => {
+  const handleStartAdd = () => {
     setEditing({ values: emptyRow(), isNew: true, originalCode: "" });
   };
 
-  const startEdit = (entry: Record<string, string>) => {
+  const handleStartEdit = (entry: Record<string, string>) => {
     setEditing({
       values: { ...entry },
       isNew: false,
@@ -99,7 +99,7 @@ export function EditableTableCard({
     });
   };
 
-  const cancelEdit = () => {
+  const handleCancelEdit = () => {
     setEditing(null);
   };
 
@@ -139,11 +139,11 @@ export function EditableTableCard({
     if (e.key === "Enter" && canSave) {
       handleSave();
     } else if (e.key === "Escape") {
-      cancelEdit();
+      handleCancelEdit();
     }
   };
 
-  const updateField = (key: string, value: string) => {
+  const handleUpdateField = (key: string, value: string) => {
     if (!editing) return;
     setEditing({
       ...editing,
@@ -160,7 +160,7 @@ export function EditableTableCard({
             <Button
               variant="ghost"
               size="icon-sm"
-              onClick={startAdd}
+              onClick={handleStartAdd}
               disabled={editing !== null}
             >
               <Plus className="size-4" />
@@ -212,7 +212,7 @@ export function EditableTableCard({
                               <Input
                                 value={editing.values[col.key]}
                                 onChange={(e) =>
-                                  updateField(col.key, e.target.value)
+                                  handleUpdateField(col.key, e.target.value)
                                 }
                                 onKeyDown={handleKeyDown}
                                 className="h-8"
@@ -234,7 +234,7 @@ export function EditableTableCard({
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              onClick={cancelEdit}
+                              onClick={handleCancelEdit}
                             >
                               <X className="size-4" />
                             </Button>
@@ -259,7 +259,7 @@ export function EditableTableCard({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            onClick={() => startEdit(entry)}
+                            onClick={() => handleStartEdit(entry)}
                             disabled={editing !== null}
                           >
                             <Pencil className="size-4" />
@@ -298,7 +298,9 @@ export function EditableTableCard({
                       <TableCell key={col.key}>
                         <Input
                           value={editing.values[col.key]}
-                          onChange={(e) => updateField(col.key, e.target.value)}
+                          onChange={(e) =>
+                            handleUpdateField(col.key, e.target.value)
+                          }
                           onKeyDown={handleKeyDown}
                           placeholder={col.label}
                           className={`h-8 ${col.mono ? "font-mono text-xs" : ""}`}
@@ -319,7 +321,7 @@ export function EditableTableCard({
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={cancelEdit}
+                          onClick={handleCancelEdit}
                         >
                           <X className="size-4" />
                         </Button>
