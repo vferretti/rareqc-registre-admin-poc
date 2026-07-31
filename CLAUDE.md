@@ -153,3 +153,4 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 
 ### Frontend
 - [x] **F12** ~~Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal~~
+- [ ] **F13** Migrer `exceljs@3.10.0` (non maintenu) → `exceljs@4.4.0` ou alternative (`xlsx` / `write-excel-file`). Touche 4 fichiers : `cart.tsx`, `activity-logs.tsx`, `lib/participants-excel-export.ts`, `lib/cart-excel-report.ts`. En attendant, les vulns transitives (`brace-expansion`, `uuid`) sont neutralisées via `overrides` dans `package.json`.
