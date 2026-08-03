@@ -1,10 +1,21 @@
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/base/ui/button";
+import { useAuthContext } from "@/contexts/use-auth-context";
 
 export function LandingPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
+  const { user, isLoading } = useAuthContext();
+
+  /** Already authenticated → straight to the app; otherwise BFF login. */
+  const handleEnter = () => {
+    if (user) {
+      navigate("/home");
+    } else {
+      window.location.href = "/api/auth/login";
+    }
+  };
 
   const toggleLanguage = () => {
     const nextLang = i18n.language === "fr" ? "en" : "fr";
@@ -47,7 +58,8 @@ export function LandingPage() {
           <Button
             size="lg"
             className="bg-cta text-cta-foreground hover:bg-cta/90"
-            onClick={() => navigate("/home")}
+            onClick={handleEnter}
+            disabled={isLoading}
           >
             {t("landing.enter")}
           </Button>

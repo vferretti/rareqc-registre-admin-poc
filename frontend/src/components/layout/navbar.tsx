@@ -12,6 +12,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { useCartContext } from "@/contexts/use-cart-context";
+import { useAuthContext } from "@/contexts/use-auth-context";
 import { UserAvatar } from "@/components/layout/user-avatar";
 import { cn } from "@/lib/utils";
 import {
@@ -23,17 +24,12 @@ import {
   DropdownMenuItem,
 } from "@/components/base/ui/dropdown-menu";
 
-const FAKE_USER = {
-  id: "fake-user-1",
-  name: "John Smith",
-  email: "john.smith@gmail.com",
-};
-
 export function Navbar() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { count: cartCount } = useCartContext();
+  const { user, logout } = useAuthContext();
 
   const links = [
     { to: "/participants", label: t("nav.patients"), icon: Users },
@@ -119,20 +115,20 @@ export function Navbar() {
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-navbar-accent transition-colors outline-none cursor-pointer">
-            <UserAvatar userId={FAKE_USER.id} name={FAKE_USER.name} />
-            <span className="font-medium">{FAKE_USER.name}</span>
+            <UserAvatar userId={user?.sub ?? ""} name={user?.name ?? ""} />
+            <span className="font-medium">{user?.name}</span>
             <ChevronDown className="size-3.5 text-navbar-muted" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel className="font-normal text-muted-foreground">
-              {t("user_menu.connected_as", { email: FAKE_USER.email })}
+              {t("user_menu.connected_as", { email: user?.email })}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <UserRound />
               {t("user_menu.profile_settings")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/")}>
+            <DropdownMenuItem onClick={() => void logout()}>
               <LogOut />
               {t("user_menu.logout")}
             </DropdownMenuItem>

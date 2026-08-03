@@ -21,6 +21,19 @@ export const axiosClient = axios.create({
   baseURL: "/api",
 });
 
+// Session expired or not authenticated: return to the landing page (the
+// /auth/me check on "/" is exempt — the landing page handles it itself).
+axiosClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401 && window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+    return Promise.reject(error);
+  },
+);
+
 const config = new Configuration({
   basePath: "/api",
 });

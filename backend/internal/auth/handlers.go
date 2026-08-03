@@ -59,6 +59,35 @@ func (s *Service) RegisterRoutes(api *gin.RouterGroup) {
 	api.GET("/auth/me", s.meHandler)
 }
 
+// oauthState is stored in the short-lived state cookie during the login
+// redirect: the anti-CSRF state plus the redirect URI actually used, which
+// must be replayed identically at the code exchange (OIDC requirement).
+type oauthState struct {
+	State       string `json:"state"`
+	RedirectURI string `json:"redirect_uri"`
+	// Verifier is the PKCE code verifier (remix-auth-oauth2 stores it in its
+	// oauth2 cookie the same way; the realm client mandates S256).
+	Verifier string `json:"verifier"`
+}
+
+// requestOrigin rebuilds the browser-facing origin of the request (scheme +
+// host), so login works from any registered dev origin (vite 5173, nginx
+// 3001, direct 8080/8082). Falls back to PORTAL_HOST.
+func (s *Service) requestOrigin(c *gin.Context) string {
+	host := c.Request.Host
+	if host == "" {
+		return s.cfg.PortalHost
+	}
+	scheme := c.GetHeader("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+		if c.Request.TLS != nil {
+			scheme = "https"
+		}
+	}
+	return scheme + "://" + host
+}
+
 // loginHandler starts the OAuth2 code flow: state in a short-lived cookie
 // (radiant's "oauth2" cookie), then redirect to the Keycloak login page.
 func (s *Service) loginHandler(c *gin.Context) {
@@ -67,27 +96,35 @@ func (s *Service) loginHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "state generation failed"})
 		return
 	}
-	state := base64.RawURLEncoding.EncodeToString(buf)
-	if err := s.sessions.set(c, cookieOAuthState, state, 300); err != nil {
+	st := oauthState{
+		State:       base64.RawURLEncoding.EncodeToString(buf),
+		RedirectURI: s.requestOrigin(c) + "/api/auth/callback",
+		Verifier:    oauth2.GenerateVerifier(),
+	}
+	if err := s.sessions.set(c, cookieOAuthState, st, 300); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "session error"})
 		return
 	}
-	c.Redirect(http.StatusFound, s.oauth.AuthCodeURL(state))
+	c.Redirect(http.StatusFound, s.oauth.AuthCodeURL(st.State,
+		oauth2.S256ChallengeOption(st.Verifier),
+		oauth2.SetAuthURLParam("redirect_uri", st.RedirectURI)))
 }
 
 // callbackHandler mirrors radiant's login(): exchange the code for tokens,
 // fetch userinfo, store user + tokens in the three session cookies, redirect
 // to the portal.
 func (s *Service) callbackHandler(c *gin.Context) {
-	var expectedState string
-	if !s.sessions.get(c, cookieOAuthState, &expectedState) ||
-		c.Query("state") != expectedState || c.Query("state") == "" {
+	var st oauthState
+	if !s.sessions.get(c, cookieOAuthState, &st) ||
+		c.Query("state") != st.State || c.Query("state") == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid oauth state"})
 		return
 	}
 	s.sessions.clear(c, cookieOAuthState)
 
-	tokens, err := s.oauth.Exchange(c.Request.Context(), c.Query("code"))
+	tokens, err := s.oauth.Exchange(c.Request.Context(), c.Query("code"),
+		oauth2.VerifierOption(st.Verifier),
+		oauth2.SetAuthURLParam("redirect_uri", st.RedirectURI))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "code exchange failed"})
 		return
@@ -104,7 +141,9 @@ func (s *Service) callbackHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "session error"})
 		return
 	}
-	c.Redirect(http.StatusFound, s.cfg.PortalHost+"/home")
+	// Relative redirect (radiant does redirect('/')): the browser stays on
+	// whichever origin it used (vite, nginx, direct API).
+	c.Redirect(http.StatusFound, "/home")
 }
 
 // logoutHandler mirrors radiant's logout(): back-channel Keycloak logout with

@@ -5,6 +5,8 @@ import { ThemeProvider } from "next-themes";
 import "./index.css";
 import "./lib/i18n";
 import { ErrorBoundary } from "./components/base/error-boundary";
+import { AuthProvider } from "./contexts/auth-context";
+import { RequireAuth } from "./components/base/require-auth";
 import { LandingPage } from "./components/feature/landing-page";
 import Root from "./routes/root";
 import Participants from "./routes/participants";
@@ -22,7 +24,11 @@ const router = createBrowserRouter([
     element: <LandingPage />,
   },
   {
-    element: <Root />,
+    element: (
+      <RequireAuth>
+        <Root />
+      </RequireAuth>
+    ),
     children: [
       {
         path: "home",
@@ -64,7 +70,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="light">
       <ErrorBoundary>
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </ErrorBoundary>
     </ThemeProvider>
   </StrictMode>,
