@@ -180,6 +180,6 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [ ] **F14** Page « accès refusé » propre pour les utilisateurs sans le rôle `registre_admin` (actuellement : écrans vides avec erreurs 403)
 
 ### Auth (suite)
-- [ ] **A1** Client `portail-participant-bff` dans le realm quand le portail participant démarrera
+- [x] **A1** ~~Client `portail-participant-bff` dans le realm~~ (créé, avec `participant-test` — voir `rareqc-infra/docs/integration-portail.md`)
 - [ ] **A2** Thème de login Keycloak aux couleurs RareQC (`rareqc-infra/keycloak/themes/`)
 - [ ] **A3** Composition staging/prod dans rareqc-infra (proxy TLS, `KC_HOSTNAME` public, secrets régénérés, images GHCR)
