@@ -6,11 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"registre-admin/internal/auth"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
-
-const fakeUserID = "fake-user-1"
 
 // cartExportDataResponse contains all data needed for the multi-sheet Excel report.
 type cartExportDataResponse struct {
@@ -35,7 +34,7 @@ func CartExportDataHandler(
 	extIDRepo repository.ExternalIDDAO,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		items, err := cartRepo.ListItems(fakeUserID)
+		items, err := cartRepo.ListItems(auth.UserSub(c))
 		if err != nil {
 			handleInternalError(c, "Failed to fetch cart")
 			return
@@ -113,7 +112,7 @@ type cartMutationResponse struct {
 // @Router      /cart/items [get]
 func ListCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		items, err := repo.ListItems(fakeUserID)
+		items, err := repo.ListItems(auth.UserSub(c))
 		if err != nil {
 			handleInternalError(c, "Failed to fetch cart")
 			return
@@ -133,7 +132,7 @@ func ListCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 // @Router      /cart/count [get]
 func CartCountHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		count, err := repo.CountItems(fakeUserID)
+		count, err := repo.CountItems(auth.UserSub(c))
 		if err != nil {
 			handleInternalError(c, "Failed to count cart items")
 			return
@@ -161,11 +160,11 @@ func AddCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 			handleBadRequest(c, "participant_ids is required")
 			return
 		}
-		if err := repo.AddItems(fakeUserID, req.ParticipantIDs); err != nil {
+		if err := repo.AddItems(auth.UserSub(c), req.ParticipantIDs); err != nil {
 			handleInternalError(c, "Failed to add items")
 			return
 		}
-		count, _ := repo.CountItems(fakeUserID)
+		count, _ := repo.CountItems(auth.UserSub(c))
 		c.JSON(http.StatusOK, cartMutationResponse{Success: true, Count: count})
 	}
 }
@@ -189,11 +188,11 @@ func RemoveCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 			handleBadRequest(c, "participant_ids is required")
 			return
 		}
-		if err := repo.RemoveItems(fakeUserID, req.ParticipantIDs); err != nil {
+		if err := repo.RemoveItems(auth.UserSub(c), req.ParticipantIDs); err != nil {
 			handleInternalError(c, "Failed to remove items")
 			return
 		}
-		count, _ := repo.CountItems(fakeUserID)
+		count, _ := repo.CountItems(auth.UserSub(c))
 		c.JSON(http.StatusOK, cartMutationResponse{Success: true, Count: count})
 	}
 }
@@ -248,7 +247,7 @@ func CreateCartCommunicationsHandler(
 			return
 		}
 
-		items, err := cartRepo.ListItems(fakeUserID)
+		items, err := cartRepo.ListItems(auth.UserSub(c))
 		if err != nil {
 			handleInternalError(c, "Failed to fetch cart")
 			return
@@ -350,7 +349,7 @@ func pickPrimaryContact(contacts []types.Contact) *types.Contact {
 // @Router      /cart [delete]
 func ClearCartHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if err := repo.ClearCart(fakeUserID); err != nil {
+		if err := repo.ClearCart(auth.UserSub(c)); err != nil {
 			handleInternalError(c, "Failed to clear cart")
 			return
 		}

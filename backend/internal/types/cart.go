@@ -4,8 +4,8 @@ import "time"
 
 // CartItem links a user to a participant in their selection cart.
 type CartItem struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	UserID        string    `gorm:"not null;uniqueIndex:idx_user_participant;type:text" json:"user_id"`
+	ID            uint        `gorm:"primaryKey" json:"id"`
+	UserID        string      `gorm:"not null;uniqueIndex:idx_user_participant;type:text" json:"user_id"`
 	ParticipantID int         `gorm:"not null;uniqueIndex:idx_user_participant" json:"participant_id"`
 	Participant   Participant `json:"-" gorm:"foreignKey:ParticipantID;constraint:OnDelete:CASCADE"`
 	CreatedAt     time.Time   `json:"created_at"`

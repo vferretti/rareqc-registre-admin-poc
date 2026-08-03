@@ -9,6 +9,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
+	"registre-admin/internal/auth"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
@@ -20,11 +21,14 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"}, // TODO: restrict to specific origins in production
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Author"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: false,
 	}))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// BFF authentication (Keycloak) — see internal/auth.
+	authService := auth.NewService(auth.LoadConfig())
 
 	// Repositories
 	participantRepo := repository.NewParticipantRepository(db)
@@ -43,7 +47,14 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	api := r.Group("/api")
 	{
+		// Public routes: health check and the BFF auth endpoints.
 		api.GET("/health", HealthHandler(db))
+		authService.RegisterRoutes(api)
+
+		// Everything registered below requires an authenticated identity
+		// (session cookie or Bearer token) with the registre_admin role.
+		api.Use(authService.Middleware())
+
 		api.GET("/enums", EnumsHandler(codeTableRepo))
 		api.GET("/reports/summary", ReportsSummaryHandler(reportsRepo))
 

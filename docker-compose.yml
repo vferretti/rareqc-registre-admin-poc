@@ -15,6 +15,15 @@ services:
       POSTGRES_USER: rareqc
       POSTGRES_PASSWORD: rareqc
       POSTGRES_DB: rareqc_registre
+      # Auth BFF (Keycloak de rareqc-infra). Le navigateur voit Keycloak sur
+      # localhost:8081 ; le conteneur l'atteint via le réseau rareqc-net.
+      KEYCLOAK_HOST: http://localhost:8081
+      KEYCLOAK_INTERNAL_HOST: http://keycloak:8080
+      KEYCLOAK_REALM: rareqc
+      KEYCLOAK_CLIENT: registre-admin-bff
+      KEYCLOAK_CLIENT_SECRET: dev-only-registre-admin-secret
+      SESSION_SECRET: dev-only-session-secret-change-me
+      PORTAL_HOST: http://localhost:3001
     # postgres vit dans la composition rareqc-infra : pas de depends_on
     # possible entre projets — restart couvre l'attente au démarrage.
     restart: unless-stopped

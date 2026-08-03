@@ -16,9 +16,9 @@ type CodeEntry struct {
 
 // codeTableMeta describes a reference table and where its codes are used.
 type codeTableMeta struct {
-	Table     string // reference table name (e.g. "sex_at_birth_code")
-	FKTable   string // domain table that references it (e.g. "participant")
-	FKColumn  string // column in the domain table (e.g. "sex_at_birth_code")
+	Table    string // reference table name (e.g. "sex_at_birth_code")
+	FKTable  string // domain table that references it (e.g. "participant")
+	FKColumn string // column in the domain table (e.g. "sex_at_birth_code")
 }
 
 // registry lists every code table with its FK dependency.

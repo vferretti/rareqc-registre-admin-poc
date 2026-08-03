@@ -1,23 +1,17 @@
 package server
 
 import (
-	"strings"
-
 	"github.com/gin-gonic/gin"
+	"registre-admin/internal/auth"
 )
 
-// defaultAuthor is the fallback author name when the X-Author header is absent.
-const defaultAuthor = "John Smith"
-
-// maxAuthorLength is the maximum allowed length for the X-Author header value.
+// maxAuthorLength caps the author name stored in activity logs.
 const maxAuthorLength = 200
 
-// getAuthor extracts the author name from the X-Author header, falling back to defaultAuthor.
+// getAuthor returns the authenticated user's display name (set by the auth
+// middleware) for activity-log authorship.
 func getAuthor(c *gin.Context) string {
-	author := strings.TrimSpace(c.GetHeader("X-Author"))
-	if author == "" {
-		return defaultAuthor
-	}
+	author := auth.UserName(c)
 	if len(author) > maxAuthorLength {
 		author = author[:maxAuthorLength]
 	}

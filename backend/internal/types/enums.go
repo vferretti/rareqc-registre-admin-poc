@@ -62,4 +62,3 @@ type DocumentType struct {
 }
 
 func (DocumentType) TableName() string { return "document_type_code" }
-
