@@ -172,6 +172,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [x] **B15** ~~Validation d'entrée (binding tags required, formats, upload 10 MB)~~
 - [x] **B16** ~~Corriger les N+1 queries (templates, code tables, external systems)~~
 - [ ] **B17** Logging structuré
+- [ ] **B18** Chiffrement au repos : disque chiffré sur la VM (LUKS/hébergeur) + sauvegardes chiffrées avant sortie de la VM ; évaluer `pgcrypto` pour la RAMQ si exigence de conformité (⚠️ casserait la recherche RAMQ actuelle). En transit DB : `sslmode` configurable (couvert par B5). TLS navigateur↔portail : couvert par A3.
 
 ### Frontend
 - [x] **F12** ~~Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal~~
