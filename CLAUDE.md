@@ -183,3 +183,8 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [x] **A1** ~~Client `portail-participant-bff` dans le realm~~ (créé, avec `participant-test` — voir `rareqc-infra/docs/integration-portail.md`)
 - [ ] **A2** Thème de login Keycloak aux couleurs RareQC (`rareqc-infra/keycloak/themes/`)
 - [ ] **A3** Composition staging/prod dans rareqc-infra (proxy TLS, `KC_HOSTNAME` public, secrets régénérés, images GHCR)
+
+### Auth — API partagée avec le portail participant (décision 2026-08-03 : un seul serveur API, une seule BD, voir `rareqc-infra/docs/integration-portail.md`)
+- [ ] **A4** Rôle par groupe de routes — remplacer le `RequiredRole` global codé en dur (`internal/auth/config.go`) : routes admin → `registre_admin`, routes participant → `participant`
+- [ ] **A5** Routes participant `/me/...` (`/me/profile`, `/me/consents`, …) filtrées par `auth.UserSub(c)` — jamais d'accès aux listes admin ; contrat à publier dans le Swagger
+- [ ] **A6** Sélection du client OIDC selon l'origine de la requête (portail admin → `registre-admin-bff`, portail participant → `portail-participant-bff`) — le redirect URI du callback est déjà dérivé de l'origine (`auth/handlers.go`)
