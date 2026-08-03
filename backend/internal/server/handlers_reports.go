@@ -17,6 +17,7 @@ import (
 // @Produce     json
 // @Param       report_date query string false "Report date (YYYY-MM-DD), defaults to today"
 // @Success     200 {object} types.ReportsSummary
+// @Security BearerAuth
 // @Router      /reports/summary [get]
 func ReportsSummaryHandler(repo repository.ReportsDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

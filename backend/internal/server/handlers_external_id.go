@@ -19,6 +19,7 @@ import (
 // @Success     200 {array}  repository.ExternalIDResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/external-ids [get]
 func ListParticipantExternalIDsHandler(extIDRepo repository.ExternalIDDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

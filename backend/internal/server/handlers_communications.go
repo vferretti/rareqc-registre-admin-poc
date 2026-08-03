@@ -42,6 +42,7 @@ type UpdateCommunicationRequest struct {
 // @Success     200 {array}  repository.CommunicationResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/communications [get]
 func ListParticipantCommunicationsHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -73,6 +74,7 @@ func ListParticipantCommunicationsHandler(commRepo repository.CommunicationDAO) 
 // @Success     201 {object} types.Communication
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/communications [post]
 func CreateParticipantCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -128,6 +130,7 @@ func CreateParticipantCommunicationHandler(commRepo repository.CommunicationDAO)
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /communications/{communicationId} [put]
 func UpdateCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -182,6 +185,7 @@ func UpdateCommunicationHandler(commRepo repository.CommunicationDAO) gin.Handle
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /communications/{communicationId} [delete]
 func DeleteCommunicationHandler(commRepo repository.CommunicationDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

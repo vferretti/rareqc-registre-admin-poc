@@ -14,6 +14,7 @@ import (
 // @Tags        system
 // @Produce     json
 // @Success     200 {object} repository.EnumsData
+// @Security BearerAuth
 // @Router      /enums [get]
 func EnumsHandler(codeTableRepo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

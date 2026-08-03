@@ -24,6 +24,7 @@ import (
 // @Param       body body resolveIDsRequest true "IDs to resolve"
 // @Success     200 {object} resolveIDsResponse
 // @Failure     400 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/resolve-ids [post]
 func ResolveIDsHandler(participantRepo repository.ParticipantDAO, extIDRepo repository.ExternalIDDAO, guidRepo repository.GuidDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -101,6 +102,7 @@ type resolveIDsResponse struct {
 // @Param       search     query string false "Search term (name, RAMQ, etc.)"
 // @Success     200 {object} types.PaginatedResponse[repository.ParticipantListItem]
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants [get]
 func ListParticipantsHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -132,6 +134,7 @@ func ListParticipantsHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 // @Success     200 {object} types.Participant
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id} [get]
 func GetParticipantHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -161,6 +164,7 @@ func GetParticipantHandler(repo repository.ParticipantDAO) gin.HandlerFunc {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id} [put]
 func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -283,6 +287,7 @@ func UpdateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 // @Success     201 {object} types.Participant
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants [post]
 func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -426,6 +431,7 @@ func CreateParticipantHandler(participantRepo repository.ParticipantDAO, contact
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id} [delete]
 func DeleteParticipantHandler(participantRepo repository.ParticipantDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -16,6 +16,7 @@ import (
 // @Produce     json
 // @Param       q query string true "Search query (min 2 characters)"
 // @Success     200 {array}  repository.SearchSuggestion
+// @Security BearerAuth
 // @Router      /search [get]
 func SearchHandler(repo repository.SearchDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

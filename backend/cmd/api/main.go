@@ -14,6 +14,11 @@ import (
 // @description     REST API pour le registre québécois de patients atteints de maladies rares — administration.
 
 // @BasePath  /api
+//
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                Jeton Bearer Keycloak (voir rareqc-infra/scripts/api-token.sh). Format : "Bearer <token>". Les sessions cookies du portail fonctionnent aussi automatiquement.
 func main() {
 	pgDB, err := database.NewPostgresDB()
 	if err != nil {

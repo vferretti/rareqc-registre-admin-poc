@@ -39,6 +39,7 @@ type ConsentTemplateUpdateResponse struct {
 // @Success     200 {array}  repository.ConsentResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/consents [get]
 func ListParticipantConsentsHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -67,6 +68,7 @@ func ListParticipantConsentsHandler(consentRepo repository.ConsentDAO) gin.Handl
 // @Param       template_document_id query int false "Filter by template document ID"
 // @Success     200 {array}  types.ConsentClause
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consent-clauses [get]
 func ListConsentClausesHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -94,6 +96,7 @@ func ListConsentClausesHandler(consentRepo repository.ConsentDAO) gin.HandlerFun
 // @Produce     json
 // @Success     200 {array}  ConsentTemplateResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consent-templates [get]
 func ListConsentTemplatesHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -140,6 +143,7 @@ type CreateConsentRequest struct {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/consents [post]
 func CreateParticipantConsentHandler(consentRepo repository.ConsentDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -240,6 +244,7 @@ type UpdateConsentRequest struct {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consents/{consentId} [put]
 func UpdateConsentHandler(consentRepo repository.ConsentDAO, contactRepo repository.ContactDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -367,6 +372,7 @@ type CreateConsentTemplateClause struct {
 // @Success     201 {object} types.Document
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consent-templates [post]
 func CreateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -456,6 +462,7 @@ func CreateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consent-templates/{id} [delete]
 func DeleteConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -499,6 +506,7 @@ func DeleteConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.Handler
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /consent-templates/{id} [put]
 func UpdateConsentTemplateHandler(consentRepo repository.ConsentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

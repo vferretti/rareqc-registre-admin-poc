@@ -23,6 +23,7 @@ type CodeTableListResponse struct {
 // @Tags        admin
 // @Produce     json
 // @Success     200 {array} CodeTableListResponse
+// @Security BearerAuth
 // @Router      /code-tables [get]
 func ListCodeTablesHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -65,6 +66,7 @@ func ListCodeTablesHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 // @Success     201 {object} repository.CodeEntry
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /code-tables/{table}/entries [post]
 func CreateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -102,6 +104,7 @@ func CreateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 // @Success     200 {object} repository.CodeEntry
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /code-tables/{table}/entries/{code} [put]
 func UpdateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -137,6 +140,7 @@ func UpdateCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 // @Param       code  path string true "Code value to delete"
 // @Success     204
 // @Failure     409 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /code-tables/{table}/entries/{code} [delete]
 func DeleteCodeEntryHandler(repo repository.CodeTableDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

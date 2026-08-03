@@ -24,6 +24,7 @@ import (
 // @Param       search         query string false "Search term"
 // @Success     200 {object} types.PaginatedResponse[repository.ActivityLogResponse]
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /activity-logs [get]
 func ListActivityLogsHandler(repo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -73,6 +74,7 @@ func ListActivityLogsHandler(repo repository.ActivityDAO) gin.HandlerFunc {
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /participants/{id}/activity-logs [get]
 func ListParticipantActivityLogsHandler(participantRepo repository.ParticipantDAO, activityRepo repository.ActivityDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

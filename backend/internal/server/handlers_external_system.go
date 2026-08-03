@@ -16,6 +16,7 @@ import (
 // @Tags        admin
 // @Produce     json
 // @Success     200 {array} repository.ExternalSystemResponse
+// @Security BearerAuth
 // @Router      /external-systems [get]
 func ListExternalSystemsHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -45,6 +46,7 @@ type ExternalSystemRequest struct {
 // @Param       body body ExternalSystemRequest true "External system"
 // @Success     201 {object} types.ExternalSystem
 // @Failure     400 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /external-systems [post]
 func CreateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -79,6 +81,7 @@ func CreateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerF
 // @Success     200 {object} object{status=string}
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     409 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /external-systems/{id} [put]
 func UpdateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -115,6 +118,7 @@ func UpdateExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerF
 // @Param       id path int true "External system ID"
 // @Success     204
 // @Failure     409 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /external-systems/{id} [delete]
 func DeleteExternalSystemHandler(repo repository.ExternalSystemDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

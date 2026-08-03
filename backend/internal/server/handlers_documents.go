@@ -28,6 +28,7 @@ import (
 // @Success     201 {object} types.Document
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /documents [post]
 func UploadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -108,6 +109,7 @@ func UploadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 // @Success     307 {string} string "Redirect to S3 URL"
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     404 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /documents/{id}/file [get]
 func DownloadDocumentHandler(docRepo repository.DocumentDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {

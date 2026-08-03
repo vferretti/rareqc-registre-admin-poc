@@ -26,6 +26,7 @@ type cartExportDataResponse struct {
 // @Produce     json
 // @Success     200 {object} cartExportDataResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/export-data [post]
 func CartExportDataHandler(
 	cartRepo repository.CartDAO,
@@ -109,6 +110,7 @@ type cartMutationResponse struct {
 // @Produce     json
 // @Success     200 {object} cartListResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/items [get]
 func ListCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -129,6 +131,7 @@ func ListCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 // @Produce     json
 // @Success     200 {object} cartCountResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/count [get]
 func CartCountHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -152,6 +155,7 @@ func CartCountHandler(repo repository.CartDAO) gin.HandlerFunc {
 // @Success     200 {object} cartMutationResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/items [post]
 func AddCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -180,6 +184,7 @@ func AddCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 // @Success     200 {object} cartMutationResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/items [delete]
 func RemoveCartItemsHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -229,6 +234,7 @@ type bulkCommunicationResponse struct {
 // @Success     201 {object} bulkCommunicationResponse
 // @Failure     400 {object} types.ErrorResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart/communications [post]
 func CreateCartCommunicationsHandler(
 	cartRepo repository.CartDAO,
@@ -346,6 +352,7 @@ func pickPrimaryContact(contacts []types.Contact) *types.Contact {
 // @Produce     json
 // @Success     200 {object} cartMutationResponse
 // @Failure     500 {object} types.ErrorResponse
+// @Security BearerAuth
 // @Router      /cart [delete]
 func ClearCartHandler(repo repository.CartDAO) gin.HandlerFunc {
 	return func(c *gin.Context) {
