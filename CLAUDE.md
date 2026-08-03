@@ -148,10 +148,20 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - `CQGC` — Centre québécois de génomique clinique
 - External IDs displayed as colored badges in participant detail header, sorted alphabetically by system name
 
+## Authentication (BFF Keycloak — mirrors radiant-portal's design)
+- **Pattern**: the Go backend is the confidential OIDC client (BFF). Tokens live in three signed httpOnly cookies (`session.user`, `session.token`, `session.r.token` — SameSite=Lax) and never reach browser JavaScript. Package `backend/internal/auth/`.
+- **Keycloak**: realm `rareqc` hosted by the rareqc-infra platform (port 8081 dev). Realm role `registre_admin` required on every API route (403 otherwise). Test users: `vincent-test`, `marie-test` (with role), `sansrole-test` (without) — password `test1234`.
+- **Endpoints**: `/api/auth/login` (code flow + PKCE S256, state cookie), `/api/auth/callback`, `/api/auth/logout` (back-channel), `/api/auth/me`. Everything else under `/api` requires auth except `/health`.
+- **Dual mode**: browser = session cookies (transparent refresh on expiry); scripts/services = `Authorization: Bearer` verified against the Keycloak JWKS (client `rareqc-scripts`, flux `client_credentials` — see `rareqc-infra/scripts/api-token.sh`).
+- **Identity in handlers**: `auth.UserSub(c)` (cart ownership), `auth.UserName(c)` (activity-log author via `getAuthor`).
+- **Env vars** (radiant naming, dev defaults built in): `KEYCLOAK_HOST`, `KEYCLOAK_INTERNAL_HOST` (containers), `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT`, `KEYCLOAK_CLIENT_SECRET`, `SESSION_SECRET`, `PORTAL_HOST`, `COOKIE_SECURE`. See `backend/.env.example`.
+- **Frontend**: `AuthProvider` (`src/contexts/auth-context.tsx`) loads `/api/auth/me` at startup; `RequireAuth` guards app routes; axios 401 interceptor returns to the landing page; no OIDC library needed.
+- **Gotchas**: nginx needs enlarged proxy buffers for the session cookies (see `frontend/nginx.conf`); Keycloak runs with `KC_HOSTNAME` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` for the dev split-horizon.
+
 ## TODO — Production readiness
 
 ### Backend
-- [ ] **B1** Auth JWT (Keycloak) — remplacer `fakeUserID` et `X-Author`
+- [x] **B1** ~~Auth JWT (Keycloak) — remplacer `fakeUserID` et `X-Author`~~ (BFF, voir section Authentication)
 - [ ] **B2** CORS — env var au lieu de `*`
 - [x] **B3** ~~Connection pool PostgreSQL (`MaxOpenConns`, `MaxIdleConns`)~~
 - [ ] **B4** Graceful shutdown (`http.Server` + `signal.Notify`)
@@ -166,3 +176,9 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 ### Frontend
 - [x] **F12** ~~Migrer `cva` → `tv` (tailwind-variants) pour matcher radiant-portal~~
 - [ ] **F13** Migrer `exceljs@3.10.0` (non maintenu) → `exceljs@4.4.0` ou alternative (`xlsx` / `write-excel-file`). Touche 4 fichiers : `cart.tsx`, `activity-logs.tsx`, `lib/participants-excel-export.ts`, `lib/cart-excel-report.ts`. En attendant, les vulns transitives (`brace-expansion`, `uuid`) sont neutralisées via `overrides` dans `package.json`.
+- [ ] **F14** Page « accès refusé » propre pour les utilisateurs sans le rôle `registre_admin` (actuellement : écrans vides avec erreurs 403)
+
+### Auth (suite)
+- [ ] **A1** Client `portail-participant-bff` dans le realm quand le portail participant démarrera
+- [ ] **A2** Thème de login Keycloak aux couleurs RareQC (`rareqc-infra/keycloak/themes/`)
+- [ ] **A3** Composition staging/prod dans rareqc-infra (proxy TLS, `KC_HOSTNAME` public, secrets régénérés, images GHCR)
