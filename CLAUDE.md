@@ -120,9 +120,10 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - Consent status columns in participant list use a single LEFT JOIN with conditional aggregation (not correlated subqueries)
 
 ## Commands
+- **Shared platform (REQUIRED first — postgres + keycloak)**: `docker compose up -d` in `~/src/rareqc-infra` (creates the external `rareqc-net` network; see that repo's README)
 - **Frontend dev**: `cd frontend && npm install && npm run dev`
 - **Backend dev**: `cd backend && go run ./cmd/api/`
-- **Docker full stack**: `docker compose up --build`
+- **Docker full stack**: `docker compose up --build` (joins `rareqc-net`)
 - **Seed data**: `docker compose --profile dev run --rm seed`
 - **Lint**: `cd frontend && npm run lint`
 - **Format**: `cd frontend && npm run format`
@@ -132,9 +133,10 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 ## Ports
 | Service    | Port |
 |------------|------|
-| Frontend   | 5173 (dev) / 3000 (docker) |
+| Frontend   | 5173 (dev) / 3001 (docker) |
 | API        | 8080 (dev) / 8082 (docker) |
-| PostgreSQL | 5440 |
+| PostgreSQL | 5440 (rareqc-infra) |
+| Keycloak   | 8081 (rareqc-infra) |
 
 ## Docker notes
 - Frontend Dockerfile copies `.npmrc` (with `legacy-peer-deps=true`) before `npm ci` to handle `react-joyride` peer dependency conflict with React 19

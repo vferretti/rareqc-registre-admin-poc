@@ -1,20 +1,7 @@
+# Portail admin RareQC.
+# Prérequis : la plateforme partagée (postgres + keycloak) doit tourner —
+# `docker compose up -d` dans le repo rareqc-infra (crée le réseau rareqc-net).
 services:
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5440:5432"
-    environment:
-      POSTGRES_DB: rareqc_registre
-      POSTGRES_USER: rareqc
-      POSTGRES_PASSWORD: rareqc
-    volumes:
-      - registre_pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rareqc -d rareqc_registre"]
-      interval: 2s
-      timeout: 5s
-      retries: 10
-
   api:
     build:
       context: ./backend
@@ -28,14 +15,16 @@ services:
       POSTGRES_USER: rareqc
       POSTGRES_PASSWORD: rareqc
       POSTGRES_DB: rareqc_registre
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # postgres vit dans la composition rareqc-infra : pas de depends_on
+    # possible entre projets — restart couvre l'attente au démarrage.
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/health || exit 1"]
       interval: 3s
       timeout: 5s
       retries: 10
+    networks:
+      - rareqc-net
 
   seed:
     build:
@@ -53,6 +42,8 @@ services:
         condition: service_healthy
     profiles:
       - dev
+    networks:
+      - rareqc-net
 
   frontend:
     build:
@@ -63,6 +54,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    networks:
+      - rareqc-net
 
-volumes:
-  registre_pgdata:
+networks:
+  rareqc-net:
+    external: true
