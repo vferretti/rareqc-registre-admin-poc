@@ -2,30 +2,18 @@ package database
 
 import (
 	"fmt"
-	"log"
-	"os"
+	"log/slog"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"registre-admin/internal/config"
 )
 
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func NewPostgresDB() (*gorm.DB, error) {
-	host := getEnvOrDefault("POSTGRES_HOST", "localhost")
-	port := getEnvOrDefault("POSTGRES_PORT", "5432")
-	user := getEnvOrDefault("POSTGRES_USER", "rareqc")
-	password := getEnvOrDefault("POSTGRES_PASSWORD", "rareqc")
-	dbName := getEnvOrDefault("POSTGRES_DB", "rareqc_registre")
-
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbName)
+func NewPostgresDB(cfg config.DB) (*gorm.DB, error) {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name, cfg.SSLMode)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -40,6 +28,6 @@ func NewPostgresDB() (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	log.Println("PostgreSQL connection established")
+	slog.Info("postgres connection established", "host", cfg.Host, "db", cfg.Name, "sslmode", cfg.SSLMode)
 	return db, nil
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"registre-admin/internal/config"
 	"registre-admin/internal/database"
 	"registre-admin/internal/guid"
 	"registre-admin/internal/types"
@@ -72,7 +73,11 @@ var authors = []string{
 }
 
 func main() {
-	db, err := database.NewPostgresDB()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("invalid configuration: %v", err)
+	}
+	db, err := database.NewPostgresDB(cfg.DB)
 	if err != nil {
 		log.Fatalf("failed to connect to postgres: %v", err)
 	}

@@ -163,16 +163,16 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 
 ### Backend
 - [x] **B1** ~~Auth JWT (Keycloak) — remplacer `fakeUserID` et `X-Author`~~ (BFF, voir section Authentication)
-- [ ] **B2** CORS — env var au lieu de `*`
+- [x] **B2** ~~CORS — env var au lieu de `*`~~ (`CORS_ALLOWED_ORIGINS`, `*` refusé en release)
 - [x] **B3** ~~Connection pool PostgreSQL (`MaxOpenConns`, `MaxIdleConns`)~~
-- [ ] **B4** Graceful shutdown (`http.Server` + `signal.Notify`)
-- [ ] **B5** Config par env vars (port, DB creds, SSL) — refuser de démarrer si manquant
+- [x] **B4** ~~Graceful shutdown~~ (`signal.NotifyContext` + `srv.Shutdown`, budget 10 s)
+- [x] **B5** ~~Config par env vars — refuser de démarrer si manquant~~ (`internal/config`, `GIN_MODE=release` = mode strict ; `PORT`, `POSTGRES_SSLMODE`, secrets)
 - [x] **B7** ~~Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)~~
 - [x] **B13** ~~Health check qui ping la DB~~
 - [ ] **B14** Tests unitaires (DAO interfaces déjà en place)
 - [x] **B15** ~~Validation d'entrée (binding tags required, formats, upload 10 MB)~~
 - [x] **B16** ~~Corriger les N+1 queries (templates, code tables, external systems)~~
-- [ ] **B17** Logging structuré
+- [x] **B17** ~~Logging structuré~~ (`slog` — JSON en release, texte en dev ; requêtes HTTP via middleware `requestLogger`, health en debug)
 - [ ] **B18** Chiffrement au repos : disque chiffré sur la VM (LUKS/hébergeur) + sauvegardes chiffrées avant sortie de la VM ; évaluer `pgcrypto` pour la RAMQ si exigence de conformité (⚠️ casserait la recherche RAMQ actuelle). En transit DB : `sslmode` configurable (couvert par B5). TLS navigateur↔portail : couvert par A3.
 
 ### Frontend

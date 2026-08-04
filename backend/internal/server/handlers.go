@@ -10,16 +10,18 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 	"registre-admin/internal/auth"
+	"registre-admin/internal/config"
 	"registre-admin/internal/repository"
 	"registre-admin/internal/types"
 )
 
 // SetupRouter configures the Gin engine with CORS, Swagger, and all API routes.
-func SetupRouter(db *gorm.DB) *gin.Engine {
-	r := gin.Default()
+func SetupRouter(db *gorm.DB, cfg config.Config, authCfg auth.Config) *gin.Engine {
+	r := gin.New()
+	r.Use(requestLogger(), gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // TODO: restrict to specific origins in production
+		AllowOrigins:     cfg.CORSAllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		AllowCredentials: false,
@@ -28,7 +30,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// BFF authentication (Keycloak) — see internal/auth.
-	authService := auth.NewService(auth.LoadConfig())
+	authService := auth.NewService(authCfg)
 
 	// Repositories
 	participantRepo := repository.NewParticipantRepository(db)

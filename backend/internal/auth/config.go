@@ -6,7 +6,7 @@ package auth
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 )
@@ -62,8 +62,9 @@ func getEnvOrDefault(key, def string) string {
 }
 
 // LoadConfig reads the auth configuration from the environment, falling back
-// to dev defaults (with a warning) so `go run` works out of the box.
-func LoadConfig() Config {
+// to dev defaults so `go run` works out of the box. In production the dev
+// secrets are rejected (error) instead of merely warned about.
+func LoadConfig(production bool) (Config, error) {
 	cfg := Config{
 		KeycloakHost:            getEnvOrDefault("KEYCLOAK_HOST", "http://localhost:8081"),
 		Realm:                   getEnvOrDefault("KEYCLOAK_REALM", "rareqc"),
@@ -78,11 +79,25 @@ func LoadConfig() Config {
 	}
 	cfg.KeycloakInternalHost = getEnvOrDefault("KEYCLOAK_INTERNAL_HOST", cfg.KeycloakHost)
 
-	if cfg.SessionSecret == devSessionSecret || cfg.ClientSecret == devClientSecret ||
-		cfg.ParticipantClientSecret == devParticipantClientSecret {
-		log.Println("WARNING: auth is using dev-only secrets — set SESSION_SECRET, KEYCLOAK_CLIENT_SECRET and KEYCLOAK_PARTICIPANT_CLIENT_SECRET outside dev")
+	var devSecrets []string
+	if cfg.SessionSecret == devSessionSecret {
+		devSecrets = append(devSecrets, "SESSION_SECRET")
 	}
-	return cfg
+	if cfg.ClientSecret == devClientSecret {
+		devSecrets = append(devSecrets, "KEYCLOAK_CLIENT_SECRET")
+	}
+	if cfg.ParticipantClientSecret == devParticipantClientSecret {
+		devSecrets = append(devSecrets, "KEYCLOAK_PARTICIPANT_CLIENT_SECRET")
+	}
+	if len(devSecrets) > 0 {
+		if production {
+			return cfg, fmt.Errorf("refusing to start in production with dev-only secrets: %s",
+				strings.Join(devSecrets, ", "))
+		}
+		slog.Warn("auth is using dev-only secrets — set real values outside dev",
+			"vars", strings.Join(devSecrets, ", "))
+	}
+	return cfg, nil
 }
 
 // splitHosts parses a comma-separated origin list, trimming whitespace and

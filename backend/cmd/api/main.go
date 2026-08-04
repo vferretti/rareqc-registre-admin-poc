@@ -1,8 +1,17 @@
 package main
 
 import (
-	"log"
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"registre-admin/internal/auth"
+	"registre-admin/internal/config"
 	"registre-admin/internal/database"
 	"registre-admin/internal/server"
 
@@ -20,19 +29,65 @@ import (
 // @name                       Authorization
 // @description                Jeton Bearer Keycloak (voir rareqc-infra/scripts/api-token.sh). Format : "Bearer <token>". Les sessions cookies du portail fonctionnent aussi automatiquement.
 func main() {
-	pgDB, err := database.NewPostgresDB()
+	cfg, err := config.Load()
+	setupLogger(cfg.Production)
 	if err != nil {
-		log.Fatalf("failed to connect to postgres: %v", err)
+		slog.Error("invalid configuration", "error", err)
+		os.Exit(1)
 	}
 
-	if err := database.Migrate(); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
+	authCfg, err := auth.LoadConfig(cfg.Production)
+	if err != nil {
+		slog.Error("invalid auth configuration", "error", err)
+		os.Exit(1)
 	}
 
-	r := server.SetupRouter(pgDB)
-
-	log.Println("server listening on :8080")
-	if err := r.Run(":8080"); err != nil {
-		log.Fatalf("server error: %v", err)
+	pgDB, err := database.NewPostgresDB(cfg.DB)
+	if err != nil {
+		slog.Error("failed to connect to postgres", "error", err)
+		os.Exit(1)
 	}
+
+	if err := database.Migrate(cfg.DB); err != nil {
+		slog.Error("failed to run migrations", "error", err)
+		os.Exit(1)
+	}
+
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: server.SetupRouter(pgDB, cfg, authCfg),
+	}
+
+	go func() {
+		slog.Info("server listening", "port", cfg.Port, "production", cfg.Production)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("server error", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Graceful shutdown: on SIGINT/SIGTERM, stop accepting connections and
+	// drain in-flight requests (10s budget) before exiting.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+
+	slog.Info("shutdown signal received, draining in-flight requests")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("forced shutdown", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("server stopped")
+}
+
+// setupLogger routes slog output as JSON in production, human-readable text
+// in dev.
+func setupLogger(production bool) {
+	if production {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+		return
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
 }

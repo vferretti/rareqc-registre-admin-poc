@@ -2,23 +2,21 @@ package database
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
+	"net/url"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+
+	"registre-admin/internal/config"
 )
 
 // Migrate runs all pending SQL migrations from the migrations/ directory.
-func Migrate() error {
-	host := getEnvOrDefault("POSTGRES_HOST", "localhost")
-	port := getEnvOrDefault("POSTGRES_PORT", "5432")
-	user := getEnvOrDefault("POSTGRES_USER", "rareqc")
-	password := getEnvOrDefault("POSTGRES_PASSWORD", "rareqc")
-	dbName := getEnvOrDefault("POSTGRES_DB", "rareqc_registre")
-
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		user, password, host, port, dbName)
+func Migrate(cfg config.DB) error {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		url.QueryEscape(cfg.User), url.QueryEscape(cfg.Password),
+		cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
 
 	m, err := migrate.New("file://migrations", dsn)
 	if err != nil {
@@ -30,6 +28,6 @@ func Migrate() error {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	log.Println("Database migrations applied")
+	slog.Info("database migrations applied")
 	return nil
 }
