@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
 	"registre-admin/internal/config"
@@ -426,10 +427,24 @@ func loadTemplatePDF(db *gorm.DB, fileName, pdfPath string) {
 	log.Printf("Template PDF loaded: %s (%d bytes)", doc.Name, len(pdfData))
 }
 
+// pdfDir resolves the directory holding the consent PDFs: SEED_PDF_DIR if
+// set, /data inside the seed docker image, scripts/seed when run from
+// backend/ with `go run ./scripts/seed/`.
+func pdfDir() string {
+	if d := os.Getenv("SEED_PDF_DIR"); d != "" {
+		return d
+	}
+	if _, err := os.Stat("/data/Consentement_RareQc.pdf"); err == nil {
+		return "/data"
+	}
+	return "scripts/seed"
+}
+
 // seedConsentDocuments loads both template PDFs into the database.
 func seedConsentDocuments(db *gorm.DB) {
-	loadTemplatePDF(db, "Consentement_RareQc.pdf", "/data/Consentement_RareQc.pdf")
-	loadTemplatePDF(db, "Consentement_RQDM.pdf", "/data/Consentement_RQDM.pdf")
+	dir := pdfDir()
+	loadTemplatePDF(db, "Consentement_RareQc.pdf", filepath.Join(dir, "Consentement_RareQc.pdf"))
+	loadTemplatePDF(db, "Consentement_RQDM.pdf", filepath.Join(dir, "Consentement_RQDM.pdf"))
 }
 
 // seedConsents creates consent records for all participants.
@@ -452,8 +467,9 @@ func seedConsents(db *gorm.DB) {
 	}
 
 	// Load template PDFs for copying into signed documents
-	rareqcPDF, _ := os.ReadFile("/data/Consentement_RareQc.pdf")
-	rqdmPDF, _ := os.ReadFile("/data/Consentement_RQDM.pdf")
+	dir := pdfDir()
+	rareqcPDF, _ := os.ReadFile(filepath.Join(dir, "Consentement_RareQc.pdf"))
+	rqdmPDF, _ := os.ReadFile(filepath.Join(dir, "Consentement_RQDM.pdf"))
 
 	var participants []types.Participant
 	db.Preload("Contacts").Find(&participants)
