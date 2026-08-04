@@ -25,6 +25,12 @@
     "description": "",
     "enter": "Accéder au portail"
   },
+  "auth": {
+    "access_denied": {
+      "title": "Accès refusé",
+      "description": "Votre compte {{email}} est authentifié, mais il ne dispose pas des droits d'accès au portail d'administration du registre. Si vous croyez qu'il s'agit d'une erreur, communiquez avec l'équipe RareQC."
+    }
+  },
   "nav": {
     "home": "Accueil",
     "patients": "Participants",

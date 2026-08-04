@@ -25,6 +25,12 @@
     "description": "",
     "enter": "Enter portal"
   },
+  "auth": {
+    "access_denied": {
+      "title": "Access denied",
+      "description": "Your account {{email}} is authenticated, but it does not have access rights to the registry administration portal. If you believe this is an error, please contact the RareQC team."
+    }
+  },
   "nav": {
     "home": "Home",
     "patients": "Participants",
