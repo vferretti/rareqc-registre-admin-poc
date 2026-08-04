@@ -466,6 +466,17 @@ export interface QuarterCount {
   count: number;
   quarter: string;
 }
+export interface RegistreAdminInternalAuthAdminUser {
+  email?: string;
+  enabled: boolean;
+  first_name?: string;
+  last_name?: string;
+  /**
+   * ServiceAccount marks machine clients (service-account-*) that hold the role — worth surfacing in an access review.
+   */
+  service_account: boolean;
+  username?: string;
+}
 export interface Relationship {
   code: string;
   name_en: string;
@@ -604,6 +615,13 @@ export const ActivityApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (pageIndex !== undefined) {
         localVarQueryParameter["page_index"] = pageIndex;
       }
@@ -670,7 +688,7 @@ export const ActivityApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdActivityLogsGet", "id", id);
       const localVarPath = `/participants/{id}/activity-logs`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -687,6 +705,13 @@ export const ActivityApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       if (pageIndex !== undefined) {
         localVarQueryParameter["page_index"] = pageIndex;
@@ -989,6 +1014,54 @@ export const AdminApiAxiosParamCreator = function (
 ) {
   return {
     /**
+     * Returns the Keycloak accounts holding the registre_admin realm role (read-only)
+     * @summary List administrator accounts
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    adminUsersGet: async (
+      options: RawAxiosRequestConfig = {},
+    ): Promise<RequestArgs> => {
+      const localVarPath = `/admin-users`;
+      // use dummy base URL string because the URL constructor only accepts absolute URLs.
+      const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+      let baseOptions;
+      if (configuration) {
+        baseOptions = configuration.baseOptions;
+      }
+
+      const localVarRequestOptions = {
+        method: "GET",
+        ...baseOptions,
+        ...options,
+      };
+      const localVarHeaderParameter = {} as any;
+      const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
+      localVarHeaderParameter["Accept"] = "application/json";
+
+      setSearchParams(localVarUrlObj, localVarQueryParameter);
+      let headersFromBaseOptions =
+        baseOptions && baseOptions.headers ? baseOptions.headers : {};
+      localVarRequestOptions.headers = {
+        ...localVarHeaderParameter,
+        ...headersFromBaseOptions,
+        ...options.headers,
+      };
+
+      return {
+        url: toPathString(localVarUrlObj),
+        options: localVarRequestOptions,
+      };
+    },
+    /**
      * Returns every code/reference table with its entries and which codes are referenced
      * @summary List all code tables
      * @param {*} [options] Override http request option.
@@ -1012,6 +1085,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -1047,8 +1127,8 @@ export const AdminApiAxiosParamCreator = function (
       // verify required parameter 'code' is not null or undefined
       assertParamExists("codeTablesTableEntriesCodeDelete", "code", code);
       const localVarPath = `/code-tables/{table}/entries/{code}`
-        .replace(`{${"table"}}`, encodeURIComponent(String(table)))
-        .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+        .replace("{table}", encodeURIComponent(String(table)))
+        .replace("{code}", encodeURIComponent(String(code)));
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
       const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
       let baseOptions;
@@ -1063,6 +1143,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -1102,8 +1189,8 @@ export const AdminApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("codeTablesTableEntriesCodePut", "body", body);
       const localVarPath = `/code-tables/{table}/entries/{code}`
-        .replace(`{${"table"}}`, encodeURIComponent(String(table)))
-        .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+        .replace("{table}", encodeURIComponent(String(table)))
+        .replace("{code}", encodeURIComponent(String(code)));
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
       const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
       let baseOptions;
@@ -1118,6 +1205,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -1159,7 +1253,7 @@ export const AdminApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("codeTablesTableEntriesPost", "body", body);
       const localVarPath = `/code-tables/{table}/entries`.replace(
-        `{${"table"}}`,
+        "{table}",
         encodeURIComponent(String(table)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -1176,6 +1270,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -1224,6 +1325,13 @@ export const AdminApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Accept"] = "application/json";
 
       setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -1254,7 +1362,7 @@ export const AdminApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("externalSystemsIdDelete", "id", id);
       const localVarPath = `/external-systems/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -1271,6 +1379,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -1306,7 +1421,7 @@ export const AdminApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("externalSystemsIdPut", "body", body);
       const localVarPath = `/external-systems/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -1323,6 +1438,13 @@ export const AdminApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -1375,6 +1497,13 @@ export const AdminApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -1406,6 +1535,35 @@ export const AdminApiAxiosParamCreator = function (
 export const AdminApiFp = function (configuration?: Configuration) {
   const localVarAxiosParamCreator = AdminApiAxiosParamCreator(configuration);
   return {
+    /**
+     * Returns the Keycloak accounts holding the registre_admin realm role (read-only)
+     * @summary List administrator accounts
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    async adminUsersGet(
+      options?: RawAxiosRequestConfig,
+    ): Promise<
+      (
+        axios?: AxiosInstance,
+        basePath?: string,
+      ) => AxiosPromise<Array<RegistreAdminInternalAuthAdminUser>>
+    > {
+      const localVarAxiosArgs =
+        await localVarAxiosParamCreator.adminUsersGet(options);
+      const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+      const localVarOperationServerBasePath =
+        operationServerMap["AdminApi.adminUsersGet"]?.[
+          localVarOperationServerIndex
+        ]?.url;
+      return (axios, basePath) =>
+        createRequestFunction(
+          localVarAxiosArgs,
+          globalAxios,
+          BASE_PATH,
+          configuration,
+        )(axios, localVarOperationServerBasePath || basePath);
+    },
     /**
      * Returns every code/reference table with its entries and which codes are referenced
      * @summary List all code tables
@@ -1672,6 +1830,19 @@ export const AdminApiFactory = function (
   const localVarFp = AdminApiFp(configuration);
   return {
     /**
+     * Returns the Keycloak accounts holding the registre_admin realm role (read-only)
+     * @summary List administrator accounts
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    adminUsersGet(
+      options?: RawAxiosRequestConfig,
+    ): AxiosPromise<Array<RegistreAdminInternalAuthAdminUser>> {
+      return localVarFp
+        .adminUsersGet(options)
+        .then((request) => request(axios, basePath));
+    },
+    /**
      * Returns every code/reference table with its entries and which codes are referenced
      * @summary List all code tables
      * @param {*} [options] Override http request option.
@@ -1804,6 +1975,18 @@ export const AdminApiFactory = function (
  * AdminApi - object-oriented interface
  */
 export class AdminApi extends BaseAPI {
+  /**
+   * Returns the Keycloak accounts holding the registre_admin realm role (read-only)
+   * @summary List administrator accounts
+   * @param {*} [options] Override http request option.
+   * @throws {RequiredError}
+   */
+  public adminUsersGet(options?: RawAxiosRequestConfig) {
+    return AdminApiFp(this.configuration)
+      .adminUsersGet(options)
+      .then((request) => request(this.axios, this.basePath));
+  }
+
   /**
    * Returns every code/reference table with its entries and which codes are referenced
    * @summary List all code tables
@@ -1968,6 +2151,13 @@ export const CartApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -2015,6 +2205,13 @@ export const CartApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Accept"] = "application/json";
 
       setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2056,6 +2253,13 @@ export const CartApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Accept"] = "application/json";
 
       setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2096,6 +2300,13 @@ export const CartApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -2141,6 +2352,13 @@ export const CartApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -2189,6 +2407,13 @@ export const CartApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Accept"] = "application/json";
 
       setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -2233,6 +2458,13 @@ export const CartApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -2713,7 +2945,7 @@ export const CommunicationsApiAxiosParamCreator = function (
         communicationId,
       );
       const localVarPath = `/communications/{communicationId}`.replace(
-        `{${"communicationId"}}`,
+        "{communicationId}",
         encodeURIComponent(String(communicationId)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2730,6 +2962,13 @@ export const CommunicationsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "*/*";
 
@@ -2769,7 +3008,7 @@ export const CommunicationsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("communicationsCommunicationIdPut", "body", body);
       const localVarPath = `/communications/{communicationId}`.replace(
-        `{${"communicationId"}}`,
+        "{communicationId}",
         encodeURIComponent(String(communicationId)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2786,6 +3025,13 @@ export const CommunicationsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -2823,7 +3069,7 @@ export const CommunicationsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdCommunicationsGet", "id", id);
       const localVarPath = `/participants/{id}/communications`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2840,6 +3086,13 @@ export const CommunicationsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -2875,7 +3128,7 @@ export const CommunicationsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("participantsIdCommunicationsPost", "body", body);
       const localVarPath = `/participants/{id}/communications`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2892,6 +3145,13 @@ export const CommunicationsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -3245,6 +3505,13 @@ export const ConsentsApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (templateDocumentId !== undefined) {
         localVarQueryParameter["template_document_id"] = templateDocumentId;
       }
@@ -3290,6 +3557,13 @@ export const ConsentsApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Accept"] = "application/json";
 
       setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -3320,7 +3594,7 @@ export const ConsentsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("consentTemplatesIdDelete", "id", id);
       const localVarPath = `/consent-templates/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3337,6 +3611,13 @@ export const ConsentsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "*/*";
 
@@ -3378,7 +3659,7 @@ export const ConsentsApiAxiosParamCreator = function (
       // verify required parameter 'clauses' is not null or undefined
       assertParamExists("consentTemplatesIdPut", "clauses", clauses);
       const localVarPath = `/consent-templates/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3399,6 +3680,13 @@ export const ConsentsApiAxiosParamCreator = function (
         (configuration && configuration.formDataCtor) ||
         FormData
       )();
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       if (name !== undefined) {
         localVarFormParams.append("name", name as any);
@@ -3470,6 +3758,13 @@ export const ConsentsApiAxiosParamCreator = function (
         FormData
       )();
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (name !== undefined) {
         localVarFormParams.append("name", name as any);
       }
@@ -3517,7 +3812,7 @@ export const ConsentsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("consentsConsentIdPut", "body", body);
       const localVarPath = `/consents/{consentId}`.replace(
-        `{${"consentId"}}`,
+        "{consentId}",
         encodeURIComponent(String(consentId)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3534,6 +3829,13 @@ export const ConsentsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -3571,7 +3873,7 @@ export const ConsentsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdConsentsGet", "id", id);
       const localVarPath = `/participants/{id}/consents`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3588,6 +3890,13 @@ export const ConsentsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -3623,7 +3932,7 @@ export const ConsentsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("participantsIdConsentsPost", "body", body);
       const localVarPath = `/participants/{id}/consents`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3640,6 +3949,13 @@ export const ConsentsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -4251,7 +4567,7 @@ export const ContactsApiAxiosParamCreator = function (
       // verify required parameter 'contactId' is not null or undefined
       assertParamExists("contactsContactIdDelete", "contactId", contactId);
       const localVarPath = `/contacts/{contactId}`.replace(
-        `{${"contactId"}}`,
+        "{contactId}",
         encodeURIComponent(String(contactId)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -4268,6 +4584,13 @@ export const ContactsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -4303,7 +4626,7 @@ export const ContactsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("contactsContactIdPut", "body", body);
       const localVarPath = `/contacts/{contactId}`.replace(
-        `{${"contactId"}}`,
+        "{contactId}",
         encodeURIComponent(String(contactId)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -4320,6 +4643,13 @@ export const ContactsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -4361,7 +4691,7 @@ export const ContactsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("participantsIdContactsPost", "body", body);
       const localVarPath = `/participants/{id}/contacts`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -4378,6 +4708,13 @@ export const ContactsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -4655,7 +4992,7 @@ export const DocumentsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("documentsIdFileGet", "id", id);
       const localVarPath = `/documents/{id}/file`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -4672,6 +5009,13 @@ export const DocumentsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/octet-stream";
 
@@ -4729,6 +5073,13 @@ export const DocumentsApiAxiosParamCreator = function (
         (configuration && configuration.formDataCtor) ||
         FormData
       )();
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       if (name !== undefined) {
         localVarFormParams.append("name", name as any);
@@ -4942,7 +5293,7 @@ export const ExternalIdsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdExternalIdsGet", "id", id);
       const localVarPath = `/participants/{id}/external-ids`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -4959,6 +5310,13 @@ export const ExternalIdsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -5114,6 +5472,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (pageIndex !== undefined) {
         localVarQueryParameter["page_index"] = pageIndex;
       }
@@ -5164,7 +5529,7 @@ export const ParticipantsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdDelete", "id", id);
       const localVarPath = `/participants/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -5181,6 +5546,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "*/*";
 
@@ -5212,7 +5584,7 @@ export const ParticipantsApiAxiosParamCreator = function (
       // verify required parameter 'id' is not null or undefined
       assertParamExists("participantsIdGet", "id", id);
       const localVarPath = `/participants/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -5229,6 +5601,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -5264,7 +5643,7 @@ export const ParticipantsApiAxiosParamCreator = function (
       // verify required parameter 'body' is not null or undefined
       assertParamExists("participantsIdPut", "body", body);
       const localVarPath = `/participants/{id}`.replace(
-        `{${"id"}}`,
+        "{id}",
         encodeURIComponent(String(id)),
       );
       // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -5281,6 +5660,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -5333,6 +5719,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
 
@@ -5383,6 +5776,13 @@ export const ParticipantsApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Content-Type"] = "application/json";
       localVarHeaderParameter["Accept"] = "application/json";
@@ -5878,6 +6278,13 @@ export const ReportsApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (reportDate !== undefined) {
         localVarQueryParameter["report_date"] = reportDate;
       }
@@ -6023,6 +6430,13 @@ export const SearchApiAxiosParamCreator = function (
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
 
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
+
       if (q !== undefined) {
         localVarQueryParameter["q"] = q;
       }
@@ -6165,6 +6579,13 @@ export const SystemApiAxiosParamCreator = function (
       };
       const localVarHeaderParameter = {} as any;
       const localVarQueryParameter = {} as any;
+
+      // authentication BearerAuth required
+      await setApiKeyToObject(
+        localVarHeaderParameter,
+        "Authorization",
+        configuration,
+      );
 
       localVarHeaderParameter["Accept"] = "application/json";
 

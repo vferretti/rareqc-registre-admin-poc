@@ -67,6 +67,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 | GET | `/search` | Search suggestions (participants + contacts) |
 | GET | `/activity-logs` | Activity log (paginated) |
 | GET | `/participants/:id/activity-logs` | Activity log for a participant |
+| GET | `/admin-users` | Keycloak accounts holding `registre_admin` (read-only, via admin API) |
 
 ## Data model key rules
 - **One consent per clause type per participant** — enforced both at API level and via PostgreSQL trigger (`trg_unique_consent_clause_type`)
@@ -103,7 +104,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - `/participants` — Participant list with table (consent status columns, column visibility, fullscreen, consent status filter)
 - `/participants/:id` — Participant detail (identity, coordinates, contacts, consents, activity, external IDs in header badges)
 - `/activity` — Activity log
-- `/admin` — Administration with accordion sections (Users: coming soon, Consent forms: template management with table)
+- `/admin` — Administration with accordion sections (Users: read-only list of Keycloak accounts with the admin role, Consent forms: template management with table)
 
 ## Styling & theming (STRICT — replicate unic-portal / radiant-portal architecture exactly)
 - **No hardcoded colors in components.** All colors must come from semantic CSS tokens via Tailwind classes (`bg-navbar`, `text-hero-foreground`, `bg-cta`, etc.). Never use brand palette classes directly (e.g., `bg-rareqc-600`, `text-slate-500`) in component code.
@@ -156,6 +157,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - **Identity in handlers**: `auth.UserSub(c)` (cart ownership), `auth.UserName(c)` (activity-log author via `getAuthor`).
 - **Env vars** (radiant naming, dev defaults built in): `KEYCLOAK_HOST`, `KEYCLOAK_INTERNAL_HOST` (containers), `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT`, `KEYCLOAK_CLIENT_SECRET`, `SESSION_SECRET`, `PORTAL_HOST`, `COOKIE_SECURE`. See `backend/.env.example`.
 - **Two portals, one API (A6)**: the OIDC client is selected per request origin — origins listed in `PARTICIPANT_PORTAL_HOSTS` (default `http://localhost:5174,http://localhost:3002`) use `KEYCLOAK_PARTICIPANT_CLIENT`/`KEYCLOAK_PARTICIPANT_CLIENT_SECRET` (`portail-participant-bff`); every other origin uses the admin client. Test user: `participant-test` (role `participant`).
+- **Admin users listing**: `GET /admin-users` proxies the Keycloak admin API using the `registre-admin-bff` **service account** (client_credentials), which holds only the realm-management `view-users` + `view-realm` roles (read-only — reading a role and its holders requires both).
 - **Frontend**: `AuthProvider` (`src/contexts/auth-context.tsx`) loads `/api/auth/me` at startup; `RequireAuth` guards app routes; axios 401 interceptor returns to the landing page; no OIDC library needed.
 - **Gotchas**: nginx needs enlarged proxy buffers for the session cookies (see `frontend/nginx.conf`); Keycloak runs with `KC_HOSTNAME` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` for the dev split-horizon.
 

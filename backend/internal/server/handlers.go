@@ -102,6 +102,8 @@ func SetupRouter(db *gorm.DB, cfg config.Config, authCfg auth.Config) *gin.Engin
 		api.PUT("/code-tables/:table/entries/:code", UpdateCodeEntryHandler(codeTableRepo))
 		api.DELETE("/code-tables/:table/entries/:code", DeleteCodeEntryHandler(codeTableRepo))
 
+		api.GET("/admin-users", ListAdminUsersHandler(authService))
+
 		api.GET("/external-systems", ListExternalSystemsHandler(extSysRepo))
 		api.POST("/external-systems", CreateExternalSystemHandler(extSysRepo))
 		api.PUT("/external-systems/:id", UpdateExternalSystemHandler(extSysRepo))

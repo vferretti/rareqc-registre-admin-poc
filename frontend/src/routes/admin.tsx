@@ -60,6 +60,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/base/table/table";
+import { AdminUsersSection } from "@/components/feature/admin-users-section";
 import { ConsentTemplateDialog } from "@/components/feature/consent-template-dialog";
 import { CodeTableCard } from "@/components/feature/code-table-card";
 import { useCodeTables } from "@/hooks/useCodeTables";
@@ -142,26 +143,20 @@ export default function Admin() {
         >
           {/* Users section */}
           <AccordionItem value="users">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="opacity-50 cursor-not-allowed">
-                    <AccordionTrigger disabled>
-                      <div className="flex items-center gap-3">
-                        <ShieldCheck className="size-5 text-primary" />
-                        <div className="text-left">
-                          <div className="font-medium">{t("admin.users")}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {t("admin.users_description")}
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
+            <AccordionTrigger>
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="size-5 text-primary" />
+                <div className="text-left">
+                  <div className="font-medium">{t("admin.users")}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t("admin.users_description")}
                   </div>
-                </TooltipTrigger>
-                <TooltipContent>{t("admin.coming_soon")}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <AdminUsersSection />
+            </AccordionContent>
           </AccordionItem>
 
           {/* Consent forms section */}
