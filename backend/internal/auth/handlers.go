@@ -17,18 +17,29 @@ import (
 
 // Service implements the BFF OAuth2 flows against Keycloak, mirroring
 // radiant-portal's auth.server.ts (login, callback, refresh, logout).
+// It holds one confidential OIDC client per portal; the request origin
+// decides which one handles a given flow.
 type Service struct {
-	cfg      Config
-	sessions *sessions
-	oauth    *oauth2.Config
-	verifier *oidc.IDTokenVerifier
+	cfg               Config
+	sessions          *sessions
+	adminClient       *oidcClient
+	participantClient *oidcClient
+	participantHosts  map[string]bool
+	verifier          *oidc.IDTokenVerifier
 }
 
-// NewService wires the OAuth2 client and the Bearer JWT verifier.
-func NewService(cfg Config) *Service {
-	oauthCfg := &oauth2.Config{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
+// oidcClient bundles a confidential client's credentials with its OAuth2
+// configuration (same realm endpoints for all clients).
+type oidcClient struct {
+	id     string
+	secret string
+	oauth  *oauth2.Config
+}
+
+func newOIDCClient(cfg Config, id, secret string) *oidcClient {
+	return &oidcClient{id: id, secret: secret, oauth: &oauth2.Config{
+		ClientID:     id,
+		ClientSecret: secret,
 		RedirectURL:  cfg.RedirectURI(),
 		Scopes:       []string{oidc.ScopeOpenID, "email", "profile"},
 		Endpoint: oauth2.Endpoint{
@@ -37,6 +48,14 @@ func NewService(cfg Config) *Service {
 			AuthURL:  cfg.oauth2URL("auth"),
 			TokenURL: cfg.internalOauth2URL("token"),
 		},
+	}}
+}
+
+// NewService wires the OAuth2 clients and the Bearer JWT verifier.
+func NewService(cfg Config) *Service {
+	participantHosts := make(map[string]bool, len(cfg.ParticipantPortalHosts))
+	for _, h := range cfg.ParticipantPortalHosts {
+		participantHosts[h] = true
 	}
 
 	// Bearer tokens (scripts/services) are fully verified: signature against
@@ -48,7 +67,26 @@ func NewService(cfg Config) *Service {
 		SkipClientIDCheck: true,
 	})
 
-	return &Service{cfg: cfg, sessions: newSessions(cfg), oauth: oauthCfg, verifier: verifier}
+	return &Service{
+		cfg:               cfg,
+		sessions:          newSessions(cfg),
+		adminClient:       newOIDCClient(cfg, cfg.ClientID, cfg.ClientSecret),
+		participantClient: newOIDCClient(cfg, cfg.ParticipantClientID, cfg.ParticipantClientSecret),
+		participantHosts:  participantHosts,
+		verifier:          verifier,
+	}
+}
+
+// clientFor picks the OIDC client matching the request origin: participant
+// portal origins → portail-participant-bff; every other origin (admin
+// portal, direct API, scripts) → registre-admin-bff. Sessions always flow
+// through the same origin they were created on, so login, refresh and
+// logout all resolve to the same client.
+func (s *Service) clientFor(c *gin.Context) *oidcClient {
+	if s.participantHosts[s.requestOrigin(c)] {
+		return s.participantClient
+	}
+	return s.adminClient
 }
 
 // RegisterRoutes mounts the public auth endpoints on the /api group.
@@ -105,7 +143,7 @@ func (s *Service) loginHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "session error"})
 		return
 	}
-	c.Redirect(http.StatusFound, s.oauth.AuthCodeURL(st.State,
+	c.Redirect(http.StatusFound, s.clientFor(c).oauth.AuthCodeURL(st.State,
 		oauth2.S256ChallengeOption(st.Verifier),
 		oauth2.SetAuthURLParam("redirect_uri", st.RedirectURI)))
 }
@@ -122,7 +160,7 @@ func (s *Service) callbackHandler(c *gin.Context) {
 	}
 	s.sessions.clear(c, cookieOAuthState)
 
-	tokens, err := s.oauth.Exchange(c.Request.Context(), c.Query("code"),
+	tokens, err := s.clientFor(c).oauth.Exchange(c.Request.Context(), c.Query("code"),
 		oauth2.VerifierOption(st.Verifier),
 		oauth2.SetAuthURLParam("redirect_uri", st.RedirectURI))
 	if err != nil {
@@ -150,10 +188,11 @@ func (s *Service) callbackHandler(c *gin.Context) {
 // the refresh token, then destroy the session cookies.
 func (s *Service) logoutHandler(c *gin.Context) {
 	if refreshToken, ok := s.sessions.sessionRefreshToken(c); ok {
+		client := s.clientFor(c)
 		body := url.Values{
 			"refresh_token": {refreshToken},
-			"client_id":     {s.cfg.ClientID},
-			"client_secret": {s.cfg.ClientSecret},
+			"client_id":     {client.id},
+			"client_secret": {client.secret},
 		}
 		req, _ := http.NewRequestWithContext(c.Request.Context(), http.MethodPost,
 			s.cfg.internalOauth2URL("logout"), strings.NewReader(body.Encode()))
@@ -210,7 +249,7 @@ func (s *Service) refreshAccessToken(c *gin.Context) (string, error) {
 		return "", fmt.Errorf("refresh token invalid")
 	}
 
-	src := s.oauth.TokenSource(c.Request.Context(), &oauth2.Token{RefreshToken: refreshToken})
+	src := s.clientFor(c).oauth.TokenSource(c.Request.Context(), &oauth2.Token{RefreshToken: refreshToken})
 	tokens, err := src.Token()
 	if err != nil {
 		return "", err

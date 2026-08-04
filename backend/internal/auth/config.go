@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 // Config holds the Keycloak/BFF settings. Env var names mirror radiant-portal
@@ -26,16 +27,31 @@ type Config struct {
 	SessionSecret string
 	// PortalHost is the public URL of the portal (redirect URI base), e.g. http://localhost:5173.
 	PortalHost string
+	// ParticipantClientID and ParticipantClientSecret are the confidential
+	// OIDC client used when the request originates from the participant
+	// portal (A6). All other origins use ClientID/ClientSecret.
+	ParticipantClientID     string
+	ParticipantClientSecret string
+	// ParticipantPortalHosts lists the origins served by the participant
+	// portal (comma-separated in PARTICIPANT_PORTAL_HOSTS). They must match
+	// the redirect URIs registered on the participant client in the realm.
+	ParticipantPortalHosts []string
 	// CookieSecure toggles the Secure flag on cookies (true outside dev).
 	CookieSecure bool
-	// RequiredRole is the realm role required to use the API.
-	RequiredRole string
 }
+
+// Realm roles enforced per route group: admin routes require RoleAdmin,
+// participant routes (/me/...) require RoleParticipant.
+const (
+	RoleAdmin       = "registre_admin"
+	RoleParticipant = "participant"
+)
 
 // insecure dev defaults, aligned with rareqc-infra's dev realm.
 const (
-	devSessionSecret = "dev-only-session-secret-change-me"
-	devClientSecret  = "dev-only-registre-admin-secret"
+	devSessionSecret           = "dev-only-session-secret-change-me"
+	devClientSecret            = "dev-only-registre-admin-secret"
+	devParticipantClientSecret = "dev-only-portail-participant-secret"
 )
 
 func getEnvOrDefault(key, def string) string {
@@ -49,21 +65,36 @@ func getEnvOrDefault(key, def string) string {
 // to dev defaults (with a warning) so `go run` works out of the box.
 func LoadConfig() Config {
 	cfg := Config{
-		KeycloakHost:  getEnvOrDefault("KEYCLOAK_HOST", "http://localhost:8081"),
-		Realm:         getEnvOrDefault("KEYCLOAK_REALM", "rareqc"),
-		ClientID:      getEnvOrDefault("KEYCLOAK_CLIENT", "registre-admin-bff"),
-		ClientSecret:  getEnvOrDefault("KEYCLOAK_CLIENT_SECRET", devClientSecret),
-		SessionSecret: getEnvOrDefault("SESSION_SECRET", devSessionSecret),
-		PortalHost:    getEnvOrDefault("PORTAL_HOST", "http://localhost:5173"),
-		CookieSecure:  getEnvOrDefault("COOKIE_SECURE", "false") == "true",
-		RequiredRole:  "registre_admin",
+		KeycloakHost:            getEnvOrDefault("KEYCLOAK_HOST", "http://localhost:8081"),
+		Realm:                   getEnvOrDefault("KEYCLOAK_REALM", "rareqc"),
+		ClientID:                getEnvOrDefault("KEYCLOAK_CLIENT", "registre-admin-bff"),
+		ClientSecret:            getEnvOrDefault("KEYCLOAK_CLIENT_SECRET", devClientSecret),
+		ParticipantClientID:     getEnvOrDefault("KEYCLOAK_PARTICIPANT_CLIENT", "portail-participant-bff"),
+		ParticipantClientSecret: getEnvOrDefault("KEYCLOAK_PARTICIPANT_CLIENT_SECRET", devParticipantClientSecret),
+		ParticipantPortalHosts:  splitHosts(getEnvOrDefault("PARTICIPANT_PORTAL_HOSTS", "http://localhost:5174,http://localhost:3002")),
+		SessionSecret:           getEnvOrDefault("SESSION_SECRET", devSessionSecret),
+		PortalHost:              getEnvOrDefault("PORTAL_HOST", "http://localhost:5173"),
+		CookieSecure:            getEnvOrDefault("COOKIE_SECURE", "false") == "true",
 	}
 	cfg.KeycloakInternalHost = getEnvOrDefault("KEYCLOAK_INTERNAL_HOST", cfg.KeycloakHost)
 
-	if cfg.SessionSecret == devSessionSecret || cfg.ClientSecret == devClientSecret {
-		log.Println("WARNING: auth is using dev-only secrets — set SESSION_SECRET and KEYCLOAK_CLIENT_SECRET outside dev")
+	if cfg.SessionSecret == devSessionSecret || cfg.ClientSecret == devClientSecret ||
+		cfg.ParticipantClientSecret == devParticipantClientSecret {
+		log.Println("WARNING: auth is using dev-only secrets — set SESSION_SECRET, KEYCLOAK_CLIENT_SECRET and KEYCLOAK_PARTICIPANT_CLIENT_SECRET outside dev")
 	}
 	return cfg
+}
+
+// splitHosts parses a comma-separated origin list, trimming whitespace and
+// trailing slashes so entries compare equal to request origins.
+func splitHosts(raw string) []string {
+	var hosts []string
+	for _, h := range strings.Split(raw, ",") {
+		if h = strings.TrimRight(strings.TrimSpace(h), "/"); h != "" {
+			hosts = append(hosts, h)
+		}
+	}
+	return hosts
 }
 
 // oauth2URL builds a Keycloak openid-connect endpoint URL, mirroring

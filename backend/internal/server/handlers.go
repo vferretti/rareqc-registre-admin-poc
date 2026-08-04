@@ -53,7 +53,9 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 		// Everything registered below requires an authenticated identity
 		// (session cookie or Bearer token) with the registre_admin role.
-		api.Use(authService.Middleware())
+		// Participant routes (/me/...) will form their own group with
+		// auth.RoleParticipant (A5).
+		api.Use(authService.Middleware(auth.RoleAdmin))
 
 		api.GET("/enums", EnumsHandler(codeTableRepo))
 		api.GET("/reports/summary", ReportsSummaryHandler(reportsRepo))

@@ -150,11 +150,12 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 
 ## Authentication (BFF Keycloak — mirrors radiant-portal's design)
 - **Pattern**: the Go backend is the confidential OIDC client (BFF). Tokens live in three signed httpOnly cookies (`session.user`, `session.token`, `session.r.token` — SameSite=Lax) and never reach browser JavaScript. Package `backend/internal/auth/`.
-- **Keycloak**: realm `rareqc` hosted by the rareqc-infra platform (port 8081 dev). Realm role `registre_admin` required on every API route (403 otherwise). Test users: `vincent-test`, `marie-test` (with role), `sansrole-test` (without) — password `test1234`.
+- **Keycloak**: realm `rareqc` hosted by the rareqc-infra platform (port 8081 dev). Roles are enforced per route group: `authService.Middleware(auth.RoleAdmin)` on admin routes (403 otherwise); future `/me/...` routes will use `auth.RoleParticipant` (constants in `internal/auth/config.go`). Test users: `vincent-test`, `marie-test` (with role), `sansrole-test` (without) — password `test1234`.
 - **Endpoints**: `/api/auth/login` (code flow + PKCE S256, state cookie), `/api/auth/callback`, `/api/auth/logout` (back-channel), `/api/auth/me`. Everything else under `/api` requires auth except `/health`.
 - **Dual mode**: browser = session cookies (transparent refresh on expiry); scripts/services = `Authorization: Bearer` verified against the Keycloak JWKS (client `rareqc-scripts`, flux `client_credentials` — see `rareqc-infra/scripts/api-token.sh`).
 - **Identity in handlers**: `auth.UserSub(c)` (cart ownership), `auth.UserName(c)` (activity-log author via `getAuthor`).
 - **Env vars** (radiant naming, dev defaults built in): `KEYCLOAK_HOST`, `KEYCLOAK_INTERNAL_HOST` (containers), `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT`, `KEYCLOAK_CLIENT_SECRET`, `SESSION_SECRET`, `PORTAL_HOST`, `COOKIE_SECURE`. See `backend/.env.example`.
+- **Two portals, one API (A6)**: the OIDC client is selected per request origin — origins listed in `PARTICIPANT_PORTAL_HOSTS` (default `http://localhost:5174,http://localhost:3002`) use `KEYCLOAK_PARTICIPANT_CLIENT`/`KEYCLOAK_PARTICIPANT_CLIENT_SECRET` (`portail-participant-bff`); every other origin uses the admin client. Test user: `participant-test` (role `participant`).
 - **Frontend**: `AuthProvider` (`src/contexts/auth-context.tsx`) loads `/api/auth/me` at startup; `RequireAuth` guards app routes; axios 401 interceptor returns to the landing page; no OIDC library needed.
 - **Gotchas**: nginx needs enlarged proxy buffers for the session cookies (see `frontend/nginx.conf`); Keycloak runs with `KC_HOSTNAME` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` for the dev split-horizon.
 
@@ -185,6 +186,8 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [ ] **A3** Composition staging/prod dans rareqc-infra (proxy TLS, `KC_HOSTNAME` public, secrets régénérés, images GHCR)
 
 ### Auth — API partagée avec le portail participant (décision 2026-08-03 : un seul serveur API, une seule BD, voir `rareqc-infra/docs/integration-portail.md`)
-- [ ] **A4** Rôle par groupe de routes — remplacer le `RequiredRole` global codé en dur (`internal/auth/config.go`) : routes admin → `registre_admin`, routes participant → `participant`
+- [x] **A4** ~~Rôle par groupe de routes — remplacer le `RequiredRole` global codé en dur~~ (`Middleware(role)` + constantes `auth.RoleAdmin`/`auth.RoleParticipant`)
 - [ ] **A5** Routes participant `/me/...` (`/me/profile`, `/me/consents`, …) filtrées par `auth.UserSub(c)` — jamais d'accès aux listes admin ; contrat à publier dans le Swagger
-- [ ] **A6** Sélection du client OIDC selon l'origine de la requête (portail admin → `registre-admin-bff`, portail participant → `portail-participant-bff`) — le redirect URI du callback est déjà dérivé de l'origine (`auth/handlers.go`)
+- [x] **A6** ~~Sélection du client OIDC selon l'origine de la requête~~ (origines participant dans `PARTICIPANT_PORTAL_HOSTS` → client `portail-participant-bff` ; tout le reste → `registre-admin-bff`)
+- [ ] **A7** Liaison compte Keycloak ↔ participant en BD (prérequis A5) : colonne `keycloak_sub` (unique, nullable) sur `participant` + décision de processus pour la remplir (association par un admin ? correspondance courriel à la première connexion ? enrôlement ?)
+- [ ] **A8** Défense en profondeur côté portail participant (repo `rareqc-portal-participant`) : son nginx ne doit proxifier que `/api/auth/*` et `/api/me/*` — jamais tout `/api` ; à documenter comme exigence dans `rareqc-infra/docs/integration-portail.md`

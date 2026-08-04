@@ -30,21 +30,22 @@ func UserName(c *gin.Context) string {
 //   - session cookies (portal users): radiant-style requireAuth — token
 //     present and unexpired, with transparent refresh when expired.
 //
-// In both modes the realm role cfg.RequiredRole is enforced (403 otherwise)
-// and the identity is stored in the Gin context.
-func (s *Service) Middleware() gin.HandlerFunc {
+// In both modes the given realm role is enforced (403 otherwise) and the
+// identity is stored in the Gin context. Each route group passes its own
+// role: RoleAdmin for admin routes, RoleParticipant for /me routes.
+func (s *Service) Middleware(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if header := c.GetHeader("Authorization"); strings.HasPrefix(header, "Bearer ") {
-			s.authenticateBearer(c, strings.TrimPrefix(header, "Bearer "))
+			s.authenticateBearer(c, strings.TrimPrefix(header, "Bearer "), requiredRole)
 			return
 		}
-		s.authenticateSession(c)
+		s.authenticateSession(c, requiredRole)
 	}
 }
 
 // authenticateBearer verifies an externally-supplied JWT (signature, issuer,
 // expiry) and enforces the required role.
-func (s *Service) authenticateBearer(c *gin.Context, rawToken string) {
+func (s *Service) authenticateBearer(c *gin.Context, rawToken, requiredRole string) {
 	if _, err := s.verifier.Verify(c.Request.Context(), rawToken); err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
@@ -54,12 +55,12 @@ func (s *Service) authenticateBearer(c *gin.Context, rawToken string) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
-	s.authorize(c, claims)
+	s.authorize(c, claims, requiredRole)
 }
 
 // authenticateSession mirrors radiant's requireAuth + refreshAccessToken:
 // valid session cookies, transparent refresh on expiry, otherwise 401.
-func (s *Service) authenticateSession(c *gin.Context) {
+func (s *Service) authenticateSession(c *gin.Context, requiredRole string) {
 	user, userOK := s.sessions.sessionUser(c)
 	token, tokenOK := s.sessions.sessionAccessToken(c)
 	if !userOK || !tokenOK {
@@ -86,12 +87,12 @@ func (s *Service) authenticateSession(c *gin.Context) {
 	if user.Name != "" {
 		claims.Name = user.Name
 	}
-	s.authorize(c, claims)
+	s.authorize(c, claims, requiredRole)
 }
 
 // authorize enforces the required realm role and exposes the identity.
-func (s *Service) authorize(c *gin.Context, claims *tokenClaims) {
-	if !claims.hasRole(s.cfg.RequiredRole) {
+func (s *Service) authorize(c *gin.Context, claims *tokenClaims, requiredRole string) {
+	if !claims.hasRole(requiredRole) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "missing required role"})
 		return
 	}
