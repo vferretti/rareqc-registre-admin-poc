@@ -44,8 +44,10 @@ func Load() (Config, error) {
 		Port:               getEnvOrDefault("PORT", "8080"),
 		CORSAllowedOrigins: SplitAndTrim(getEnvOrDefault("CORS_ALLOWED_ORIGINS", "*")),
 		DB: DB{
-			Host:     getEnvOrDefault("POSTGRES_HOST", "localhost"),
-			Port:     getEnvOrDefault("POSTGRES_PORT", "5432"),
+			Host: getEnvOrDefault("POSTGRES_HOST", "localhost"),
+			// 5440 = port hôte du postgres de la plateforme rareqc-infra,
+			// pour que `go run ./cmd/api/` fonctionne sans .env en dev.
+			Port: getEnvOrDefault("POSTGRES_PORT", "5440"),
 			User:     getEnvOrDefault("POSTGRES_USER", "rareqc"),
 			Password: getEnvOrDefault("POSTGRES_PASSWORD", devDBPassword),
 			Name:     getEnvOrDefault("POSTGRES_DB", "rareqc_registre"),

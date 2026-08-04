@@ -1,30 +1,36 @@
-# RareQC — Registre Admin (POC)
+# RareQC — Registre Admin
 
 Application web d'administration pour un registre québécois de maladies rares. Permet la gestion des participants (patients), de leurs contacts, des consentements, du suivi de l'historique des modifications, des rapports et de la sélection en lot (panier).
+
+Le backend (API + base de données) est **partagé** avec le futur portail participant (`rareqc-portal-participant`) : un seul serveur API, une seule base, un seul Keycloak — voir `rareqc-infra/docs/integration-portail.md`.
 
 ## Stack technique
 
 | Couche       | Technologies                                                       |
 |--------------|--------------------------------------------------------------------|
-| **Backend**  | Go 1.24, Gin, GORM, PostgreSQL 16, Swagger (swaggo)               |
+| **Backend**  | Go 1.25, Gin, GORM, PostgreSQL 16, Swagger (swaggo)               |
+| **Auth**     | Keycloak (OIDC, patron BFF — cookies httpOnly, aucun jeton côté navigateur) |
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, i18next, recharts, ExcelJS |
-| **Infra**    | Docker Compose (PostgreSQL, Go API, Nginx)                         |
-| **Qualité**  | ESLint, Prettier, Husky + lint-staged                              |
+| **Infra**    | Docker Compose (Go API, Nginx) + plateforme partagée `rareqc-infra` (PostgreSQL, Keycloak) |
+| **Qualité**  | ESLint, Prettier, Husky + lint-staged, tests Go (`go test ./...`)  |
 
 ## Prérequis
 
+- **Plateforme partagée `rareqc-infra` démarrée** (PostgreSQL + Keycloak — crée le réseau Docker `rareqc-net`) : `docker compose up -d` dans le repo `rareqc-infra`
 - [Docker](https://docs.docker.com/get-docker/) et Docker Compose
-- [Go 1.24+](https://go.dev/dl/) (développement backend local)
+- [Go 1.25+](https://go.dev/dl/) (développement backend local)
 - [Node.js 22+](https://nodejs.org/) via nvm (développement frontend local)
 
 ---
 
 ## Démarrage rapide
 
+> **Toujours en premier** : `docker compose up -d` dans `~/src/rareqc-infra` (PostgreSQL sur 5440, Keycloak sur 8081).
+
 ### Option 1 — Stack Docker complète
 
 ```bash
-# Démarrer tous les services (API + PostgreSQL + Frontend)
+# Démarrer API + Frontend (rejoignent le réseau rareqc-net)
 docker compose up --build
 
 # Charger les données de test (dans un autre terminal)
@@ -36,18 +42,19 @@ docker compose --profile dev run --rm seed
 | Frontend   | http://localhost:3001         |
 | API        | http://localhost:8082/api     |
 | Swagger    | http://localhost:8082/swagger/index.html |
-| PostgreSQL | localhost:5440               |
+| PostgreSQL | localhost:5440 (rareqc-infra) |
+| Keycloak   | http://localhost:8081 (rareqc-infra) |
 
-### Option 2 — Développement local (frontend)
+### Option 2 — Développement local
 
 ```bash
-# 1. Démarrer l'API + PostgreSQL avec Docker
-docker compose up --build api
+# 1. L'API en dev (les défauts pointent vers la plateforme rareqc-infra — aucun .env requis)
+cd backend && go run ./cmd/api/
 
 # 2. Charger les données de test
 docker compose --profile dev run --rm seed
 
-# 3. Lancer le frontend en mode dev
+# 3. Le frontend en mode dev
 cd frontend
 npm install
 npm run dev
@@ -56,11 +63,20 @@ npm run dev
 | Service    | URL                          |
 |------------|------------------------------|
 | Frontend   | http://localhost:5173         |
-| API        | http://localhost:8082/api     |
-| Swagger    | http://localhost:8082/swagger/index.html |
-| PostgreSQL | localhost:5440               |
+| API (dev)  | http://localhost:8080/api     |
+| Swagger    | http://localhost:8080/swagger/index.html |
 
-Le serveur Vite proxy automatiquement `/api` vers le port 8082.
+Le serveur Vite proxy `/api` vers l'API (8082 par défaut dans `vite.config.ts` ; ajuster vers 8080 si l'API tourne avec `go run`).
+
+### Se connecter
+
+La page d'accueil redirige vers Keycloak (thème RareQC). Utilisateurs de test (mot de passe `test1234`) :
+
+| Utilisateur | Rôle | Résultat |
+|---|---|---|
+| `vincent-test`, `marie-test` | `registre_admin` | accès complet |
+| `sansrole-test` | aucun | page « accès refusé » |
+| `participant-test` | `participant` | page « accès refusé » (réservé au futur portail participant) |
 
 ### Après un changement de code backend
 
@@ -78,16 +94,13 @@ docker compose --profile dev run --rm seed
 
 ### Réinitialiser la base de données
 
+La base vit dans la composition `rareqc-infra` (volume `pgdata`, partagé avec Keycloak). Pour repartir d'un jeu de données propre, le re-seed suffit dans la plupart des cas :
+
 ```bash
-# 1. Arrêter les services et supprimer le volume PostgreSQL
-docker compose down -v
-
-# 2. Relancer l'API (recrée la BD vide avec les migrations)
-docker compose up --build api -d
-
-# 3. Recharger les données de test
 docker compose --profile dev run --rm seed
 ```
+
+Pour une réinitialisation complète (schéma compris), voir « Base applicative : sauvegarde / restauration » dans le README de `rareqc-infra` — ⚠️ supprimer le volume `pgdata` détruit aussi la base Keycloak (realm réimporté au prochain démarrage).
 
 ---
 
@@ -132,6 +145,9 @@ PGPASSWORD=rareqc psql -h localhost -p 5440 -U rareqc -d rareqc_registre
 ## Commandes utiles
 
 ```bash
+# Tests backend
+cd backend && go test ./...
+
 # Lint frontend
 cd frontend && npm run lint
 
@@ -156,16 +172,34 @@ Annotations Go (swag) → swagger.yaml → openapi-generator (typescript-axios) 
 
 Après tout changement à l'API backend (nouveaux endpoints, types modifiés), exécuter `make generate` pour mettre à jour le client frontend. Les types manuels dans `src/types/` sont des barrels de ré-export depuis le client généré.
 
+## Authentification
+
+Patron **BFF** (backend-for-frontend) : le backend Go est le client OIDC confidentiel de Keycloak. Les jetons vivent dans trois cookies httpOnly signés et n'atteignent jamais le JavaScript du navigateur. Double mode : cookies de session (navigateur) ou `Authorization: Bearer` vérifié contre le JWKS (scripts — voir `rareqc-infra/scripts/api-token.sh`).
+
+- Le rôle realm est exigé **par groupe de routes** : les routes admin exigent `registre_admin` ; les futures routes `/me/...` du portail participant exigeront `participant`.
+- Le client OIDC est choisi **selon l'origine de la requête** : les origines listées dans `PARTICIPANT_PORTAL_HOSTS` utilisent `portail-participant-bff`, tout le reste `registre-admin-bff`.
+- Un utilisateur authentifié sans le bon rôle voit une page « accès refusé » (pas d'écrans vides).
+
 ## Variables d'environnement
 
-| Variable            | Défaut            | Description |
-|---------------------|-------------------|-------------|
-| `POSTGRES_HOST`     | `localhost`       | Hôte PostgreSQL |
-| `POSTGRES_PORT`     | `5432`            | Port PostgreSQL |
-| `POSTGRES_USER`     | `rareqc`          | Utilisateur BD |
-| `POSTGRES_PASSWORD` | `rareqc`          | Mot de passe BD |
-| `POSTGRES_DB`       | `rareqc_registre` | Nom de la base |
-| `STORAGE_TYPE`      | `database`        | Stockage des documents (`database` ou `s3`) |
+Tout est documenté dans [`backend/.env.example`](backend/.env.example) — les défauts pointent vers la plateforme de dev `rareqc-infra`, donc **aucun `.env` n'est requis en dev**.
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `GIN_MODE` | *(vide)* | `release` = mode production : **refuse de démarrer** si un secret/réglage est resté à sa valeur de dev ; logs JSON |
+| `PORT` | `8080` | Port d'écoute HTTP |
+| `CORS_ALLOWED_ORIGINS` | `*` | Origines CORS (séparées par des virgules) — `*` interdit en release |
+| `POSTGRES_HOST` / `POSTGRES_PORT` | `localhost` / `5440` | PostgreSQL (plateforme rareqc-infra) |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `rareqc` / `rareqc` / `rareqc_registre` | Accès BD |
+| `POSTGRES_SSLMODE` | `disable` | `sslmode` du driver — valeur explicite exigée en release |
+| `KEYCLOAK_HOST` / `KEYCLOAK_INTERNAL_HOST` | `http://localhost:8081` / *(=HOST)* | Keycloak public / interne (conteneurs) |
+| `KEYCLOAK_REALM` / `KEYCLOAK_CLIENT` / `KEYCLOAK_CLIENT_SECRET` | `rareqc` / `registre-admin-bff` / *(dev)* | Client OIDC du portail admin |
+| `KEYCLOAK_PARTICIPANT_CLIENT` / `KEYCLOAK_PARTICIPANT_CLIENT_SECRET` | `portail-participant-bff` / *(dev)* | Client OIDC du portail participant |
+| `PARTICIPANT_PORTAL_HOSTS` | `http://localhost:5174,http://localhost:3002` | Origines du portail participant |
+| `SESSION_SECRET` | *(dev)* | Signature des cookies de session |
+| `PORTAL_HOST` | `http://localhost:5173` | Origine de secours du flux OIDC |
+| `COOKIE_SECURE` | `false` | `true` hors dev (exige HTTPS) |
+| `STORAGE_TYPE` | `database` | Stockage des documents (`database` ou `s3`) |
 
 ## Stockage des documents
 
