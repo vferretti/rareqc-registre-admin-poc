@@ -169,7 +169,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 - [x] **B5** ~~Config par env vars — refuser de démarrer si manquant~~ (`internal/config`, `GIN_MODE=release` = mode strict ; `PORT`, `POSTGRES_SSLMODE`, secrets)
 - [x] **B7** ~~Remplacer AutoMigrate par `golang-migrate` (migrations SQL versionnées)~~
 - [x] **B13** ~~Health check qui ping la DB~~
-- [ ] **B14** Tests unitaires (DAO interfaces déjà en place)
+- [x] **B14** ~~Tests unitaires~~ (socle : `internal/auth` complet — middleware/rôles, sélection client par origine, tokens, config — + `internal/config` + patron DAO mocké dans `handlers_external_system_test.go` ; étendre aux autres handlers au fil de l'eau)
 - [x] **B15** ~~Validation d'entrée (binding tags required, formats, upload 10 MB)~~
 - [x] **B16** ~~Corriger les N+1 queries (templates, code tables, external systems)~~
 - [x] **B17** ~~Logging structuré~~ (`slog` — JSON en release, texte en dev ; requêtes HTTP via middleware `requestLogger`, health en debug)
