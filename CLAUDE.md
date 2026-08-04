@@ -182,7 +182,7 @@ Web application for administrators of a Quebec rare disease patient registry. Ma
 
 ### Auth (suite)
 - [x] **A1** ~~Client `portail-participant-bff` dans le realm~~ (créé, avec `participant-test` — voir `rareqc-infra/docs/integration-portail.md`)
-- [ ] **A2** Thème de login Keycloak aux couleurs RareQC (`rareqc-infra/keycloak/themes/`)
+- [x] **A2** ~~Thème de login Keycloak aux couleurs RareQC~~ (`rareqc-infra/keycloak/themes/rareqc/login/`, enfant de `keycloak.v2`, monté par le compose ; `loginTheme` posé dans le realm JSON et appliqué au realm vivant)
 - [ ] **A3** Composition staging/prod dans rareqc-infra (proxy TLS, `KC_HOSTNAME` public, secrets régénérés, images GHCR)
 
 ### Auth — API partagée avec le portail participant (décision 2026-08-03 : un seul serveur API, une seule BD, voir `rareqc-infra/docs/integration-portail.md`)
