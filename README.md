@@ -66,7 +66,7 @@ npm run dev
 | API (dev)  | http://localhost:8080/api     |
 | Swagger    | http://localhost:8080/swagger/index.html |
 
-Le serveur Vite proxy `/api` vers l'API (8082 par défaut dans `vite.config.ts` ; ajuster vers 8080 si l'API tourne avec `go run`).
+Le serveur Vite proxy `/api` vers l'API en dev local (8080). Si l'API tourne en docker plutôt qu'avec `go run` : `VITE_API_PROXY_TARGET=http://localhost:8082 npm run dev`.
 
 ### Se connecter
 
